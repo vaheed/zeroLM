@@ -76,3 +76,43 @@ The project keeps the word “language model” as its research direction, but t
 The C runtime allocates a fixed-size model structure, reads the weight file once, builds the output vocabulary once, and runs one request at a time. It has no network calls, GPU dependency, external model runtime, or persistent state. The C executable can run without Python after compilation.
 
 Persistent state is opt-in and lives only in the Rust port's `zerolm live` mode, which keeps a separate life file (decaying facts, learned phrase weights) next to an unmodified `weights.zlm`. See [LIVE.md](LIVE.md). The one-shot CLI of both runtimes remains stateless and produces identical output (checked in CI).
+
+## 8. Two runtimes, one model file
+
+`weights.zlm` is read by two independent implementations:
+
+| | C (`main.c`) | Rust (`rust/`) |
+| --- | --- | --- |
+| Role | reference, stateless | same one-shot behaviour, plus ZeroLM Live |
+| Decoder | softmax over states and vocabulary for every token | follows successor pointers (`--faithful` runs the softmax path) |
+| Vocabulary build | compares each state's token with all earlier ones (O(states x vocabulary)) | hash map (O(states)) |
+| Parsing | fixed buffers, `sscanf` | bounded `String`/`Vec`; dangling state or intent references are rejected at load time |
+| Limits | 32 intents, 512 features, 2048 states, 1024 vocabulary | same |
+
+The pointer walk relies on the hidden state staying (very nearly) one-hot: the start state holds
+about 99.98% of the mass, and every update re-concentrates the mass on the single declared
+successor, so the softmax decoder picks the token of the state the pointer names. This is a
+property of this hand-built matrix design, not a general equivalence. It is checked rather than
+assumed: CI diffs the output of both runtimes, in both Rust decoder modes, on every prompt in
+`tests/` and `examples/`, plus `--self-test` and `--info`. Benchmarks show the cost of
+the softmax path (see [TESTING.md](TESTING.md)).
+
+## 9. ZeroLM Live layers
+
+Live mode wraps the same classifier and decoder. It adds, in order of precedence on each turn:
+
+1. **Commands** (`teach`, `good`/`bad`, `again`, `what did I say`, `remember`, `forget`) handled
+   before classification.
+2. **Memory recall**: a question opener (`what is ...`) whose key matches a stored fact.
+3. **Learned reflexes**: extra phrase-to-intent weights added to the base features when
+   classifying, clamped to +/-16 so the base model keeps the final say.
+4. **Follow-up resolution**: a short turn (up to 4 words) with a cue word such as `why` or `yes`
+   that the classifier cannot place is classified together with the last real question.
+5. **The base model**: classify, abstain below 0.75, decode.
+
+State is a **memory** (facts with a strength that decays 3% per turn and is restored by recall,
+capacity-limited with weakest-first eviction), **learned reflexes** (decay 0.5% per turn), and a
+byte-budgeted **transcript**. Facts and reflexes are saved to a life file after every turn
+through a temp file and rename; the transcript is not saved. A kernel file lock
+(`flock`) on `<life file>.lock` ensures one live session per life file, including across
+containers. `weights.zlm` is never written. Details and limits: [LIVE.md](LIVE.md).
