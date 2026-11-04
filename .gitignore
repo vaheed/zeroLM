@@ -6,3 +6,4 @@ __pycache__/
 /model/spec.json.bak
 /reports/*.tmp
 /reports/clinc150_small.json
+/rust/target/

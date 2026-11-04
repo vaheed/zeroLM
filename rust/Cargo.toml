@@ -1,0 +1,22 @@
+[package]
+name = "zerolm"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+description = "ZeroLM runtime in safe Rust (port of main.c); foundation for the LLLM live language model"
+
+[lib]
+name = "zerolm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "zerolm"
+path = "src/main.rs"
+
+[dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+panic = "abort"

@@ -136,3 +136,35 @@ jobs:
             zerolm.exe
           if-no-files-found: warn
           retention-days: 14
+
+  rust:
+    name: Rust port parity (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Unit tests
+        run: cargo test --manifest-path rust/Cargo.toml
+
+      - name: Build C reference and Rust release binary
+        run: |
+          make all
+          cargo build --release --manifest-path rust/Cargo.toml
+
+      - name: Output parity with C reference
+        shell: bash
+        run: |
+          set -euo pipefail
+          R=rust/target/release/zerolm
+          diff <(./zerolm --self-test) <($R --self-test)
+          diff <(./zerolm --info) <($R --info)
+          while IFS=$'\t' read -r a b; do
+            case "$a" in ''|\#*) continue;; esac
+            p="${b:-$a}"
+            diff <(./zerolm --verbose "$p") <($R --verbose "$p") >/dev/null || { echo "DIFF: $p"; exit 1; }
+            diff <(./zerolm --verbose "$p") <($R --verbose --faithful "$p") >/dev/null || { echo "FAITHFUL DIFF: $p"; exit 1; }
+          done < <(cat tests/regression.tsv tests/unknown.tsv examples/prompts.tsv)
