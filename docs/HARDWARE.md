@@ -37,3 +37,21 @@ Python is not required for chatting after the C program is compiled.
 In the build container, the benchmark was also run with CPU affinity restricted to two CPUs and a 2 GB virtual-memory limit. The 1,000-interaction run measured about 0.887 ms per interaction (about 1,128 interactions per second). A separate `/usr/bin/time` check reported 1,280 KiB maximum resident memory for the C executable's `--info` run.
 
 These are measurements from one container host, not a guarantee for every computer. They do show that the current model is far below a 2 GB memory budget and has very low CPU cost on this host.
+
+## Measurements from the benchmark suite
+
+`python3 scripts/benchmark_all.py` records speed and memory for the C runtime, the Rust port and
+ZeroLM Live in [reports/benchmarks.md](../reports/benchmarks.md). On the recorded run (a 32-thread
+Xeon E5-2697 v4 host, one measurement each):
+
+- **Resident memory:** about 2.7-2.9 MB peak for a running process (C, Rust, and Live with 64
+  stored facts), far below the 2 GB target. The `docker-compose.yml` service is capped at 256 MB.
+- **Speed:** one-shot calls are 7-13 ms, almost all process start-up and model loading. Inside a
+  running process the C runtime answers about 930 prompts/s and the default Rust decoder about
+  20,000/s.
+- **ZeroLM Live:** about 3.4 ms per turn with the life file on disk, about 0.3 ms on tmpfs. The
+  life file is saved with an fsync every turn, so slow or networked disks will be slower. A life
+  file with 64 facts is about 2 KB.
+
+The earlier "Local constrained run" above was measured on a previous 18-intent model; the numbers
+in the report are the current ones. Locking relies on `flock`, which needs a local filesystem.
