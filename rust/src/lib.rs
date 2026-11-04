@@ -3,6 +3,9 @@
 //! Weight file format and observable behaviour are kept identical to the C
 //! reference so `scripts/evaluate.py` and `tests/*.tsv` work unchanged.
 
+pub mod live;
+pub mod memory;
+
 use std::collections::HashMap;
 use std::fmt;
 use std::fs;

@@ -90,8 +90,74 @@ fn self_test(m: &Model, faithful: bool) -> bool {
     passed == total
 }
 
+/// `zerolm live [--model FILE] [--life FILE] [--capacity N]`: a long-lived
+/// session whose memory persists across restarts in the life file.
+fn run_live(args: &[String]) -> ExitCode {
+    let (mut model_path, mut life, mut capacity) =
+        (DEFAULT_MODEL.to_string(), "life.zlm".to_string(), zerolm::memory::DEFAULT_CAPACITY);
+    let mut i = 0;
+    while i < args.len() {
+        let val = args.get(i + 1);
+        match (args[i].as_str(), val) {
+            ("--model", Some(v)) => model_path = v.clone(),
+            ("--life", Some(v)) => life = v.clone(),
+            ("--capacity", Some(v)) => match v.parse::<usize>() {
+                Ok(n) if n >= 1 => capacity = n,
+                _ => {
+                    eprintln!("error: --capacity needs a positive integer");
+                    return ExitCode::from(2);
+                }
+            },
+            _ => {
+                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--capacity N]");
+                return ExitCode::from(2);
+            }
+        }
+        i += 2;
+    }
+    let model = match Model::load(&model_path) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("model error: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let path = std::path::PathBuf::from(&life);
+    let memory = match zerolm::memory::Memory::load(&path, capacity) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("life error: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let age = memory.clock;
+    let mut session = zerolm::live::Session::new(&model, memory, Some(path));
+    println!("ZeroLM live (age {age} turns, {} memories) — type /quit to exit.", session.memory.entries.len());
+    let stdin = io::stdin();
+    loop {
+        print!("you> ");
+        let _ = io::stdout().flush();
+        let mut line = String::new();
+        if stdin.lock().read_line(&mut line).unwrap_or(0) == 0 {
+            break;
+        }
+        let line = line.trim_end_matches(['\r', '\n']);
+        if line == "/quit" || line == "/exit" {
+            break;
+        }
+        if line.is_empty() {
+            continue;
+        }
+        println!("bot> {}", session.turn(line));
+    }
+    ExitCode::SUCCESS
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
+    if args.get(1).map(String::as_str) == Some("live") {
+        return run_live(&args[2..]);
+    }
     let (mut model_path, mut info, mut test, mut verbose, mut faithful) =
         (DEFAULT_MODEL.to_string(), false, false, false, false);
     let mut text_start = None;
