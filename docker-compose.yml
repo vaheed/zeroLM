@@ -1,0 +1,33 @@
+# Run ZeroLM Live in a container.
+#
+#   docker compose run --rm zerolm                    interactive chat (tag "default")
+#   docker compose run --rm zerolm live --tag work    a separate session with its own memory
+#   docker compose run --rm zerolm "hello"            one-shot question (no memory)
+#   docker compose up -d zerolm-daemon                JSON-lines server on stdin/stdout (attach)
+#
+# Memory lives in the "zerolm-data" volume, one life.<tag>.zlm file per tag.
+
+services:
+  zerolm:
+    build: .
+    image: zerolm:latest
+    stdin_open: true
+    tty: true
+    init: true
+    volumes:
+      - zerolm-data:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    network_mode: none
+
+  zerolm-daemon:
+    extends: zerolm
+    profiles: ["daemon"]
+    tty: false
+    command: ["live", "--jsonl", "--tag", "daemon"]
+    restart: unless-stopped
+
+volumes:
+  zerolm-data:
