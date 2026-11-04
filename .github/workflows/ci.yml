@@ -147,8 +147,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Unit tests
+      - name: Unit and end-to-end tests
         run: cargo test --manifest-path rust/Cargo.toml
+
+      - name: Lint (clippy, warnings are errors)
+        run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
 
       - name: Build C reference and Rust release binary
         run: |
@@ -182,3 +185,16 @@ jobs:
           echo "$out" | head -1 | grep -q 'the code word is plum'
           echo "$out" | tail -1 | grep -q '"intent":"greeting"'
           [ "$before" = "$(sha256sum weights.zlm)" ]
+
+  docker:
+    name: Docker image (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build the image and run the container smoke test
+        run: scripts/docker_smoke.sh
