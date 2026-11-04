@@ -90,13 +90,17 @@ fn self_test(m: &Model, faithful: bool) -> bool {
     passed == total
 }
 
-/// `zerolm live [--model FILE] [--life FILE] [--capacity N]`: a long-lived
-/// session whose memory persists across restarts in the life file.
+/// `zerolm live [--model FILE] [--life FILE | --tag NAME] ...`: a long-lived
+/// session whose memory persists across restarts in the life file. `--tag`
+/// gives each session its own `life.NAME.zlm`; a lock file stops two processes
+/// from sharing one life file.
 fn run_live(args: &[String]) -> ExitCode {
     let (mut model_path, mut life, mut capacity) =
         (DEFAULT_MODEL.to_string(), "life.zlm".to_string(), zerolm::memory::DEFAULT_CAPACITY);
     let mut context = zerolm::context::DEFAULT_CONTEXT_BUDGET;
     let mut jsonl = false;
+    let mut explicit_life = false;
+    let mut tag: Option<String> = None;
     let mut i = 0;
     while i < args.len() {
         if args[i] == "--jsonl" {
@@ -107,7 +111,11 @@ fn run_live(args: &[String]) -> ExitCode {
         let val = args.get(i + 1);
         match (args[i].as_str(), val) {
             ("--model", Some(v)) => model_path = v.clone(),
-            ("--life", Some(v)) => life = v.clone(),
+            ("--life", Some(v)) => {
+                life = v.clone();
+                explicit_life = true;
+            }
+            ("--tag", Some(v)) => tag = Some(v.clone()),
             ("--context", Some(v)) => match v.parse::<usize>() {
                 Ok(n) if n >= 1 => context = n,
                 _ => {
@@ -123,11 +131,24 @@ fn run_live(args: &[String]) -> ExitCode {
                 }
             },
             _ => {
-                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--capacity N] [--context BYTES] [--jsonl]");
+                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--life FILE | --tag NAME] [--capacity N] [--context BYTES] [--jsonl]");
                 return ExitCode::from(2);
             }
         }
         i += 2;
+    }
+    if let Some(t) = &tag {
+        if explicit_life {
+            eprintln!("error: use either --life or --tag, not both");
+            return ExitCode::from(2);
+        }
+        match zerolm::lock::tagged_life_path(t) {
+            Ok(p) => life = p,
+            Err(e) => {
+                eprintln!("error: {e}");
+                return ExitCode::from(2);
+            }
+        }
     }
     let model = match Model::load(&model_path) {
         Ok(m) => m,
@@ -137,6 +158,14 @@ fn run_live(args: &[String]) -> ExitCode {
         }
     };
     let path = std::path::PathBuf::from(&life);
+    // Held until this function returns; released on drop.
+    let _lock = match zerolm::lock::LifeLock::acquire(&path) {
+        Ok(l) => l,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return ExitCode::from(2);
+        }
+    };
     let memory = match zerolm::memory::Memory::load(&path, capacity) {
         Ok(m) => m,
         Err(e) => {

@@ -6,6 +6,7 @@
 pub mod context;
 pub mod jsonl;
 pub mod live;
+pub mod lock;
 pub mod memory;
 
 use std::collections::HashMap;

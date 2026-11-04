@@ -62,7 +62,19 @@ time and clamped to ±16, so the base model keeps the final say.
 cd rust && cargo build --release
 ./target/release/zerolm live --model ../weights.zlm --life life.zlm
 ./target/release/zerolm live --jsonl --life life.zlm   # daemon: one JSON object per turn
+./target/release/zerolm live --tag work                # uses life.work.zlm
 ```
+
+### Tags and locking
+
+`--tag NAME` (letters, digits, `-`, `_`, up to 32 characters) gives a session
+its own life file, `life.NAME.zlm`, so separate sessions never overwrite each
+other. Use either `--tag` or `--life`, not both.
+
+A running session holds `<life file>.lock`. A second process on the same life
+file is refused with a message pointing to `--tag`. A lock left behind by a
+crashed process is detected (Linux, via `/proc`) and replaced. On other
+platforms a leftover lock must be deleted by hand.
 
 JSON-lines input is either a plain-text line or `{"text": "..."}`. Output is
 `{"reply": "...", "intent": "greeting" | null, "age": N, "memories": M}`.
@@ -74,6 +86,6 @@ JSON-lines input is either a plain-text line or `{"text": "..."}`. Output is
 - Follow-up resolution only helps short turns, and only by reusing the previous
   intent; it cannot resolve pronouns or slots.
 - The transcript is not persisted; only facts and learned reflexes are.
-- English and ASCII only. One session per life file: two processes sharing a
-  file will overwrite each other.
+- English and ASCII only. One live session per life file (enforced by the lock
+  above); use tags for parallel sessions.
 - Replies are still the canned responses of the base model.
