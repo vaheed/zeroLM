@@ -9,6 +9,8 @@ Thanks for helping with the experiment. Keep changes small, measurable, and hone
 - Do not label test execution as training or learning.
 - Do not claim general language understanding from phrase coverage.
 - Keep the C runtime dependency-free apart from the standard and math libraries.
+- The Rust port (`rust/`) must stay std-only and byte-identical to the C runtime for one-shot prompts (`cargo test` plus the CI parity job).
+- Live mode may keep runtime state (facts, learned phrase weights) only in a separate life file. It must never modify `weights.zlm`, and updates must be explicit user input or fixed rules, never gradient or loss based. Call it adaptation or state, not training.
 - Every behavior change must include regression or unknown-input test cases.
 
 ## Development loop

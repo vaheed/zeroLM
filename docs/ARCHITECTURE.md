@@ -74,3 +74,5 @@ The project keeps the word “language model” as its research direction, but t
 ## 7. Memory and runtime
 
 The C runtime allocates a fixed-size model structure, reads the weight file once, builds the output vocabulary once, and runs one request at a time. It has no network calls, GPU dependency, external model runtime, or persistent state. The C executable can run without Python after compilation.
+
+Persistent state is opt-in and lives only in the Rust port's `zerolm live` mode, which keeps a separate life file (decaying facts, learned phrase weights) next to an unmodified `weights.zlm`. See [LLLM.md](LLLM.md). The one-shot CLI of both runtimes remains stateless and produces identical output (checked in CI).

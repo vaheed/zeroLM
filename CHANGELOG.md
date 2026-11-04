@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added a std-only Rust port of the runtime (`rust/`) with output parity against the C binary, checked in CI. Bounded parsing replaces fixed C buffers; dangling state references are rejected at load time.
+- Added `zerolm live` (LLLM mode): persistent decaying memory, rolling transcript for follow-ups, `teach` and good/bad feedback as a learned-reflex overlay, and a `--jsonl` daemon mode. `weights.zlm` is never modified. See `docs/LLLM.md`.
+
 ## 0.2.0
 
 - Made the prototype and documentation English-only.

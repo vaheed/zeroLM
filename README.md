@@ -169,6 +169,15 @@ The current prototype has three main stages:
 
 The recurrent decoder is deliberately represented in a compact form so it can run with very little memory. The current implementation is not a Transformer and does not generate unrestricted prose from a learned distribution. Read [the architecture notes](docs/ARCHITECTURE.md) for implementation details.
 
+## Live mode (LLLM)
+
+The Rust port in [`rust/`](rust) adds `zerolm live`, a long-lived session with a decaying memory, a rolling transcript, and user-taught phrases, saved to a separate life file. The base weights are never modified and nothing is trained. See [docs/LLLM.md](docs/LLLM.md).
+
+```bash
+cd rust && cargo build --release
+./target/release/zerolm live --model ../weights.zlm --life life.zlm
+```
+
 ## Zero training means zero training
 
 ZeroLM's research boundary is intentionally strict:
