@@ -83,6 +83,90 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '413':
           $ref: '#/components/responses/TooLarge'
+  /v1/chat/completions:
+    post:
+      operationId: createChatCompletion
+      summary: OpenAI-compatible chat completions
+      description: |
+        Works with OpenAI SDKs and tools (set the base URL to `http://host:port/v1` and use the
+        server token as the API key). Errors on this endpoint use OpenAI's error shape.
+
+        **Models.** `zerolm` is stateless: the `messages` array is the whole context. Earlier
+        `user` messages are replayed through a throwaway session, so follow-ups such as "why?" and
+        "remember X is Y" followed by "what is X" work within one request, and nothing is stored.
+        `zerolm-live` runs the last user message in the persistent ZeroLM Live session named by the
+        `user` field (default `default`, same tag rules and locking as `/v1/sessions/{tag}`).
+
+        **What is not like OpenAI.** ZeroLM cannot follow instructions, so `system`/`developer`
+        and `assistant` messages never change the answer. `tools`, `functions` and `n` other than
+        1 are rejected with 400. `temperature`, `top_p`, `seed`, `stop`, `presence_penalty` and
+        similar are accepted and ignored (answers are deterministic). `max_tokens` truncates the
+        reply by words. `usage` counts whitespace-separated words, not model tokens. With
+        `stream: true` the reply is sent as server-sent events, one word per chunk.
+
+        The response carries one extra field, `zerolm.intent`, for callers that want to use ZeroLM
+        as an intent router.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: The completion, or a text/event-stream of chunks when `stream` is true.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+            text/event-stream:
+              schema:
+                type: string
+        '400':
+          $ref: '#/components/responses/OpenAIError'
+        '401':
+          $ref: '#/components/responses/OpenAIError'
+        '404':
+          $ref: '#/components/responses/OpenAIError'
+        '409':
+          $ref: '#/components/responses/OpenAIError'
+        '503':
+          $ref: '#/components/responses/OpenAIError'
+  /v1/models:
+    get:
+      operationId: listModels
+      summary: List models (OpenAI-compatible)
+      responses:
+        '200':
+          description: The two models, `zerolm` and `zerolm-live`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelList'
+        '401':
+          $ref: '#/components/responses/OpenAIError'
+  /v1/models/{id}:
+    get:
+      operationId: getModelById
+      summary: Retrieve a model (OpenAI-compatible)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [zerolm, zerolm-live]
+      responses:
+        '200':
+          description: The model.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelObject'
+        '401':
+          $ref: '#/components/responses/OpenAIError'
+        '404':
+          $ref: '#/components/responses/OpenAIError'
   /v1/sessions/{tag}/turns:
     post:
       operationId: sendTurn
@@ -244,6 +328,12 @@ components:
           schema:
             $ref: '#/components/schemas/TextRequest'
   responses:
+    OpenAIError:
+      description: An error in OpenAI's envelope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/OpenAIError'
     BadRequest:
       description: Malformed JSON, a missing or invalid field, or an invalid tag.
       content:
@@ -408,4 +498,149 @@ components:
         phrase:
           type: string
         intent:
+          type: string
+    OpenAIError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message, type]
+          properties:
+            message:
+              type: string
+            type:
+              type: string
+              enum: [invalid_request_error, server_error]
+            param:
+              type: string
+              nullable: true
+            code:
+              type: string
+              nullable: true
+    ChatRequest:
+      type: object
+      required: [model, messages]
+      properties:
+        model:
+          type: string
+          enum: [zerolm, zerolm-live]
+        messages:
+          type: array
+          minItems: 1
+          maxItems: 100
+          description: The last message must have role `user`.
+          items:
+            $ref: '#/components/schemas/ChatMessage'
+        stream:
+          type: boolean
+          default: false
+        max_tokens:
+          type: integer
+          minimum: 1
+          description: Truncates the reply to this many words (`finish_reason` becomes `length`).
+        max_completion_tokens:
+          type: integer
+          minimum: 1
+        user:
+          type: string
+          description: For `zerolm-live`, the session tag (1-32 of letters, digits, `-`, `_`). Default `default`.
+      additionalProperties: true
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, developer, user, assistant]
+        content:
+          description: 'A string, or an array of {"type": "text", "text": "..."} parts. At most 4096 bytes.'
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: object
+                properties:
+                  type:
+                    type: string
+                    enum: [text]
+                  text:
+                    type: string
+    ChatResponse:
+      type: object
+      required: [id, object, created, model, choices, usage]
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [chat.completion]
+        created:
+          type: integer
+        model:
+          type: string
+        choices:
+          type: array
+          items:
+            type: object
+            required: [index, message, finish_reason]
+            properties:
+              index:
+                type: integer
+              message:
+                type: object
+                required: [role, content]
+                properties:
+                  role:
+                    type: string
+                    enum: [assistant]
+                  content:
+                    type: string
+              finish_reason:
+                type: string
+                enum: [stop, length]
+        usage:
+          type: object
+          description: Counts of whitespace-separated words, not model tokens.
+          required: [prompt_tokens, completion_tokens, total_tokens]
+          properties:
+            prompt_tokens:
+              type: integer
+            completion_tokens:
+              type: integer
+            total_tokens:
+              type: integer
+        zerolm:
+          type: object
+          description: ZeroLM extension.
+          properties:
+            intent:
+              type: string
+              nullable: true
+            session:
+              type: string
+              description: Present for `zerolm-live`.
+    ModelList:
+      type: object
+      required: [object, data]
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ModelObject'
+    ModelObject:
+      type: object
+      required: [id, object, created, owned_by]
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [model]
+        created:
+          type: integer
+        owned_by:
           type: string

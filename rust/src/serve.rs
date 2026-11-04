@@ -9,7 +9,7 @@
 //!   `ROUTES` and the spec list exactly the same operations.
 
 use crate::http::{self, Request, MAX_BODY_BYTES};
-use crate::jsonl::{escape, parse_object};
+use crate::jsonl::{escape, parse_object, Json};
 use crate::live::Session;
 use crate::lock::{tagged_life_path, LifeLock};
 use crate::memory::Memory;
@@ -32,6 +32,9 @@ pub const ROUTES: &[(&str, &str)] = &[
     ("GET", "/v1/model"),
     ("GET", "/v1/openapi.yaml"),
     ("POST", "/v1/ask"),
+    ("POST", "/v1/chat/completions"),
+    ("GET", "/v1/models"),
+    ("GET", "/v1/models/{id}"),
     ("POST", "/v1/sessions/{tag}/turns"),
     ("GET", "/v1/sessions/{tag}"),
     ("DELETE", "/v1/sessions/{tag}"),
@@ -108,14 +111,38 @@ struct Resp {
     content_type: &'static str,
     extra: Vec<(&'static str, String)>,
     body: String,
+    /// Set for errors, so OpenAI-compatible routes can re-wrap them in OpenAI's error shape.
+    msg: Option<String>,
 }
 
 fn json(status: u16, body: String) -> Resp {
-    Resp { status, content_type: "application/json", extra: Vec::new(), body }
+    Resp { status, content_type: "application/json", extra: Vec::new(), body, msg: None }
 }
 
 fn error(status: u16, msg: &str) -> Resp {
-    json(status, format!("{{\"error\":\"{}\"}}", escape(msg)))
+    let mut r = json(status, format!("{{\"error\":\"{}\"}}", escape(msg)));
+    r.msg = Some(msg.to_string());
+    r
+}
+
+/// OpenAI's error envelope: {"error": {"message", "type", "param", "code"}}.
+fn openai_error(status: u16, msg: &str) -> Resp {
+    let kind = if status >= 500 { "server_error" } else { "invalid_request_error" };
+    let code = if status == 401 { "\"invalid_api_key\"" } else if status == 404 { "\"model_not_found\"" } else { "null" };
+    let mut r = json(
+        status,
+        format!(
+            "{{\"error\":{{\"message\":\"{}\",\"type\":\"{kind}\",\"param\":null,\"code\":{code}}}}}",
+            escape(msg)
+        ),
+    );
+    r.msg = Some(msg.to_string());
+    r
+}
+
+/// Routes that speak OpenAI's wire format, including its error shape.
+fn is_openai_path(path: &str) -> bool {
+    path == "/v1/chat/completions" || path == "/v1/models" || path.starts_with("/v1/models/")
 }
 
 struct Slot<'a> {
@@ -218,6 +245,18 @@ fn intent_json(name: Option<&str>) -> String {
 }
 
 fn route(state: &State<'_>, req: &Request) -> Resp {
+    let mut resp = route_inner(state, req);
+    if resp.status >= 400 && is_openai_path(&req.path) {
+        if let Some(msg) = resp.msg.take() {
+            let mut wrapped = openai_error(resp.status, &msg);
+            wrapped.extra = std::mem::take(&mut resp.extra);
+            return wrapped;
+        }
+    }
+    resp
+}
+
+fn route_inner(state: &State<'_>, req: &Request) -> Resp {
     let segs: Vec<&str> = req.path.trim_start_matches('/').split('/').collect();
     let mut allowed: Vec<&str> = Vec::new();
     let mut pattern: Option<&str> = None;
@@ -250,9 +289,12 @@ fn route(state: &State<'_>, req: &Request) -> Resp {
         ("GET", "/v1/health") => Ok(json(200, format!("{{\"status\":\"ok\",\"version\":\"{}\"}}", env!("CARGO_PKG_VERSION")))),
         ("GET", "/v1/model") => Ok(model_info(state.model)),
         ("GET", "/v1/openapi.yaml") => {
-            Ok(Resp { status: 200, content_type: "application/yaml", extra: Vec::new(), body: OPENAPI.to_string() })
+            Ok(Resp { status: 200, content_type: "application/yaml", extra: Vec::new(), body: OPENAPI.to_string(), msg: None })
         }
         ("POST", "/v1/ask") => ask(state, req),
+        ("POST", "/v1/chat/completions") => chat_completions(state, req),
+        ("GET", "/v1/models") => Ok(models_list()),
+        ("GET", "/v1/models/{id}") => decode(2).and_then(|id| model_one(&id)),
         (m, p) => decode(2).and_then(|tag| session_route(state, req, m, p, &tag, segs.get(4).map(|_| 4), &decode)),
     };
     result.unwrap_or_else(|r| r)
@@ -387,6 +429,210 @@ fn session_route(
         }
         _ => Err(error(404, "no such endpoint")),
     }
+}
+
+// ---------------------------------------------------------------------------
+// OpenAI-compatible endpoints: /v1/chat/completions and /v1/models
+// ---------------------------------------------------------------------------
+
+const MODEL_STATELESS: &str = "zerolm";
+const MODEL_LIVE: &str = "zerolm-live";
+const MAX_MESSAGES: usize = 100;
+static COMPLETION_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+fn model_json(id: &str) -> String {
+    format!("{{\"id\":\"{id}\",\"object\":\"model\",\"created\":0,\"owned_by\":\"zerolm\"}}")
+}
+
+fn models_list() -> Resp {
+    json(200, format!("{{\"object\":\"list\",\"data\":[{},{}]}}", model_json(MODEL_STATELESS), model_json(MODEL_LIVE)))
+}
+
+fn model_one(id: &str) -> Result<Resp, Resp> {
+    if id == MODEL_STATELESS || id == MODEL_LIVE {
+        Ok(json(200, model_json(id)))
+    } else {
+        Err(error(404, &format!("The model `{id}` does not exist")))
+    }
+}
+
+/// `content` may be a string or an array of `{"type":"text","text":...}` parts.
+fn message_text(content: Option<&Json>) -> Result<String, Resp> {
+    match content {
+        None | Some(Json::Null) => Ok(String::new()),
+        Some(Json::Str(s)) => Ok(s.clone()),
+        Some(Json::Arr(parts)) => {
+            let mut out: Vec<&str> = Vec::new();
+            for p in parts {
+                match (p.get("type").and_then(Json::as_str), p.get("text").and_then(Json::as_str)) {
+                    (Some("text"), Some(t)) => out.push(t),
+                    _ => return Err(error(400, "only text content parts are supported")),
+                }
+            }
+            Ok(out.join("\n"))
+        }
+        Some(_) => Err(error(400, "message content must be a string or an array of text parts")),
+    }
+}
+
+fn words(s: &str) -> usize {
+    s.split_whitespace().count()
+}
+
+fn unix_now() -> u64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs())
+}
+
+fn sse_event(id: &str, created: u64, model: &str, delta: &str, finish: Option<&str>) -> String {
+    let finish = finish.map_or("null".to_string(), |f| format!("\"{f}\""));
+    format!(
+        "data: {{\"id\":\"{id}\",\"object\":\"chat.completion.chunk\",\"created\":{created},\"model\":\"{model}\",\
+\"choices\":[{{\"index\":0,\"delta\":{delta},\"finish_reason\":{finish}}}]}}\n\n"
+    )
+}
+
+fn chat_completions(state: &State<'_>, req: &Request) -> Result<Resp, Resp> {
+    let text = std::str::from_utf8(&req.body).map_err(|_| error(400, "body must be UTF-8 JSON"))?;
+    let root = crate::jsonl::parse(text).ok_or_else(|| error(400, "body must be a JSON object"))?;
+    if !matches!(root, Json::Obj(_)) {
+        return Err(error(400, "body must be a JSON object"));
+    }
+
+    // Features ZeroLM cannot honour are refused rather than silently ignored.
+    for key in ["tools", "functions", "function_call", "audio"] {
+        if root.get(key).is_some_and(|v| *v != Json::Null) {
+            return Err(error(400, &format!("`{key}` is not supported: ZeroLM cannot call tools or functions")));
+        }
+    }
+    if let Some(tc) = root.get("tool_choice") {
+        if !matches!(tc, Json::Null) && tc.as_str() != Some("none") {
+            return Err(error(400, "`tool_choice` is not supported"));
+        }
+    }
+    if let Some(rf) = root.get("response_format") {
+        if rf.get("type").and_then(Json::as_str).is_some_and(|t| t != "text") {
+            return Err(error(400, "only `response_format` of type `text` is supported"));
+        }
+    }
+    if let Some(n) = root.get("n") {
+        if !matches!(n, Json::Null) && n.as_f64() != Some(1.0) {
+            return Err(error(400, "`n` must be 1"));
+        }
+    }
+    let stream = match root.get("stream") {
+        None | Some(Json::Null) => false,
+        Some(v) => v.as_bool().ok_or_else(|| error(400, "`stream` must be a boolean"))?,
+    };
+    let mut max_tokens: Option<usize> = None;
+    for key in ["max_tokens", "max_completion_tokens"] {
+        if let Some(v) = root.get(key).filter(|v| **v != Json::Null) {
+            match v.as_f64() {
+                Some(n) if n >= 1.0 && n.fract() == 0.0 && n <= 1e9 => max_tokens = Some(n as usize),
+                _ => return Err(error(400, &format!("`{key}` must be a positive integer"))),
+            }
+        }
+    }
+
+    let model = root.get("model").and_then(Json::as_str).ok_or_else(|| error(400, "missing string field \"model\""))?;
+    if model != MODEL_STATELESS && model != MODEL_LIVE {
+        return Err(error(404, &format!("The model `{model}` does not exist")));
+    }
+
+    let raw = root
+        .get("messages")
+        .and_then(Json::as_array)
+        .ok_or_else(|| error(400, "missing array field \"messages\""))?;
+    if raw.is_empty() || raw.len() > MAX_MESSAGES {
+        return Err(error(400, &format!("\"messages\" must contain 1 to {MAX_MESSAGES} messages")));
+    }
+    let mut messages: Vec<(&str, String)> = Vec::with_capacity(raw.len());
+    for m in raw {
+        let role = m.get("role").and_then(Json::as_str).ok_or_else(|| error(400, "every message needs a string \"role\""))?;
+        if !["system", "developer", "user", "assistant"].contains(&role) {
+            return Err(error(400, &format!("unsupported message role `{role}`")));
+        }
+        if m.get("tool_calls").is_some_and(|v| *v != Json::Null) {
+            return Err(error(400, "`tool_calls` is not supported"));
+        }
+        let content = message_text(m.get("content"))?;
+        if content.len() > MAX_TEXT {
+            return Err(error(400, &format!("message content is too long (max {MAX_TEXT} bytes)")));
+        }
+        messages.push((role, content));
+    }
+    let Some((last_role, last_text)) = messages.last() else { return Err(error(400, "no messages")) };
+    if *last_role != "user" || last_text.trim().is_empty() {
+        return Err(error(400, "the last message must have role `user` and non-empty content"));
+    }
+    let prompt_tokens: usize = messages.iter().map(|(_, c)| words(c)).sum();
+
+    // Run the conversation.
+    let (reply, intent, session_name) = if model == MODEL_LIVE {
+        let tag = match root.get("user") {
+            None | Some(Json::Null) => "default".to_string(),
+            Some(Json::Str(u)) => u.clone(),
+            Some(_) => return Err(error(400, "`user` must be a string")),
+        };
+        let arc = state.session(&tag, true)?;
+        let mut slot = lock(&arc);
+        if slot.deleted {
+            return Err(error(404, "this session was deleted"));
+        }
+        let reply = slot.session.turn(last_text);
+        (reply, slot.session.last_intent.clone(), Some(tag))
+    } else {
+        // Stateless: the messages ARE the context. Earlier user messages are replayed through a
+        // throwaway session (no life file), so follow-ups and "remember ... / what is ..." work
+        // within one request. Assistant and system messages cannot change ZeroLM's behaviour.
+        let mut s = Session::new(state.model, Memory::new(state.cfg.capacity), None);
+        s.set_context_budget(state.cfg.context);
+        for (role, content) in &messages[..messages.len() - 1] {
+            if *role == "user" && !content.trim().is_empty() {
+                s.turn(content);
+            }
+        }
+        let reply = s.turn(last_text);
+        (reply, s.last_intent.clone(), None)
+    };
+
+    // max_tokens counts whitespace-separated words, the closest thing ZeroLM has to tokens.
+    let mut toks: Vec<&str> = reply.split_whitespace().collect();
+    let mut finish = "stop";
+    if let Some(m) = max_tokens {
+        if toks.len() > m {
+            toks.truncate(m);
+            finish = "length";
+        }
+    }
+    let content = toks.join(" ");
+    let completion_tokens = toks.len();
+    let created = unix_now();
+    let id = format!("chatcmpl-{:x}{:04x}", created, COMPLETION_COUNTER.fetch_add(1, Ordering::Relaxed) & 0xffff);
+
+    if stream {
+        let mut body = sse_event(&id, created, model, "{\"role\":\"assistant\",\"content\":\"\"}", None);
+        for (i, t) in toks.iter().enumerate() {
+            let piece = if i == 0 { (*t).to_string() } else { format!(" {t}") };
+            body.push_str(&sse_event(&id, created, model, &format!("{{\"content\":\"{}\"}}", escape(&piece)), None));
+        }
+        body.push_str(&sse_event(&id, created, model, "{}", Some(finish)));
+        body.push_str("data: [DONE]\n\n");
+        return Ok(Resp { status: 200, content_type: "text/event-stream", extra: Vec::new(), body, msg: None });
+    }
+
+    let session_json = session_name.map_or(String::new(), |t| format!(",\"session\":\"{}\"", escape(&t)));
+    Ok(json(
+        200,
+        format!(
+            "{{\"id\":\"{id}\",\"object\":\"chat.completion\",\"created\":{created},\"model\":\"{model}\",\
+\"choices\":[{{\"index\":0,\"message\":{{\"role\":\"assistant\",\"content\":\"{}\"}},\"finish_reason\":\"{finish}\"}}],\
+\"usage\":{{\"prompt_tokens\":{prompt_tokens},\"completion_tokens\":{completion_tokens},\"total_tokens\":{}}},\
+\"zerolm\":{{\"intent\":{}{session_json}}}}}",
+            escape(&content),
+            prompt_tokens + completion_tokens,
+            intent_json(intent.as_deref())
+        ),
+    ))
 }
 
 /// A connection wrapper that enforces one total deadline for the whole request,
