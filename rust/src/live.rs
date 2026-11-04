@@ -12,8 +12,15 @@ const TEACH_WEIGHT: f64 = 8.0;
 const GOOD_DELTA: f64 = 1.0;
 const BAD_DELTA: f64 = -4.0;
 
-/// A short, unclear turn may borrow its meaning from the previous one.
+/// A short, unclear turn may borrow its meaning from the previous one, but only
+/// if it reads like a follow-up (contains one of these cue words). Gibberish
+/// or an unrelated short phrase must not repeat the last answer.
 const FOLLOW_UP_MAX_WORDS: usize = 4;
+const FOLLOW_UP_CUES: [&str; 27] = [
+    "why", "how", "what", "and", "more", "really", "so", "then", "explain", "elaborate",
+    "details", "detail", "mean", "about", "yes", "yeah", "yep", "no", "ok", "okay", "sure",
+    "please", "that", "it", "this", "continue", "go",
+];
 
 pub struct Session<'a> {
     model: &'a Model,
@@ -146,7 +153,9 @@ impl<'a> Session<'a> {
         let mut basis = norm.clone();
         // Follow-up: a short turn that the classifier cannot place on its own
         // is read together with the last real question.
-        if score < ABSTAIN_THRESHOLD && norm_str.split(' ').count() <= FOLLOW_UP_MAX_WORDS {
+        let words: Vec<&str> = norm_str.split(' ').collect();
+        let looks_like_follow_up = words.iter().any(|w| FOLLOW_UP_CUES.contains(w));
+        if score < ABSTAIN_THRESHOLD && words.len() <= FOLLOW_UP_MAX_WORDS && looks_like_follow_up {
             let unknown = self.model.intents - 1;
             let prev = self
                 .transcript
@@ -370,6 +379,10 @@ NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 w\nNODE 3 -1 <eos>\nNODE 4 5 sorry\nN
         assert_eq!(s.turn("show weights"), "w");
         assert_eq!(s.turn("why?"), "w"); // alone: unknown; with context: weights
         assert_eq!(s.last_intent.as_deref(), Some("weights"));
+        // gibberish and short unrelated phrases must not repeat the last answer
+        assert_eq!(s.turn("show weights"), "w");
+        assert_eq!(s.turn("asdf"), "sorry");
+        assert_eq!(s.turn("banana split"), "sorry");
         // a long unrelated sentence must not borrow context
         assert_eq!(s.turn("tell me something about the weather outside today"), "sorry");
     }
