@@ -4,6 +4,7 @@
 //! reference so `scripts/evaluate.py` and `tests/*.tsv` work unchanged.
 
 pub mod context;
+pub mod http;
 pub mod jsonl;
 pub mod live;
 pub mod lock;
