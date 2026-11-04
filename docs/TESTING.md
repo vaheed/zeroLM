@@ -63,3 +63,11 @@ Do not use only the current test prompts to claim language quality. Add new prom
 ## Current baseline
 
 The repository's initial v0.2.0 test set contains 79 regression prompts and 18 unknown prompts. The current build passes all 97. This is a check of the included hand-authored cases only; it is not a general language benchmark.
+
+### Online benchmark (CLINC150)
+
+```sh
+python3 scripts/online_benchmark.py --limit 400
+```
+
+Downloads the public CLINC150 intent dataset and reports in-scope accuracy (CLINC intents with a ZeroLM equivalent) and the abstention rate on out-of-scope and unsupported queries. CI fails if abstention drops below 85% or in-scope accuracy below 15%. If the download fails the script skips (use `--require-network` to make that an error).

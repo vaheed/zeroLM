@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 /model/spec.json.bak
 /reports/*.tmp
+/reports/clinc150_small.json

@@ -94,6 +94,14 @@ jobs:
           python3 scripts/benchmark.py --iterations 500 --json > reports/benchmark.json
           cat reports/benchmark.json
 
+      - name: Run online CLINC150 benchmark
+        id: online_benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/online_benchmark.py --limit 400 --min-abstain 0.85 --min-accuracy 0.15 2>&1 | tee reports/online-benchmark.log
+          python3 scripts/online_benchmark.py --limit 400 --json > reports/online-benchmark.json || true
+
       - name: Smoke test with a 2 GiB virtual-memory limit (Linux)
         id: memory_guard
         if: runner.os == 'Linux'

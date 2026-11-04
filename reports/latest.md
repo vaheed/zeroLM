@@ -4,7 +4,7 @@
 - Regression: **79/79** (100.0%)
 - Unknown abstention: **18/18** (100.0%)
 - Overall: **97/97** (100.0%)
-- Mean CLI case time: 4.119 ms
+- Mean CLI case time: 11.494 ms
 
 ## Failures
 
