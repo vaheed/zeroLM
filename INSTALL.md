@@ -1,47 +1,98 @@
-# ZeroLM CI update
+# Installing and running ZeroLM
 
-This is a drop-in CI update for `vaheed/zeroLM`.
+There are three ways to run ZeroLM. Pick the one that fits.
 
-## Files in this package
+| You want | Use | Needs |
+| --- | --- | --- |
+| The original stateless chat, tests, and model editing | [C runtime](#1-c-runtime) | C11 compiler, `make`, Python 3.10+ |
+| ZeroLM Live (memory, teaching, JSON-lines mode) | [Rust port](#2-rust-port) | Rust (tested with 1.75) |
+| ZeroLM Live without installing toolchains | [Docker](#3-docker) | Docker with the Compose plugin |
 
-Copy these paths into the root of your existing repository, preserving the directory structure:
+The C and Rust runtimes read the same `weights.zlm` and give identical answers for
+one-shot prompts (CI checks this on every change).
 
-- `.github/workflows/ci.yml` — expanded Ubuntu/macOS workflow, full pipeline, examples, resource guard, job summary, and uploaded reports.
-- `scripts/run_examples.py` — executes documented prompts in one-shot and interactive modes and checks the expected intent plus non-empty output.
-- `scripts/ci_summary.py` — writes a readable Markdown report to `$GITHUB_STEP_SUMMARY` and `reports/ci-summary.md`.
-- `examples/prompts.tsv` — the small set of prompts used by the example smoke test.
-
-## Apply
-
-From the repository root, extract this archive over the checkout, then:
+## 1. C runtime
 
 ```bash
-git add .github/workflows/ci.yml scripts/run_examples.py scripts/ci_summary.py examples/prompts.tsv
-git commit -m "ci: add examples, metrics, and GitHub Actions summary"
-git push
+git clone https://github.com/vaheed/zeroLM.git
+cd zeroLM
+make                      # builds ./zerolm from main.c and weights.zlm
+./run.sh                  # interactive chat (builds first if needed)
+./zerolm "Who are you?"   # one prompt, no session
+make pipeline             # rebuild weights, build, run every test and the benchmark
 ```
 
-Or copy the four paths manually from this archive.
+Requirements: `cc` (GCC or Clang), GNU Make, and Python 3.10+ for the scripts (standard
+library only). On macOS run `xcode-select --install` first if the compiler is missing.
 
-## What the updated workflow does
+Windows: `run.bat` works with MinGW-w64 GCC. The full `make pipeline` workflow targets
+Linux and macOS.
 
-1. Runs on Ubuntu and macOS for pushes to `main`, pull requests, and manual dispatch.
-2. Checks the model specification, Python syntax, shell syntax, and generated-weight consistency.
-3. Runs the repository's existing `make pipeline` (build, C smoke tests, regression evaluation, weight audit, and benchmark).
-4. Runs a separate set of documented CLI examples, including interactive stdin mode.
-5. Saves machine-readable example, weight-audit, and benchmark results.
-6. On Linux, runs the C smoke tests under a 2 GiB virtual-address-space limit.
-7. Writes test counts, model structure, benchmark data, runner information, and caveats to the GitHub Actions job Summary.
-8. Uploads the `reports/` directory and compiled binary as a 14-day workflow artifact, even when a prior test step fails.
+## 2. Rust port
 
-## Important interpretation
+```bash
+cd rust
+cargo build --release     # produces rust/target/release/zerolm
+cargo test                # unit tests + end-to-end tests of zerolm live
+cargo clippy --all-targets -- -D warnings
+```
 
-- The current evaluator checks expected intent selection and non-empty response output. It does not establish semantic correctness or general language understanding.
-- The prompt set is finite and hand-authored. Passing it is a smoke/regression signal, not a general language benchmark.
-- The Linux `ulimit` check limits virtual address space. It is not a physical-RAM measurement or a guarantee for every 2 GB computer.
-- Benchmark results include process startup and terminal I/O and should be compared on equivalent runners.
-- The workflow does not train, fine-tune, distill, or optimize model weights.
+The crate is standard-library only. On Ubuntu, `apt install cargo rustc rust-clippy` is enough.
 
-## View the evidence
+Run it from the repository root so it finds `weights.zlm`, or set `ZEROLM_MODEL`:
 
-After a workflow run, open the run's **Summary** tab for the Markdown report. Download `zerolm-ci-reports-Ubuntu` or `zerolm-ci-reports-macOS` from the run's **Artifacts** section for JSON reports and logs.
+```bash
+rust/target/release/zerolm "Who are you?"                    # same answer as the C build
+rust/target/release/zerolm live --tag me                     # ZeroLM Live, memory in life.me.zlm
+rust/target/release/zerolm live --jsonl --tag me             # JSON in, JSON out, one line per turn
+ZEROLM_MODEL=/path/to/weights.zlm rust/target/release/zerolm live
+```
+
+Live options: `--tag NAME` or `--life FILE` (not both), `--capacity N` facts (default 64),
+`--context BYTES` of transcript (default 16384), `--model FILE`. See
+[docs/LIVE.md](docs/LIVE.md) for what you can say to it.
+
+## 3. Docker
+
+```bash
+docker compose build
+docker compose run --rm zerolm                      # interactive ZeroLM Live (tag "default")
+docker compose run --rm zerolm live --tag work      # a separate session with its own memory
+docker compose run --rm zerolm "does it use training"   # one-shot, nothing stored
+docker compose up -d zerolm-daemon                  # optional long-running JSON-lines service
+```
+
+Notes:
+
+- Memory lives in the named volume `zerolm-data`, one `life.<tag>.zlm` per tag. Remove it
+  with `docker compose down -v`.
+- The container runs as an unprivileged user, with a read-only root filesystem, no
+  network (`network_mode: none`), all capabilities dropped, and a 256 MB memory limit.
+  The image is about 117 MB.
+- Two containers cannot use the same tag at the same time: the second one exits with an
+  error that points to `--tag`. This holds across containers because the lock is an OS
+  file lock on the shared volume.
+- The JSON-lines service reads requests on stdin and answers on stdout; there is no network
+  port and no HTTP server. Talk to the daemon with
+  `docker attach --sig-proxy=false <container>` (detach with Ctrl-p Ctrl-q), or skip the
+  daemon and pipe lines through
+  `docker compose run --rm -T zerolm live --jsonl --tag NAME`.
+- `scripts/docker_smoke.sh` builds the image and checks all of the above end to end.
+
+## Checking an install
+
+```bash
+./zerolm --self-test                          # C: 48 checks should pass
+rust/target/release/zerolm --self-test        # Rust: same output
+python3 scripts/evaluate.py                   # labelled prompts, expects 100%
+```
+
+## Troubleshooting
+
+| Symptom | Cause and fix |
+| --- | --- |
+| `model error: cannot open model file: weights.zlm` | Run from the repository root, pass `--model FILE`, or set `ZEROLM_MODEL`. |
+| `life file ... is in use by another session` | Another `zerolm live` has that life file open. Use a different `--tag`, or stop the other session. The lock is an OS file lock, so a crashed or killed session releases it automatically. |
+| `life error: invalid life header` | The life file is not a ZeroLM life file or is corrupt. It is left untouched; move it away or restore a copy. |
+| `make: cc: command not found` | Install a C compiler (`build-essential` on Debian/Ubuntu, Xcode tools on macOS). |
+| Docker: `permission denied` on `/data` | Use the named volume from `docker-compose.yml`; a bind mount must be writable by uid 10001. |
