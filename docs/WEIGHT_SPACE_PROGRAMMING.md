@@ -116,7 +116,7 @@ If the no-training rule is strict, the best next targets are bounded tasks that 
 1. **Better input features:** add word-boundary features for negation, question type, time expressions, numbers, and common command forms. Keep each feature explicit and testable.
 2. **Compositional parsing:** create typed slots such as `action`, `object`, `date`, and `time`. Validate extracted values with ordinary code instead of asking the network to guess.
 3. **Small algorithmic modules:** hand-design dedicated networks for tasks with a clear input/output contract, such as a small arithmetic circuit, grid movement, or finite-state protocol controller. Test each module independently.
-4. **Memory outside the network:** store user facts as structured records and retrieve only relevant records. This gives the agent history without placing the whole history into the neural context.
+4. **Memory outside the network:** store user facts as structured records and retrieve only relevant records. This gives the agent history without placing the whole history into the neural context. *Implemented as a first step in [ZeroLM Live](LIVE.md): facts are stored outside the network in a separate life file, with decay, a capacity limit and phrase-based retrieval. It does not yet handle paraphrased lookups or typed slots.*
 5. **Weight-space patches:** let an external model propose a small weight edit for a known failure. Use deterministic tests and a rollback file to decide whether to keep it.
 6. **Independent evaluation:** grow a hidden set of paraphrases, ambiguous requests, and unknown prompts. Never use the same examples for both patch design and final claims.
 

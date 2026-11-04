@@ -34,10 +34,15 @@ trained model and does not change the zero-training boundary:
 | `what is <thing>` / `who is` / `tell me about` / `recall` | recall it, reinforcing it |
 | `forget <thing>` | delete it |
 | `teach <phrase> as <intent>` | add a learned phrase→intent weight (+8) |
-| `good` / `bad` | strengthen (+1) or weaken (−4) the phrases behind the last answer |
+| `good` / `bad` (also `good answer`, `wrong`, ...) | strengthen (+1) or weaken (−4) the phrases that produced the last classified answer; if none did, it says there is nothing to adjust |
 | `again` / `repeat` | repeat the last answer |
 | `what did I say` | echo your last message |
-| a short follow-up such as `why?` | if it is unclear alone, it is read together with the last real question |
+| a short follow-up such as `why?` or `yes` | up to 4 words, containing a cue word (`why`, `how`, `what`, `more`, `yes`, `that`, `it`, ...), and not understood on its own: it is read together with the last real question |
+| `memory` topic (e.g. "does it have memory") | answered from the real state (capacity, how to use it) instead of the canned "no memory" text |
+
+Commands are matched before classification, so any message starting with `remember `, `forget `
+or `teach ` is always treated as a command. Gibberish and short unrelated phrases do not
+borrow the previous answer.
 
 Context is a rolling transcript with a byte budget (`--context`, default
 16 KiB). The oldest turns are dropped first; the newest is always kept.
@@ -71,13 +76,36 @@ cd rust && cargo build --release
 its own life file, `life.NAME.zlm`, so separate sessions never overwrite each
 other. Use either `--tag` or `--life`, not both.
 
-A running session holds `<life file>.lock`. A second process on the same life
-file is refused with a message pointing to `--tag`. A lock left behind by a
-crashed process is detected (Linux, via `/proc`) and replaced. On other
-platforms a leftover lock must be deleted by hand.
+A running session holds an exclusive OS file lock (`flock`) on
+`<life file>.lock`. A second process on the same life file, **including one in
+another container sharing the volume**, is refused with a message pointing to
+`--tag`. The kernel releases the lock when the holder exits or is killed, so
+there is no stale-lock cleanup; the `.lock` file itself stays on disk and is
+harmless. (A pid-based lock cannot work across containers, because each has its
+own pid namespace.) `flock` needs a local filesystem and is not reliable on some
+network filesystems. On non-Unix platforms a create-new lock file is used
+instead, and a leftover one must be deleted by hand.
 
-JSON-lines input is either a plain-text line or `{"text": "..."}`. Output is
-`{"reply": "...", "intent": "greeting" | null, "age": N, "memories": M}`.
+### Docker
+
+```sh
+docker compose run --rm zerolm                    # interactive, tag "default"
+docker compose run --rm zerolm live --tag work    # another session, own memory
+docker compose up -d zerolm-daemon                # optional JSON-lines service
+```
+
+Life files live in the `zerolm-data` volume. The container is read-only, has no network,
+and runs as an unprivileged user. See [INSTALL.md](../INSTALL.md).
+
+### Exit codes
+
+`0` on a normal exit (`/quit`, `/exit`, or end of input). `2` for bad arguments, an unreadable
+model, a corrupt life file (left untouched), or a busy life file.
+
+JSON-lines input is either a plain-text line or `{"text": "..."}`. Empty lines are skipped; a
+JSON object without a string `text` gets `{"error": "..."}`. Output is one object per input line:
+`{"reply": "...", "intent": "greeting" | null, "age": N, "memories": M}`. `intent` is `null` for
+commands (`remember`, `teach`, ...); `age` counts turns across restarts.
 
 ## Limitations
 
@@ -89,3 +117,8 @@ JSON-lines input is either a plain-text line or `{"text": "..."}`. Output is
 - English and ASCII only. One live session per life file (enforced by the lock
   above); use tags for parallel sessions.
 - Replies are still the canned responses of the base model.
+- Cost: the life file is saved, with an fsync, after every turn. That is about 3.4 ms per turn on the
+  benchmark host's disk against about 0.3 ms on tmpfs ([reports/benchmarks.md](../reports/benchmarks.md)),
+  so very chatty sessions on slow disks pay for it. The memory itself costs nothing measurable.
+- Capacity: 256 learned reflexes (weakest dropped first). `teach` only accepts intent names that exist
+  in the loaded model.
