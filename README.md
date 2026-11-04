@@ -1,147 +1,224 @@
 # ZeroLM — Zero-Training Language Model
 
-**Can a neural language model work without ever being trained?**
+**Can a neural language model do useful work without being trained?**
 
-ZeroLM is an experimental research project exploring a different way to build neural language models: designing their weights directly instead of learning them through conventional training.
+ZeroLM is an open-source research experiment in building a small neural text-generation system with manually engineered weights. The project explores direct network design and **Weight-Space Programming** instead of conventional pretraining or fine-tuning.
 
-ZeroLM stands for **Zero-training Language Model**.
+> **Current status:** ZeroLM is an intentionally limited research prototype. It recognizes a small set of English request patterns and emits predefined response paths through a manually specified recurrent decoder. It is not a general-purpose LLM and does not yet understand arbitrary text.
 
-Unlike conventional language models, ZeroLM does not start with pretrained weights, a training corpus, or a fine-tuning process. Its neural network weights are manually engineered using code, mathematical structures, and explicit design decisions.
+## Get started
 
-The goal is to investigate how much useful language processing and reasoning behavior can be achieved through direct neural network construction, without gradient-based training.
+The quickest way to build, test, and run ZeroLM is on Linux or macOS.
 
-## What Makes ZeroLM Different?
+### 1. Get the source
 
-Most modern neural language models follow a similar development process:
+```bash
+git clone https://github.com/vaheed/zeroLM.git
+cd zeroLM
+```
 
-1. Collect large training datasets.
-2. Initialize a neural network.
-3. Train its parameters using optimization algorithms.
-4. Fine-tune the model for specific tasks.
-5. Deploy the resulting model for inference.
+### 2. Install the requirements
 
-ZeroLM investigates an alternative approach:
+You need:
 
-1. Design the neural network architecture.
-2. Define its parameters and weight structures directly.
-3. Implement manually engineered neural behavior.
-4. Run inference without training.
-5. Evaluate the results through repeatable experiments.
-6. Improve the design through explicit weight and architecture changes.
+- A C11 compiler (`cc`, GCC, or Clang)
+- GNU Make
+- Python 3.10 or newer (the scripts use only the Python standard library)
 
-The central research question is:
+Check that the tools are available:
 
-**How much intelligence can be engineered directly into a neural network without teaching it through training?**
+```bash
+cc --version
+make --version
+python3 --version
+```
 
-## Zero Training Means Zero Training
+On macOS, install Apple's command-line developer tools when needed:
 
-ZeroLM follows a strict research boundary:
+```bash
+xcode-select --install
+```
 
-- No pretrained language models.
-- No downloaded model weights.
-- No supervised training.
-- No self-supervised training.
-- No fine-tuning.
-- No gradient descent.
-- No backpropagation-based weight optimization.
-- No hidden training process.
+### 3. Build and run the full test pipeline
 
-Model weights are defined directly by the project.
+```bash
+make pipeline
+```
 
-This makes ZeroLM different from zero-shot language models, pretrained models, quantized LLMs, and smaller models distilled from larger networks.
+This single command:
+
+1. Validates `model/spec.json` and generates `weights.zlm`.
+2. Compiles the C runtime.
+3. Checks that the generated weight file matches the specification.
+4. Runs the C runtime smoke tests.
+5. Evaluates the English regression and unknown-input test sets.
+6. Audits the weight graph and decoder paths.
+7. Runs a small inference benchmark.
+8. Writes evaluation results to `reports/latest.json` and `reports/latest.md`.
+
+A non-zero exit code means a build step or test failed. Read the first failing command and its output before changing the model.
+
+### 4. Start an interactive session
+
+```bash
+./run.sh
+```
+
+Try these example prompts:
+
+```text
+Hello
+Who are you?
+What can you do?
+Explain your architecture.
+How are the weights defined?
+Does ZeroLM use training?
+What are its limitations?
+Tell me about Weight-Space Programming.
+What is the weather in Paris?
+/quit
+```
+
+The final example is deliberately outside the supported scope. ZeroLM should return its `unknown` response rather than invent an answer.
+
+To send one prompt without starting an interactive session:
+
+```bash
+./zerolm "Who are you?"
+./zerolm --verbose "Who are you?"
+./zerolm --info
+```
+
+On Windows, `run.bat` provides a basic launch path when GCC (for example, MinGW-w64) is installed. The documented full `make pipeline` workflow is currently aimed at Linux and macOS.
+
+## Test ZeroLM
+
+Run the complete pipeline whenever you change code, model features, weights, or response paths:
+
+```bash
+make pipeline
+```
+
+You can also run individual checks:
+
+| Command | What it checks |
+| --- | --- |
+| `./zerolm --self-test` | Classifier smoke cases and decoder paths |
+| `python3 scripts/evaluate.py --write-report` | Labeled regression cases and unknown-input abstention |
+| `python3 scripts/weight_audit.py` | Model format, intent starts, state links, and decoder paths |
+| `python3 scripts/benchmark.py --iterations 500` | Repeated interactive inference on the current machine |
+| `python3 scripts/inspect_weights.py` | A readable summary of the manually authored model |
+
+### What the tests do — and do not — prove
+
+The included tests check that known prompts select their expected intent, that the decoder emits a response, and that selected out-of-scope prompts are rejected. They also check model-file consistency and basic runtime performance.
+
+**Passing these tests does not prove general language understanding, factual accuracy, or reasoning ability.** The current regression suite is hand-authored and finite. Add new paraphrases, ambiguous prompts, misspellings, and genuinely unseen examples. Review response meaning manually; the evaluator primarily checks intent selection and non-empty output.
+
+Benchmark numbers depend on the operating system, compiler, CPU, and system load. Compare runs on the same machine and setup. The project targets small CPU-only systems, including a two-core / 2 GB RAM environment, but users should measure resource use on their own hardware.
+
+## How to contribute
+
+Contributions are welcome, especially reproducible experiments that improve coverage without weakening the zero-training research boundary.
+
+### A good first contribution
+
+1. **Find a limitation.** Run ZeroLM and identify a prompt it handles incorrectly or does not support.
+2. **Add a test first.** Add the prompt and expected intent to `tests/regression.tsv`, or add an out-of-scope prompt to `tests/unknown.tsv`. Each regression row is `intent<TAB>prompt`.
+3. **Save a baseline.** Run `make pipeline`, then copy the generated report:
+
+   ```bash
+   cp reports/latest.json reports/baseline.json
+   ```
+
+4. **Make one focused change.** Edit `model/spec.json` to change manually authored input features, feature weights, or response paths. For runtime or architecture work, change the relevant C code and document the design.
+5. **Run the pipeline again.**
+
+   ```bash
+   make pipeline
+   ```
+
+6. **Compare the reports.**
+
+   ```bash
+   python3 scripts/compare_reports.py reports/baseline.json reports/latest.json
+   ```
+
+7. **Review and explain the result.** Keep the change only when it fixes the target case without unacceptable regressions. Include before-and-after reports in your pull request.
+
+### Contribution rules
+
+- Keep the shipped model English-only.
+- Do not add pretrained weights, downloaded model parameters, training datasets, training loops, fine-tuning, distillation, backpropagation, or gradient-based optimization.
+- The model builder may validate and serialize the hand-authored specification; it must not learn or optimize weights.
+- Do not describe repeated test runs as training or learning.
+- Do not claim general language understanding based on phrase coverage or passing the included tests.
+- Keep the C runtime small and dependency-light.
+- Add tests for new behavior and include unknown or ambiguous cases where relevant.
+- Explain limitations, false matches, and any trade-offs in your pull request.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution checklist.
+
+## How the model works today
+
+The current prototype has three main stages:
+
+1. **Input feature projection:** normalized English text is checked against manually authored phrase features. Their fixed weights contribute to intent scores.
+2. **Recurrent state transitions:** the selected intent activates a start state in a sparse, manually defined recurrent state graph.
+3. **Token emission:** the decoder follows that path and emits its associated tokens until an end marker is reached.
+
+The recurrent decoder is deliberately represented in a compact form so it can run with very little memory. The current implementation is not a Transformer and does not generate unrestricted prose from a learned distribution. Read [the architecture notes](docs/ARCHITECTURE.md) for implementation details.
+
+## Zero training means zero training
+
+ZeroLM's research boundary is intentionally strict:
+
+- No pretrained language model or downloaded model weights.
+- No supervised or self-supervised model training.
+- No fine-tuning or distillation.
+- No gradient descent or backpropagation-based weight optimization.
+- No hidden fitting step in the model-building pipeline.
+
+`model/spec.json` is the human-authored source of truth. `build_model.py` validates and serializes that specification into `weights.zlm`; it does not train the network.
 
 ## Weight-Space Programming
 
-ZeroLM is inspired by the emerging concept of **Weight-Space Programming**.
+ZeroLM is inspired by research into **Weight-Space Programming**: treating neural network parameters as structures that can be inspected, designed, and edited directly.
 
-Weight-Space Programming explores treating neural network weights as directly readable and writable structures rather than parameters that can only be produced through conventional training.
+An important inspiration is [Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights](https://rikiyat.github.io/blog/weight-space-programming/). That work explores several settings, including small networks created for specific tasks and direct editing of existing pretrained models. ZeroLM takes inspiration from the direct-weight-design direction, but starts from manually specified weights and no pretrained language model.
 
-An important inspiration is:
+Read [the Weight-Space Programming research notes](docs/WEIGHT_SPACE_PROGRAMMING.md) for the relationship, distinctions, and possible experiments.
 
-[Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights](https://rikiyat.github.io/blog/weight-space-programming/)
+## Research directions
 
-This work explores how neural networks can be inspected, constructed, and improved through direct reasoning about their weights.
+Areas we want to explore include:
 
-Its experiments include creating small task-specific neural networks from scratch and modifying existing pretrained models without gradient-based optimization.
+- Better compositional input representations that go beyond exact phrase coverage.
+- More expressive manually designed recurrent or other compact neural architectures.
+- Weight inspection, composition, and carefully documented weight-space edits.
+- Robust handling of numbers, dates, entities, and simple relations.
+- Explicit abstention when the model cannot support a request.
+- Repeatable evaluation with unseen prompts and independent review.
+- CPU-first inference under strict memory limits.
 
-ZeroLM takes inspiration from this direction but has a different starting point: **building a language-model research prototype with manually specified weights and no pretrained model at all.**
+Improvements must remain measurable and must preserve the zero-training constraint.
 
-### How ZeroLM Can Explore Weight-Space Programming
+## Documentation
 
-The project aims to investigate several approaches:
+- [Architecture](docs/ARCHITECTURE.md) — current network and inference path.
+- [Testing and experiments](docs/TESTING.md) — test layers, reports, and repeatable evaluation.
+- [Weight-Space Programming](docs/WEIGHT_SPACE_PROGRAMMING.md) — research inspiration and project-specific directions.
+- [Hardware notes](docs/HARDWARE.md) — runtime and resource targets.
+- [Contributing](CONTRIBUTING.md) — development rules and pull request expectations.
+- [Changelog](CHANGELOG.md) — project changes.
 
-- **Manual Weight Engineering:** Designing neural network parameters through explicit mathematical and programmatic methods.
-- **Weight Inspection:** Understanding how individual parameters and groups of parameters affect network behavior.
-- **Weight Composition:** Combining manually designed neural structures to produce more complex behaviors.
-- **Weight-Space Experiments:** Testing alternative parameter structures without running training loops.
-- **Reasoning-Driven Weight Editing:** Using external reasoning tools to propose parameter changes, followed by independent evaluation and regression testing.
-- **Architecture Exploration:** Investigating different neural network structures that can operate under strict memory and CPU limits.
+## Continuous integration
 
-## Research Goals
+GitHub Actions runs the build and test pipeline on Ubuntu and macOS for pushes and pull requests. See the [latest workflow runs](https://github.com/vaheed/zeroLM/actions).
 
-ZeroLM is not intended to compete with today's large pretrained language models in its current form.
+## License
 
-Its purpose is to explore a different research question.
-
-How far can we go using manually engineered neural networks?
-
-Current research directions include:
-
-- Neural language processing without training.
-- Directly engineered neural network weights.
-- Weight-space programming and parameter manipulation.
-- Lightweight language model architectures.
-- CPU-only neural inference.
-- Language understanding through explicit neural structures.
-- Small-memory neural systems.
-- Reproducible experiments in training-free neural network design.
-
-## Lightweight and CPU-First
-
-ZeroLM also explores whether neural language processing can run on extremely limited hardware.
-
-The target environment is:
-
-- Two CPU cores.
-- 2 GB RAM.
-- No GPU.
-- No external AI API.
-- No pretrained model downloads.
-
-The project prioritizes small binaries, low memory usage, predictable execution, and reproducible benchmarks.
-
-These are engineering targets, not a claim that the model already provides general-purpose language intelligence.
-
-## Reproducible Experiments
-
-Every proposed improvement should be measurable.
-
-ZeroLM uses repeatable testing to evaluate:
-
-- Language input handling.
-- Output quality.
-- Neural inference behavior.
-- Weight integrity.
-- Memory consumption.
-- CPU performance.
-- Regression behavior.
-- Previously unsupported inputs.
-
-Changes to network architecture or weights must be evaluated against the existing benchmark suite.
-
-Repeated tests help us identify improvements and prevent regressions. They do not automatically improve model intelligence.
-
-## Project Philosophy
-
-ZeroLM is an experiment in building neural networks differently.
-
-Rather than asking how much data is needed to train a language model, we ask:
-
-**What if we directly engineered the neural network to perform the behavior we want?**
-
-The project is open to new architectures, mathematical approaches, weight-space programming techniques, and reproducible research.
-
-Our long-term objective is to discover the practical limits of zero-training neural language models.
+ZeroLM is released under the [MIT License](LICENSE).
 
 ---
 
