@@ -1,14 +1,39 @@
-//! Live session: the model plus a persistent, decaying memory (the "LLLM" layer).
-//! The base `weights.zlm` is never modified; all life lives in the life file.
+//! Live session: the model plus a persistent, decaying memory and a rolling
+//! transcript (the "LLLM" layer). The base `weights.zlm` is never modified;
+//! all life lives in the life file.
 
+use crate::context::{Transcript, Turn, DEFAULT_CONTEXT_BUDGET};
 use crate::memory::Memory;
-use crate::{normalize_text, Model, MAX_TEXT};
+use crate::{normalize_text, Model, ABSTAIN_THRESHOLD, MAX_TEXT};
 use std::path::PathBuf;
+
+/// A short, unclear turn may borrow its meaning from the previous one.
+const FOLLOW_UP_MAX_WORDS: usize = 4;
 
 pub struct Session<'a> {
     model: &'a Model,
     pub memory: Memory,
     path: Option<PathBuf>,
+    pub transcript: Transcript,
+    /// Intent name chosen on the most recent turn (None for commands).
+    pub last_intent: Option<String>,
+}
+
+/// What a turn produced, for the transcript.
+struct Outcome {
+    text: String,
+    intent: Option<usize>,
+    matched: Vec<String>,
+    meta: bool,
+}
+
+impl Outcome {
+    fn plain(text: String) -> Outcome {
+        Outcome { text, intent: None, matched: Vec::new(), meta: false }
+    }
+    fn meta(text: String) -> Outcome {
+        Outcome { text, intent: None, matched: Vec::new(), meta: true }
+    }
 }
 
 fn strip_prefix_ci<'s>(s: &'s str, prefix: &str) -> Option<&'s str> {
@@ -31,51 +56,113 @@ const QUESTION_OPENERS: [&str; 10] = [
 
 impl<'a> Session<'a> {
     pub fn new(model: &'a Model, memory: Memory, path: Option<PathBuf>) -> Session<'a> {
-        Session { model, memory, path }
+        Session {
+            model,
+            memory,
+            path,
+            transcript: Transcript::new(DEFAULT_CONTEXT_BUDGET),
+            last_intent: None,
+        }
+    }
+
+    pub fn set_context_budget(&mut self, bytes: usize) {
+        self.transcript = Transcript::new(bytes);
     }
 
     /// Handle one user turn and return the reply.
     pub fn turn(&mut self, raw: &str) -> String {
         self.memory.tick();
         let raw = raw.trim();
-        let reply = self.dispatch(raw);
+        self.last_intent = None;
+        let out = self.dispatch(raw);
+        self.last_intent = out.intent.map(|i| self.model.intent_name[i].clone());
+        self.transcript.push(Turn {
+            user: raw.to_string(),
+            bot: out.text.clone(),
+            intent: out.intent,
+            matched: out.matched,
+            meta: out.meta,
+        });
         if let Some(p) = &self.path {
             if let Err(e) = self.memory.save(p) {
                 eprintln!("warning: cannot save life file {}: {e}", p.display());
             }
         }
-        reply
+        out.text
     }
 
-    fn dispatch(&mut self, raw: &str) -> String {
+    fn dispatch(&mut self, raw: &str) -> Outcome {
+        let norm = normalize_text(raw.as_bytes(), MAX_TEXT);
+        let norm_str = String::from_utf8_lossy(&norm).into_owned();
+
+        // Context commands: they read the transcript, not the classifier.
+        if matches!(norm_str.as_str(), "again" | "repeat" | "repeat that" | "say that again") {
+            return Outcome::meta(match self.transcript.recent().find(|t| !t.meta) {
+                Some(t) => t.bot.clone(),
+                None => "There is nothing to repeat yet.".to_string(),
+            });
+        }
+        if matches!(norm_str.as_str(), "what did i say" | "what did i just say" | "what was my last message") {
+            return Outcome::meta(match self.transcript.recent().find(|t| !t.meta) {
+                Some(t) => format!("You said: {}", t.user),
+                None => "You have not said anything yet.".to_string(),
+            });
+        }
+
         if let Some(rest) = strip_prefix_ci(raw, "remember ") {
-            return self.cmd_remember(rest);
+            return Outcome::plain(self.cmd_remember(rest));
         }
         if let Some(rest) = strip_prefix_ci(raw, "forget ") {
             let rest = strip_prefix_ci(rest, "about ").unwrap_or(rest);
             let key = norm_string(rest);
-            return if !key.is_empty() && self.memory.forget(&key) {
+            return Outcome::plain(if !key.is_empty() && self.memory.forget(&key) {
                 format!("Forgot {key}.")
             } else {
                 format!("I do not remember {key}.")
-            };
+            });
         }
-        let norm = normalize_text(raw.as_bytes(), MAX_TEXT);
-        let norm_str = String::from_utf8_lossy(&norm);
         if QUESTION_OPENERS.iter().any(|o| norm_str.starts_with(o)) {
             if let Some((key, value)) = self.memory.recall(&norm) {
-                return format!("{key} is {value}.");
+                return Outcome::plain(format!("{key} is {value}."));
             }
         }
-        let (intent, _) = self.model.decide(raw);
-        if self.model.intent_name[intent] == "memory" {
-            return format!(
-                "I keep up to {} memories, and unused ones fade as we talk. \
-Say \"remember X is Y\", ask \"what is X\", or say \"forget X\".",
-                self.memory.capacity
-            );
+
+        let (mut intent, score) = self.model.decide(raw);
+        // Follow-up: a short turn that the classifier cannot place on its own
+        // is read together with the last real question.
+        if score < ABSTAIN_THRESHOLD && norm_str.split(' ').count() <= FOLLOW_UP_MAX_WORDS {
+            let unknown = self.model.intents - 1;
+            let prev = self
+                .transcript
+                .recent()
+                .find(|t| !t.meta && t.intent.is_some_and(|i| i != unknown))
+                .map(|t| t.user.clone());
+            if let Some(prev) = prev {
+                let (ci, cs) = self.model.decide(&format!("{prev} {raw}"));
+                if cs >= ABSTAIN_THRESHOLD {
+                    intent = ci;
+                }
+            }
         }
-        self.model.generate(intent).join(" ")
+
+        if self.model.intent_name[intent] == "memory" {
+            return Outcome {
+                text: format!(
+                    "I keep up to {} memories, and unused ones fade as we talk. \
+Say \"remember X is Y\", ask \"what is X\", or say \"forget X\".",
+                    self.memory.capacity
+                ),
+                intent: Some(intent),
+                matched: Vec::new(),
+                meta: false,
+            };
+        }
+        Outcome {
+            text: self.model.generate(intent).join(" "),
+            intent: Some(intent),
+            matched: Vec::new(),
+            meta: false,
+        }
     }
 
     fn cmd_remember(&mut self, rest: &str) -> String {
@@ -104,14 +191,18 @@ Say \"remember X is Y\", ask \"what is X\", or say \"forget X\".",
 mod tests {
     use super::*;
 
-    const TINY: &str = "ZEROLM 1\nMETA 2 4\nINTENT 0 memory\nINTENT 1 unknown\n\
-FEATURE 0 8.0 memory\nSTART 0 0\nSTART 1 2\n\
-NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
+    const TINY: &str = "ZEROLM 1\nMETA 3 6\nINTENT 0 memory\nINTENT 1 weights\nINTENT 2 unknown\n\
+FEATURE 0 8.0 memory\nFEATURE 1 8.0 weights\nSTART 0 0\nSTART 1 2\nSTART 2 4\n\
+NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 w\nNODE 3 -1 <eos>\nNODE 4 5 sorry\nNODE 5 -1 <eos>\n";
+
+    fn session(m: &Model) -> Session<'_> {
+        Session::new(m, Memory::new(8), None)
+    }
 
     #[test]
     fn remember_recall_forget() {
         let m = Model::parse(TINY).unwrap();
-        let mut s = Session::new(&m, Memory::new(8), None);
+        let mut s = session(&m);
         assert!(s.turn("Remember that my name is Sam.").starts_with("Okay"));
         assert_eq!(s.turn("what is my name?"), "my name is Sam.");
         assert_eq!(s.turn("forget my name"), "Forgot my name.");
@@ -121,8 +212,7 @@ NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
     #[test]
     fn memory_intent_is_live_not_canned() {
         let m = Model::parse(TINY).unwrap();
-        let mut s = Session::new(&m, Memory::new(8), None);
-        assert!(s.turn("memory").contains("8 memories"));
+        assert!(session(&m).turn("memory").contains("8 memories"));
     }
 
     #[test]
@@ -143,7 +233,30 @@ NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
     #[test]
     fn bad_remember_gives_usage() {
         let m = Model::parse(TINY).unwrap();
-        let mut s = Session::new(&m, Memory::new(8), None);
-        assert!(s.turn("remember nothing").starts_with("Say it like"));
+        assert!(session(&m).turn("remember nothing").starts_with("Say it like"));
+    }
+
+    #[test]
+    fn repeat_and_recall_of_last_message() {
+        let m = Model::parse(TINY).unwrap();
+        let mut s = session(&m);
+        assert_eq!(s.turn("again"), "There is nothing to repeat yet.");
+        assert_eq!(s.turn("show weights"), "w");
+        assert_eq!(s.turn("say that again"), "w");
+        assert_eq!(s.turn("what did I say?"), "You said: show weights");
+        // meta turns do not become the thing that is repeated
+        assert_eq!(s.turn("again"), "w");
+    }
+
+    #[test]
+    fn short_follow_up_borrows_previous_intent() {
+        let m = Model::parse(TINY).unwrap();
+        let mut s = session(&m);
+        assert_eq!(s.turn("yes"), "sorry"); // nothing to borrow from yet
+        assert_eq!(s.turn("show weights"), "w");
+        assert_eq!(s.turn("why?"), "w"); // alone: unknown; with context: weights
+        assert_eq!(s.last_intent.as_deref(), Some("weights"));
+        // a long unrelated sentence must not borrow context
+        assert_eq!(s.turn("tell me something about the weather outside today"), "sorry");
     }
 }

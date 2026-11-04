@@ -95,12 +95,20 @@ fn self_test(m: &Model, faithful: bool) -> bool {
 fn run_live(args: &[String]) -> ExitCode {
     let (mut model_path, mut life, mut capacity) =
         (DEFAULT_MODEL.to_string(), "life.zlm".to_string(), zerolm::memory::DEFAULT_CAPACITY);
+    let mut context = zerolm::context::DEFAULT_CONTEXT_BUDGET;
     let mut i = 0;
     while i < args.len() {
         let val = args.get(i + 1);
         match (args[i].as_str(), val) {
             ("--model", Some(v)) => model_path = v.clone(),
             ("--life", Some(v)) => life = v.clone(),
+            ("--context", Some(v)) => match v.parse::<usize>() {
+                Ok(n) if n >= 1 => context = n,
+                _ => {
+                    eprintln!("error: --context needs a positive byte budget");
+                    return ExitCode::from(2);
+                }
+            },
             ("--capacity", Some(v)) => match v.parse::<usize>() {
                 Ok(n) if n >= 1 => capacity = n,
                 _ => {
@@ -109,7 +117,7 @@ fn run_live(args: &[String]) -> ExitCode {
                 }
             },
             _ => {
-                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--capacity N]");
+                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--capacity N] [--context BYTES]");
                 return ExitCode::from(2);
             }
         }
@@ -132,6 +140,7 @@ fn run_live(args: &[String]) -> ExitCode {
     };
     let age = memory.clock;
     let mut session = zerolm::live::Session::new(&model, memory, Some(path));
+    session.set_context_budget(context);
     println!("ZeroLM live (age {age} turns, {} memories) — type /quit to exit.", session.memory.entries.len());
     let stdin = io::stdin();
     loop {

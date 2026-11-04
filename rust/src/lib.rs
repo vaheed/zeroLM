@@ -3,6 +3,7 @@
 //! Weight file format and observable behaviour are kept identical to the C
 //! reference so `scripts/evaluate.py` and `tests/*.tsv` work unchanged.
 
+pub mod context;
 pub mod live;
 pub mod memory;
 
