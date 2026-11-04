@@ -96,8 +96,14 @@ fn run_live(args: &[String]) -> ExitCode {
     let (mut model_path, mut life, mut capacity) =
         (DEFAULT_MODEL.to_string(), "life.zlm".to_string(), zerolm::memory::DEFAULT_CAPACITY);
     let mut context = zerolm::context::DEFAULT_CONTEXT_BUDGET;
+    let mut jsonl = false;
     let mut i = 0;
     while i < args.len() {
+        if args[i] == "--jsonl" {
+            jsonl = true;
+            i += 1;
+            continue;
+        }
         let val = args.get(i + 1);
         match (args[i].as_str(), val) {
             ("--model", Some(v)) => model_path = v.clone(),
@@ -117,7 +123,7 @@ fn run_live(args: &[String]) -> ExitCode {
                 }
             },
             _ => {
-                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--capacity N] [--context BYTES]");
+                eprintln!("Usage: zerolm live [--model FILE] [--life FILE] [--capacity N] [--context BYTES] [--jsonl]");
                 return ExitCode::from(2);
             }
         }
@@ -141,6 +147,39 @@ fn run_live(args: &[String]) -> ExitCode {
     let age = memory.clock;
     let mut session = zerolm::live::Session::new(&model, memory, Some(path));
     session.set_context_budget(context);
+    if jsonl {
+        let stdin = io::stdin();
+        let mut out = io::stdout().lock();
+        for line in stdin.lock().lines() {
+            let Ok(line) = line else { break };
+            let line = line.trim_end_matches('\r');
+            if line.is_empty() {
+                continue;
+            }
+            let text = if line.starts_with('{') { zerolm::jsonl::extract_text(line) } else { Some(line.to_string()) };
+            let resp = match text {
+                None => "{\"error\":\"expected a string field \\\"text\\\"\"}".to_string(),
+                Some(t) => {
+                    let reply = session.turn(&t);
+                    let intent = match &session.last_intent {
+                        Some(i) => format!("\"{}\"", zerolm::jsonl::escape(i)),
+                        None => "null".to_string(),
+                    };
+                    format!(
+                        "{{\"reply\":\"{}\",\"intent\":{},\"age\":{},\"memories\":{}}}",
+                        zerolm::jsonl::escape(&reply),
+                        intent,
+                        session.memory.clock,
+                        session.memory.entries.len()
+                    )
+                }
+            };
+            if writeln!(out, "{resp}").and_then(|_| out.flush()).is_err() {
+                break;
+            }
+        }
+        return ExitCode::SUCCESS;
+    }
     println!("ZeroLM live (age {age} turns, {} memories) — type /quit to exit.", session.memory.entries.len());
     let stdin = io::stdin();
     loop {
