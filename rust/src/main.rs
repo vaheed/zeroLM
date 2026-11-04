@@ -233,10 +233,113 @@ fn run_live(args: &[String]) -> ExitCode {
     ExitCode::SUCCESS
 }
 
+/// Parse a positive integer option value, or exit with a usage error.
+fn positive(name: &str, v: &str) -> Result<usize, String> {
+    match v.parse::<usize>() {
+        Ok(n) if n >= 1 => Ok(n),
+        _ => Err(format!("{name} needs a positive integer")),
+    }
+}
+
+/// `zerolm serve [--model FILE] [--addr HOST:PORT] [--dir DIR] ...`: the HTTP/JSON API.
+/// The token comes from `$ZEROLM_TOKEN` (preferred, so it stays out of `ps`) or `--token`.
+fn run_serve(args: &[String]) -> ExitCode {
+    let fail = |msg: String| {
+        eprintln!("error: {msg}");
+        ExitCode::from(2)
+    };
+    let mut model_path = default_model();
+    let mut cfg = zerolm::serve::Config::new("127.0.0.1:8080");
+    cfg.token = env::var("ZEROLM_TOKEN").ok().filter(|t| !t.is_empty());
+    let mut i = 0;
+    while i < args.len() {
+        let Some(v) = args.get(i + 1) else {
+            return fail(format!("{} needs a value\nUsage: zerolm serve [--model FILE] [--addr HOST:PORT] [--dir DIR] [--token T] [--capacity N] [--context BYTES] [--request-timeout-ms N] [--max-connections N] [--max-sessions N]", args[i]));
+        };
+        let r: Result<(), String> = match args[i].as_str() {
+            "--model" => {
+                model_path = v.clone();
+                Ok(())
+            }
+            "--addr" => {
+                cfg.addr = v.clone();
+                Ok(())
+            }
+            "--dir" => {
+                cfg.dir = v.into();
+                Ok(())
+            }
+            "--token" => {
+                cfg.token = Some(v.clone());
+                Ok(())
+            }
+            "--capacity" => positive("--capacity", v).map(|n| cfg.capacity = n),
+            "--context" => positive("--context", v).map(|n| cfg.context = n),
+            "--max-connections" => positive("--max-connections", v).map(|n| cfg.max_connections = n),
+            "--max-sessions" => positive("--max-sessions", v).map(|n| cfg.max_sessions = n),
+            "--request-timeout-ms" => positive("--request-timeout-ms", v)
+                .map(|n| cfg.request_timeout = std::time::Duration::from_millis(n as u64)),
+            other => Err(format!("unknown option {other}")),
+        };
+        if let Err(e) = r {
+            return fail(e);
+        }
+        i += 2;
+    }
+    let model = match Model::load(&model_path) {
+        Ok(m) => m,
+        Err(e) => return fail(format!("model error: {e}")),
+    };
+    let ready = |addr: std::net::SocketAddr| {
+        println!("listening on http://{addr}");
+        let _ = io::stdout().flush();
+    };
+    match zerolm::serve::run(&model, &cfg, ready) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => fail(e),
+    }
+}
+
+/// `zerolm health [--addr HOST:PORT]`: exit 0 if the server answers `GET /v1/health` with 200.
+/// Used as the container health check (the image has no curl).
+fn run_health(args: &[String]) -> ExitCode {
+    use std::io::Read;
+    use std::net::{TcpStream, ToSocketAddrs};
+    let addr = match args {
+        [] => "127.0.0.1:8080".to_string(),
+        [flag, v] if flag == "--addr" => v.clone(),
+        _ => {
+            eprintln!("Usage: zerolm health [--addr HOST:PORT]");
+            return ExitCode::from(2);
+        }
+    };
+    let timeout = std::time::Duration::from_secs(3);
+    let ok = (|| -> Option<bool> {
+        let target = addr.to_socket_addrs().ok()?.next()?;
+        let mut s = TcpStream::connect_timeout(&target, timeout).ok()?;
+        s.set_read_timeout(Some(timeout)).ok()?;
+        s.set_write_timeout(Some(timeout)).ok()?;
+        s.write_all(b"GET /v1/health HTTP/1.1\r\nHost: health\r\nConnection: close\r\n\r\n").ok()?;
+        let mut head = [0u8; 12];
+        s.read_exact(&mut head).ok()?;
+        Some(&head == b"HTTP/1.1 200")
+    })()
+    .unwrap_or(false);
+    if ok {
+        ExitCode::SUCCESS
+    } else {
+        eprintln!("unhealthy: no 200 from http://{addr}/v1/health");
+        ExitCode::from(1)
+    }
+}
+
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().collect();
-    if args.get(1).map(String::as_str) == Some("live") {
-        return run_live(&args[2..]);
+    match args.get(1).map(String::as_str) {
+        Some("live") => return run_live(&args[2..]),
+        Some("serve") => return run_serve(&args[2..]),
+        Some("health") => return run_health(&args[2..]),
+        _ => {}
     }
     let (mut model_path, mut info, mut test, mut verbose, mut faithful) =
         (default_model(), false, false, false, false);

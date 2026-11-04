@@ -77,6 +77,39 @@ impl<'a> Session<'a> {
         }
     }
 
+    /// Save the life file now (a no-op without a path).
+    pub fn save(&self) -> std::io::Result<()> {
+        match &self.path {
+            Some(p) => self.memory.save(p),
+            None => Ok(()),
+        }
+    }
+
+    /// Teach a phrase programmatically (same effect as `teach <phrase> as <intent>`).
+    /// Returns the normalized phrase and intent name, and saves.
+    pub fn teach(&mut self, phrase: &str, intent: &str) -> Result<(String, String), String> {
+        let phrase = norm_string(phrase);
+        let name = intent.trim().to_ascii_lowercase();
+        if phrase.is_empty() || name.is_empty() {
+            return Err("phrase and intent must not be empty".to_string());
+        }
+        if self.model.intent_index(&name).is_none() {
+            return Err(format!("no intent called {name}"));
+        }
+        self.memory.learn(&name, &phrase, TEACH_WEIGHT);
+        self.save().map_err(|e| format!("cannot save life file: {e}"))?;
+        Ok((phrase, name))
+    }
+
+    /// Forget one stored fact by key (normalized like `forget <key>`); saves.
+    pub fn forget_fact(&mut self, key: &str) -> bool {
+        let removed = self.memory.forget(&norm_string(key));
+        if removed {
+            let _ = self.save();
+        }
+        removed
+    }
+
     pub fn set_context_budget(&mut self, bytes: usize) {
         self.transcript = Transcript::new(bytes);
     }
@@ -358,6 +391,19 @@ NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 w\nNODE 3 -1 <eos>\nNODE 4 5 sorry\nN
         assert!(s.turn("good").contains("nothing to adjust"));
         let learned = s.memory.learned.iter().find(|l| l.phrase == "weights").unwrap();
         assert!(learned.weight < -7.0 && learned.weight > -8.0);
+    }
+
+    #[test]
+    fn programmatic_teach_and_forget() {
+        let m = Model::parse(TINY).unwrap();
+        let mut s = session(&m);
+        assert_eq!(s.teach("Show Me!", " Weights ").unwrap(), ("show me".to_string(), "weights".to_string()));
+        assert_eq!(s.turn("show me"), "w");
+        assert!(s.teach("x", "nope").unwrap_err().contains("no intent called nope"));
+        assert!(s.teach("  ", "weights").is_err());
+        s.turn("remember my dog is Rex");
+        assert!(s.forget_fact("My Dog!"));
+        assert!(!s.forget_fact("my dog"));
     }
 
     #[test]

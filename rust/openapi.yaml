@@ -1,0 +1,411 @@
+openapi: 3.0.3
+info:
+  title: ZeroLM API
+  version: 0.2.0
+  description: |
+    HTTP/JSON API for ZeroLM, served by `zerolm serve`.
+
+    ZeroLM is a small, hand-programmed phrase-to-intent model with canned answers. It is not a
+    general language model. `/v1/ask` is stateless. `/v1/sessions/{tag}/...` is ZeroLM Live: each
+    tag is an independent session with its own memory, saved to `life.<tag>.zlm` in the server's
+    data directory. A tag can be used by only one process at a time, so a CLI or Docker session
+    holding a tag makes the API answer 409 for it, and the other way round.
+
+    Every request needs `Authorization: Bearer <token>` when the server was started with a token
+    (required for any non-loopback address), except `GET /v1/health`.
+
+    Errors are always `{"error": "<message>"}`. Requests are limited to 64 KiB, headers to 8 KiB,
+    and one request is served per connection.
+servers:
+  - url: http://127.0.0.1:8080
+    description: Default local address
+security:
+  - bearerAuth: []
+paths:
+  /v1/health:
+    get:
+      operationId: getHealth
+      summary: Liveness probe
+      description: Always unauthenticated, for load balancers and container health checks.
+      security: []
+      responses:
+        '200':
+          description: The server is running.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /v1/model:
+    get:
+      operationId: getModel
+      summary: Describe the loaded model
+      responses:
+        '200':
+          description: Model summary.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Model'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/openapi.yaml:
+    get:
+      operationId: getOpenApi
+      summary: This specification
+      responses:
+        '200':
+          description: The OpenAPI document served by this exact build.
+          content:
+            application/yaml:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/ask:
+    post:
+      operationId: ask
+      summary: Ask one question without any session or memory
+      description: |
+        Classifies the text and returns the canned answer for the chosen intent. Nothing is stored.
+        `intent` is `unknown` when no phrase scored at least 0.75.
+      requestBody:
+        $ref: '#/components/requestBodies/Text'
+      responses:
+        '200':
+          description: The answer.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Answer'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+  /v1/sessions/{tag}/turns:
+    post:
+      operationId: sendTurn
+      summary: Send one message in a session
+      description: |
+        Creates the session on first use. Handles commands (`remember X is Y`, `forget X`,
+        `teach <phrase> as <intent>`, `good`, `bad`, `again`, `what did I say`), recalls facts
+        (`what is X`), resolves short follow-ups such as `why?`, and otherwise answers like `/v1/ask`.
+        `intent` is null when the message was handled as a command or a memory lookup.
+      parameters:
+        - $ref: '#/components/parameters/Tag'
+      requestBody:
+        $ref: '#/components/requestBodies/Text'
+      responses:
+        '200':
+          description: The reply and the session's state after this turn.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Turn'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/InUse'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /v1/sessions/{tag}:
+    get:
+      operationId: getSession
+      summary: Session summary
+      parameters:
+        - $ref: '#/components/parameters/Tag'
+      responses:
+        '200':
+          description: Counts for this session.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InUse'
+    delete:
+      operationId: deleteSession
+      summary: Delete a session and its saved memory
+      description: Removes `life.<tag>.zlm`. The base model is never touched.
+      parameters:
+        - $ref: '#/components/parameters/Tag'
+      responses:
+        '204':
+          description: The session was deleted.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InUse'
+  /v1/sessions/{tag}/memories:
+    get:
+      operationId: listMemories
+      summary: List the facts a session remembers
+      description: Strongest first. Unused facts fade by 3% of their strength per turn and are dropped below 0.05.
+      parameters:
+        - $ref: '#/components/parameters/Tag'
+      responses:
+        '200':
+          description: The stored facts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Memories'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InUse'
+  /v1/sessions/{tag}/memories/{key}:
+    delete:
+      operationId: forgetMemory
+      summary: Forget one fact
+      parameters:
+        - $ref: '#/components/parameters/Tag'
+        - name: key
+          in: path
+          required: true
+          description: The fact's key, percent-encoded. Normalized like the `forget` command (lower-case, punctuation removed).
+          schema:
+            type: string
+      responses:
+        '204':
+          description: The fact was forgotten.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/InUse'
+  /v1/sessions/{tag}/teach:
+    post:
+      operationId: teach
+      summary: Teach a phrase to mean an intent
+      description: |
+        Adds a learned phrase-to-intent weight (+8) to this session only. It is saved in the life
+        file, fades slowly (0.5% per turn), and never changes the base model.
+      parameters:
+        - $ref: '#/components/parameters/Tag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeachRequest'
+      responses:
+        '200':
+          description: What was learned, after normalization.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Taught'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/InUse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    Tag:
+      name: tag
+      in: path
+      required: true
+      description: Session name, 1-32 characters of letters, digits, `-` or `_`.
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_-]{1,32}$'
+  requestBodies:
+    Text:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TextRequest'
+  responses:
+    BadRequest:
+      description: Malformed JSON, a missing or invalid field, or an invalid tag.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or wrong bearer token.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: No such session, memory or endpoint.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooLarge:
+      description: The request body is larger than 64 KiB.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InUse:
+      description: Another ZeroLM process (CLI or container) has this session's life file open.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Busy:
+      description: Too many open sessions or connections. Retry later.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string
+    Model:
+      type: object
+      required: [version, intents, features, states, vocabulary]
+      properties:
+        version:
+          type: string
+        intents:
+          type: array
+          description: Intent names. The last one, `unknown`, is the abstain answer.
+          items:
+            type: string
+        features:
+          type: integer
+        states:
+          type: integer
+        vocabulary:
+          type: integer
+    TextRequest:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+          minLength: 1
+          maxLength: 4096
+          description: The user's message (at most 4096 bytes of UTF-8). English and ASCII work best.
+    Answer:
+      type: object
+      required: [reply, intent, score]
+      properties:
+        reply:
+          type: string
+        intent:
+          type: string
+        score:
+          type: number
+          description: Raw phrase score for the chosen intent (not a probability). Below 0.75 the intent is `unknown`.
+    Turn:
+      type: object
+      required: [reply, intent, age, memories]
+      properties:
+        reply:
+          type: string
+        intent:
+          type: string
+          nullable: true
+          description: The classified intent, or null for commands and memory lookups.
+        age:
+          type: integer
+          description: Turns this session has lived, across restarts.
+        memories:
+          type: integer
+          description: Facts currently stored.
+    Session:
+      type: object
+      required: [tag, age, memories, learned, capacity]
+      properties:
+        tag:
+          type: string
+        age:
+          type: integer
+        memories:
+          type: integer
+        learned:
+          type: integer
+          description: Learned phrase weights (from `teach` and `good`/`bad`).
+        capacity:
+          type: integer
+          description: Maximum facts before the weakest is dropped.
+    Memories:
+      type: object
+      required: [memories]
+      properties:
+        memories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Memory'
+    Memory:
+      type: object
+      required: [key, value, strength, last_used]
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        strength:
+          type: number
+          description: 1.0 when fresh; fades with use of other turns, restored by recall.
+        last_used:
+          type: integer
+          description: The session age at which it was last stored or recalled.
+    TeachRequest:
+      type: object
+      required: [phrase, intent]
+      properties:
+        phrase:
+          type: string
+          maxLength: 200
+        intent:
+          type: string
+          description: One of the names from `GET /v1/model`.
+    Taught:
+      type: object
+      required: [phrase, intent]
+      properties:
+        phrase:
+          type: string
+        intent:
+          type: string

@@ -270,7 +270,7 @@ mod tests {
     fn caps_header_size_and_count() {
         let big = format!("GET /x HTTP/1.1\r\nX: {}\r\n\r\n", "a".repeat(MAX_HEADER_BYTES + 10));
         assert_eq!(parse(&big).unwrap_err().0, 431);
-        let many: String = (0..MAX_HEADERS + 1).map(|i| format!("H{i}: v\r\n")).collect();
+        let many = (0..MAX_HEADERS + 1).map(|i| format!("H{i}: v\r\n")).collect::<Vec<_>>().concat();
         assert_eq!(parse(&format!("GET /x HTTP/1.1\r\n{many}\r\n")).unwrap_err().0, 431);
         // headers that never end
         assert_eq!(parse(&format!("GET /x HTTP/1.1\r\nX: {}", "a".repeat(20_000))).unwrap_err().0, 431);

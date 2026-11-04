@@ -9,6 +9,7 @@ pub mod jsonl;
 pub mod live;
 pub mod lock;
 pub mod memory;
+pub mod serve;
 
 use std::collections::HashMap;
 use std::fmt;
