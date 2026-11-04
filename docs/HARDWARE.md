@@ -9,7 +9,7 @@ ZeroLM is designed for a basic computer with:
 - a C11 compiler to build from source
 - no GPU
 
-The model does not need network access or a model-download step. It is single-threaded. The runtime uses fixed arrays and one model allocation. The current model structure is about 398 KiB before process/runtime overhead.
+The model does not need network access or a model-download step. It is single-threaded. The runtime uses fixed arrays and one model allocation. The current model structure is about 514 KiB before process/runtime overhead.
 
 ## Real-time expectations
 

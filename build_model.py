@@ -47,8 +47,8 @@ def load_spec() -> dict:
             if not isinstance(weight, (int, float)) or not (0.1 <= float(weight) <= 20.0):
                 raise SystemExit(f"feature weight out of range for phrase: {phrase}")
             feature_count += 1
-    if feature_count > 256:
-        raise SystemExit("the C runtime supports at most 256 features")
+    if feature_count > 512:
+        raise SystemExit("the C runtime supports at most 512 features")
     return spec
 
 

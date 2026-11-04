@@ -62,7 +62,7 @@ def main():
     names = [i["name"] for i in spec["intents"]]
     if len(names) > 32 or len(set(names)) != len(names) or names[-1] != "unknown":
         raise SystemExit("intent list failed validation")
-    if sum(len(i["features"]) for i in spec["intents"]) > 256:
+    if sum(len(i["features"]) for i in spec["intents"]) > 512:
         raise SystemExit("feature count exceeds runtime limit")
     if sum(len(i["response"].split()) + 1 for i in spec["intents"]) > 2048:
         raise SystemExit("state count exceeds runtime limit")

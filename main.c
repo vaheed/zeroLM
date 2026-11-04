@@ -16,13 +16,13 @@
 #include <time.h>
 
 #define MAX_INTENTS 32
-#define MAX_FEATURES 256
+#define MAX_FEATURES 512
 #define MAX_STATES 2048
 #define MAX_TEXT 4096
 #define MAX_LINE 1024
 #define MAX_TOKEN 128
 #define MAX_STEPS 256
-#define MAX_VOCAB 512
+#define MAX_VOCAB 1024
 
 #define DEFAULT_MODEL "weights.zlm"
 #define W_ACTIVE 8.0

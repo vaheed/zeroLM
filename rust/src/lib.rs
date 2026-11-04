@@ -14,15 +14,15 @@ use std::fmt;
 use std::fs;
 
 pub const MAX_INTENTS: usize = 32;
-pub const MAX_FEATURES: usize = 256;
+pub const MAX_FEATURES: usize = 512;
 pub const MAX_STATES: usize = 2048;
 pub const MAX_TEXT: usize = 4096;
 pub const MAX_TOKEN: usize = 128;
 pub const MAX_STEPS: usize = 256;
-pub const MAX_VOCAB: usize = 512;
+pub const MAX_VOCAB: usize = 1024;
 pub const ABSTAIN_THRESHOLD: f64 = 0.75;
 /// `sizeof(Model)` of the C reference build, reported by `--info` for parity.
-pub const C_MODEL_STRUCT_BYTES: usize = 407_448;
+pub const C_MODEL_STRUCT_BYTES: usize = 526_232;
 
 #[derive(Debug)]
 pub struct ModelError(pub String);
