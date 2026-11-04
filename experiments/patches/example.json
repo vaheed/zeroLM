@@ -1,0 +1,11 @@
+{
+  "description": "Example only: add one informal greeting phrase without training.",
+  "operations": [
+    {
+      "op": "add_feature",
+      "intent": "greeting",
+      "phrase": "yo there",
+      "weight": 2.5
+    }
+  ]
+}

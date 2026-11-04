@@ -1,0 +1,881 @@
+# ZeroLM v0.2.0 - hand-authored weights; no training was performed.
+# FEATURE: phrase-to-intent input projection (phrase matching is a fixed feature extractor).
+# START: intent-to-hidden initialization. NODE: recurrent transition and output token mapping.
+# Implicit inactive matrix values are -8.0; declared active connections are +8.0.
+ZEROLM 1
+META 18 694
+INTENT 0 greeting
+INTENT 1 identity
+INTENT 2 capabilities
+INTENT 3 thanks
+INTENT 4 farewell
+INTENT 5 help
+INTENT 6 architecture
+INTENT 7 weights
+INTENT 8 no_training
+INTENT 9 limitations
+INTENT 10 memory
+INTENT 11 planning
+INTENT 12 coding
+INTENT 13 math
+INTENT 14 explain
+INTENT 15 testing
+INTENT 16 inspiration
+INTENT 17 unknown
+FEATURE 0 2.8000 hello
+FEATURE 0 1.8000 hi
+FEATURE 0 2.4000 hey
+FEATURE 0 3.0000 good morning
+FEATURE 0 3.0000 good afternoon
+FEATURE 0 3.0000 good evening
+FEATURE 0 2.4000 howdy
+FEATURE 0 3.0000 hello there
+FEATURE 1 3.2000 who are you
+FEATURE 1 3.2000 what are you
+FEATURE 1 2.8000 your name
+FEATURE 1 3.6000 what is zerolm
+FEATURE 1 3.6000 what does zerolm mean
+FEATURE 1 3.2000 what is zero language model
+FEATURE 1 3.0000 are you an llm
+FEATURE 2 3.4000 what can you do
+FEATURE 2 3.0000 your capabilities
+FEATURE 2 2.8000 what do you do
+FEATURE 2 2.2000 can you help
+FEATURE 2 3.2000 what are you able to do
+FEATURE 2 2.6000 supported tasks
+FEATURE 2 3.2000 what can zerolm
+FEATURE 2 3.1000 what tasks are supported
+FEATURE 3 3.0000 thank you
+FEATURE 3 2.5000 thanks
+FEATURE 3 3.0000 many thanks
+FEATURE 3 2.8000 appreciate it
+FEATURE 3 2.8000 much appreciated
+FEATURE 4 3.0000 goodbye
+FEATURE 4 2.4000 bye
+FEATURE 4 2.6000 see you
+FEATURE 4 2.6000 talk later
+FEATURE 4 1.8000 exit
+FEATURE 4 1.8000 quit
+FEATURE 5 1.8000 help
+FEATURE 5 3.0000 how do i use
+FEATURE 5 3.0000 how to run
+FEATURE 5 2.2000 usage
+FEATURE 5 2.4000 command line
+FEATURE 5 3.0000 start zerolm
+FEATURE 5 3.0000 run the model
+FEATURE 5 3.2000 how do i run
+FEATURE 5 3.0000 how can i use
+FEATURE 5 2.8000 how to start
+FEATURE 5 2.4000 run it
+FEATURE 6 3.0000 architecture
+FEATURE 6 2.8000 how does it work
+FEATURE 6 3.0000 network design
+FEATURE 6 3.0000 recurrent network
+FEATURE 6 2.4000 rnn
+FEATURE 6 2.8000 hidden state
+FEATURE 6 2.6000 decoder
+FEATURE 6 3.2000 neural architecture
+FEATURE 6 3.0000 how do you work
+FEATURE 6 2.8000 what happens inside
+FEATURE 7 2.8000 weights
+FEATURE 7 3.2000 weight file
+FEATURE 7 3.2000 weight matrix
+FEATURE 7 3.4000 manual weights
+FEATURE 7 3.0000 parameter count
+FEATURE 7 3.0000 weight values
+FEATURE 7 3.2000 how are weights
+FEATURE 7 3.0000 how many weights
+FEATURE 7 3.0000 inspect the weights
+FEATURE 8 2.8000 training
+FEATURE 8 2.2000 train
+FEATURE 8 3.0000 fine tune
+FEATURE 8 3.0000 fine-tune
+FEATURE 8 3.2000 gradient descent
+FEATURE 8 3.0000 pretraining
+FEATURE 8 3.0000 pretrained
+FEATURE 8 3.0000 pre-trained
+FEATURE 8 3.4000 without training
+FEATURE 8 3.4000 zero training
+FEATURE 8 3.0000 learn from data
+FEATURE 8 3.0000 is it trained
+FEATURE 8 2.8000 does it learn
+FEATURE 8 3.0000 fine tuned
+FEATURE 8 3.2000 was it fine tuned
+FEATURE 9 3.2000 limitations
+FEATURE 9 3.0000 general llm
+FEATURE 9 3.0000 general language model
+FEATURE 9 2.8000 hallucination
+FEATURE 9 2.8000 can you reason
+FEATURE 9 3.0000 world knowledge
+FEATURE 9 3.0000 answer anything
+FEATURE 9 2.8000 understand any
+FEATURE 10 2.8000 remember
+FEATURE 10 2.8000 memory
+FEATURE 10 3.2000 long term memory
+FEATURE 10 3.0000 conversation history
+FEATURE 10 3.2000 remember this
+FEATURE 10 2.8000 store this
+FEATURE 11 3.2000 make a plan
+FEATURE 11 2.8000 plan this
+FEATURE 11 2.8000 step by step
+FEATURE 11 2.8000 break down
+FEATURE 11 3.0000 task planning
+FEATURE 11 3.0000 make a checklist
+FEATURE 11 3.0000 organize these tasks
+FEATURE 12 3.0000 write code
+FEATURE 12 2.6000 programming
+FEATURE 12 2.6000 debug
+FEATURE 12 2.6000 compile
+FEATURE 12 2.8000 c compiler
+FEATURE 12 2.8000 python script
+FEATURE 12 2.4000 source code
+FEATURE 12 2.8000 software bug
+FEATURE 13 3.0000 calculate
+FEATURE 13 2.8000 math
+FEATURE 13 2.8000 equation
+FEATURE 13 4.0000 what is 2 + 2
+FEATURE 13 2.6000 solve this
+FEATURE 13 3.0000 arithmetic
+FEATURE 13 2.6000 multiply
+FEATURE 13 2.6000 divide
+FEATURE 13 4.2000 what is 2 2
+FEATURE 14 2.4000 define
+FEATURE 14 2.4000 why does
+FEATURE 14 2.6000 how to understand
+FEATURE 14 2.4000 meaning of
+FEATURE 14 2.2000 describe
+FEATURE 14 2.8000 what does a word mean
+FEATURE 14 2.8000 what does this term mean
+FEATURE 14 2.8000 explain a concept
+FEATURE 14 2.6000 explain this
+FEATURE 14 2.8000 explain a term
+FEATURE 14 2.8000 explain the meaning
+FEATURE 15 2.4000 test
+FEATURE 15 3.0000 benchmark
+FEATURE 15 2.8000 evaluation
+FEATURE 15 2.8000 accuracy
+FEATURE 15 2.8000 pipeline
+FEATURE 15 2.8000 regression
+FEATURE 15 3.0000 test suite
+FEATURE 15 3.0000 measure performance
+FEATURE 15 3.0000 check for regressions
+FEATURE 16 3.6000 weight space programming
+FEATURE 16 3.6000 weight-space
+FEATURE 16 3.0000 zero shot weights
+FEATURE 16 2.8000 program weights
+FEATURE 16 3.2000 write neural weights
+FEATURE 16 2.4000 rikiyat
+FEATURE 16 2.4000 takehi
+FEATURE 16 3.2000 zero shot weight
+START 0 0
+START 1 28
+START 2 59
+START 3 101
+START 4 105
+START 5 115
+START 6 153
+START 7 207
+START 8 254
+START 9 294
+START 10 340
+START 11 388
+START 12 431
+START 13 472
+START 14 510
+START 15 548
+START 16 600
+START 17 661
+NODE 0 1 Hello.
+NODE 1 2 I
+NODE 2 3 am
+NODE 3 4 ZeroLM,
+NODE 4 5 a
+NODE 5 6 small
+NODE 6 7 zero-training
+NODE 7 8 neural
+NODE 8 9 language
+NODE 9 10 model
+NODE 10 11 experiment.
+NODE 11 12 I
+NODE 12 13 can
+NODE 13 14 answer
+NODE 14 15 a
+NODE 15 16 limited
+NODE 16 17 set
+NODE 17 18 of
+NODE 18 19 English
+NODE 19 20 questions
+NODE 20 21 using
+NODE 21 22 manually
+NODE 22 23 designed
+NODE 23 24 weights
+NODE 24 25 and
+NODE 25 26 response
+NODE 26 27 paths.
+NODE 27 -1 <eos>
+NODE 28 29 I
+NODE 29 30 am
+NODE 30 31 ZeroLM.
+NODE 31 32 The
+NODE 32 33 name
+NODE 33 34 means
+NODE 34 35 Zero-training
+NODE 35 36 Language
+NODE 36 37 Model,
+NODE 37 38 not
+NODE 38 39 Zero
+NODE 39 40 Large
+NODE 40 41 Model.
+NODE 41 42 I
+NODE 42 43 am
+NODE 43 44 a
+NODE 44 45 small
+NODE 45 46 neural
+NODE 46 47 text-generation
+NODE 47 48 experiment
+NODE 48 49 with
+NODE 49 50 manually
+NODE 50 51 designed
+NODE 51 52 weights,
+NODE 52 53 no
+NODE 53 54 pretrained
+NODE 54 55 model,
+NODE 55 56 and
+NODE 56 57 no
+NODE 57 58 training.
+NODE 58 -1 <eos>
+NODE 59 60 I
+NODE 60 61 can
+NODE 61 62 recognize
+NODE 62 63 a
+NODE 63 64 small
+NODE 64 65 set
+NODE 65 66 of
+NODE 66 67 English
+NODE 67 68 request
+NODE 68 69 types,
+NODE 69 70 select
+NODE 70 71 a
+NODE 71 72 response
+NODE 72 73 path,
+NODE 73 74 and
+NODE 74 75 generate
+NODE 75 76 its
+NODE 76 77 words
+NODE 77 78 through
+NODE 78 79 a
+NODE 79 80 recurrent
+NODE 80 81 neural
+NODE 81 82 decoder.
+NODE 82 83 I
+NODE 83 84 can
+NODE 84 85 explain
+NODE 85 86 this
+NODE 86 87 project
+NODE 87 88 and
+NODE 88 89 report
+NODE 89 90 its
+NODE 90 91 limits.
+NODE 91 92 I
+NODE 92 93 cannot
+NODE 93 94 browse,
+NODE 94 95 call
+NODE 95 96 tools,
+NODE 96 97 or
+NODE 97 98 answer
+NODE 98 99 arbitrary
+NODE 99 100 questions.
+NODE 100 -1 <eos>
+NODE 101 102 You
+NODE 102 103 are
+NODE 103 104 welcome.
+NODE 104 -1 <eos>
+NODE 105 106 Goodbye.
+NODE 106 107 You
+NODE 107 108 can
+NODE 108 109 start
+NODE 109 110 ZeroLM
+NODE 110 111 again
+NODE 111 112 at
+NODE 112 113 any
+NODE 113 114 time.
+NODE 114 -1 <eos>
+NODE 115 116 Build
+NODE 116 117 the
+NODE 117 118 project
+NODE 118 119 with
+NODE 119 120 make,
+NODE 120 121 then
+NODE 121 122 start
+NODE 122 123 it
+NODE 123 124 with
+NODE 124 125 ./run.sh.
+NODE 125 126 Type
+NODE 126 127 a
+NODE 127 128 message
+NODE 128 129 and
+NODE 129 130 press
+NODE 130 131 Enter.
+NODE 131 132 Type
+NODE 132 133 /quit
+NODE 133 134 to
+NODE 134 135 leave.
+NODE 135 136 Run
+NODE 136 137 ./zerolm
+NODE 137 138 --info
+NODE 138 139 for
+NODE 139 140 model
+NODE 140 141 details
+NODE 141 142 and
+NODE 142 143 make
+NODE 143 144 pipeline
+NODE 144 145 to
+NODE 145 146 rebuild
+NODE 146 147 and
+NODE 147 148 run
+NODE 148 149 the
+NODE 149 150 complete
+NODE 150 151 test
+NODE 151 152 pipeline.
+NODE 152 -1 <eos>
+NODE 153 154 The
+NODE 154 155 input
+NODE 155 156 side
+NODE 156 157 uses
+NODE 157 158 manually
+NODE 158 159 weighted
+NODE 159 160 phrase
+NODE 160 161 features
+NODE 161 162 to
+NODE 162 163 select
+NODE 163 164 an
+NODE 164 165 intent.
+NODE 165 166 That
+NODE 166 167 intent
+NODE 167 168 activates
+NODE 168 169 a
+NODE 169 170 hidden
+NODE 170 171 state.
+NODE 171 172 A
+NODE 172 173 sparse
+NODE 173 174 recurrent
+NODE 174 175 transition
+NODE 175 176 matrix
+NODE 176 177 moves
+NODE 177 178 the
+NODE 178 179 hidden
+NODE 179 180 state
+NODE 180 181 forward,
+NODE 181 182 and
+NODE 182 183 an
+NODE 183 184 output
+NODE 184 185 projection
+NODE 185 186 selects
+NODE 186 187 one
+NODE 187 188 word
+NODE 188 189 at
+NODE 189 190 each
+NODE 190 191 step.
+NODE 191 192 An
+NODE 192 193 end
+NODE 193 194 token
+NODE 194 195 stops
+NODE 195 196 generation.
+NODE 196 197 This
+NODE 197 198 is
+NODE 198 199 a
+NODE 199 200 small
+NODE 200 201 engineered
+NODE 201 202 recurrent
+NODE 202 203 system,
+NODE 203 204 not
+NODE 204 205 a
+NODE 205 206 Transformer.
+NODE 206 -1 <eos>
+NODE 207 208 The
+NODE 208 209 weights
+NODE 209 210 are
+NODE 210 211 stored
+NODE 211 212 in
+NODE 212 213 weights.zlm.
+NODE 213 214 Feature
+NODE 214 215 weights
+NODE 215 216 map
+NODE 216 217 phrases
+NODE 217 218 to
+NODE 218 219 intents.
+NODE 219 220 Start
+NODE 220 221 weights
+NODE 221 222 activate
+NODE 222 223 the
+NODE 223 224 first
+NODE 224 225 hidden
+NODE 225 226 state.
+NODE 226 227 Recurrent
+NODE 227 228 weights
+NODE 228 229 define
+NODE 229 230 the
+NODE 230 231 next
+NODE 231 232 state.
+NODE 232 233 Output
+NODE 233 234 weights
+NODE 234 235 map
+NODE 235 236 each
+NODE 236 237 state
+NODE 237 238 to
+NODE 238 239 a
+NODE 239 240 word.
+NODE 240 241 The
+NODE 241 242 values
+NODE 242 243 are
+NODE 243 244 authored
+NODE 244 245 by
+NODE 245 246 a
+NODE 246 247 person
+NODE 247 248 and
+NODE 248 249 are
+NODE 249 250 not
+NODE 250 251 learned
+NODE 251 252 from
+NODE 252 253 data.
+NODE 253 -1 <eos>
+NODE 254 255 ZeroLM
+NODE 255 256 performs
+NODE 256 257 no
+NODE 257 258 training.
+NODE 258 259 It
+NODE 259 260 uses
+NODE 260 261 no
+NODE 261 262 pretrained
+NODE 262 263 weights,
+NODE 263 264 fine-tuning,
+NODE 264 265 gradient
+NODE 265 266 descent,
+NODE 266 267 distillation,
+NODE 267 268 or
+NODE 268 269 automatic
+NODE 269 270 parameter
+NODE 270 271 fitting.
+NODE 271 272 The
+NODE 272 273 model
+NODE 273 274 builder
+NODE 274 275 only
+NODE 275 276 converts
+NODE 276 277 a
+NODE 277 278 human-written
+NODE 278 279 specification
+NODE 279 280 into
+NODE 280 281 a
+NODE 281 282 readable
+NODE 282 283 weight
+NODE 283 284 file.
+NODE 284 285 Running
+NODE 285 286 tests
+NODE 286 287 does
+NODE 287 288 not
+NODE 288 289 train
+NODE 289 290 or
+NODE 290 291 improve
+NODE 291 292 the
+NODE 292 293 model.
+NODE 293 -1 <eos>
+NODE 294 295 I
+NODE 295 296 am
+NODE 296 297 not
+NODE 297 298 a
+NODE 298 299 general-purpose
+NODE 299 300 language
+NODE 300 301 model.
+NODE 301 302 I
+NODE 302 303 do
+NODE 303 304 not
+NODE 304 305 have
+NODE 305 306 broad
+NODE 306 307 world
+NODE 307 308 knowledge,
+NODE 308 309 open-ended
+NODE 309 310 reasoning,
+NODE 310 311 or
+NODE 311 312 reliable
+NODE 312 313 free-form
+NODE 313 314 language
+NODE 314 315 understanding.
+NODE 315 316 My
+NODE 316 317 phrase
+NODE 317 318 matcher
+NODE 318 319 covers
+NODE 319 320 known
+NODE 320 321 patterns,
+NODE 321 322 and
+NODE 322 323 my
+NODE 323 324 decoder
+NODE 324 325 produces
+NODE 325 326 fixed
+NODE 326 327 response
+NODE 327 328 paths.
+NODE 328 329 For
+NODE 329 330 unknown
+NODE 330 331 requests
+NODE 331 332 I
+NODE 332 333 should
+NODE 333 334 abstain
+NODE 334 335 rather
+NODE 335 336 than
+NODE 336 337 invent
+NODE 337 338 an
+NODE 338 339 answer.
+NODE 339 -1 <eos>
+NODE 340 341 This
+NODE 341 342 version
+NODE 342 343 has
+NODE 343 344 no
+NODE 344 345 persistent
+NODE 345 346 personal
+NODE 346 347 memory.
+NODE 347 348 Each
+NODE 348 349 input
+NODE 349 350 is
+NODE 350 351 handled
+NODE 351 352 on
+NODE 352 353 its
+NODE 353 354 own.
+NODE 354 355 A
+NODE 355 356 future
+NODE 356 357 extension
+NODE 357 358 could
+NODE 358 359 add
+NODE 359 360 a
+NODE 360 361 small
+NODE 361 362 external
+NODE 362 363 memory
+NODE 363 364 store,
+NODE 364 365 retrieve
+NODE 365 366 only
+NODE 366 367 relevant
+NODE 367 368 records,
+NODE 368 369 and
+NODE 369 370 pass
+NODE 370 371 selected
+NODE 371 372 facts
+NODE 372 373 into
+NODE 373 374 a
+NODE 374 375 structured
+NODE 375 376 input
+NODE 376 377 layer.
+NODE 377 378 That
+NODE 378 379 would
+NODE 379 380 add
+NODE 380 381 memory
+NODE 381 382 without
+NODE 382 383 making
+NODE 383 384 the
+NODE 384 385 neural
+NODE 385 386 model
+NODE 386 387 larger.
+NODE 387 -1 <eos>
+NODE 388 389 I
+NODE 389 390 cannot
+NODE 390 391 create
+NODE 391 392 a
+NODE 392 393 reliable
+NODE 393 394 plan
+NODE 394 395 from
+NODE 395 396 arbitrary
+NODE 396 397 text
+NODE 397 398 yet.
+NODE 398 399 A
+NODE 399 400 safe
+NODE 400 401 next
+NODE 401 402 step
+NODE 402 403 is
+NODE 403 404 to
+NODE 404 405 add
+NODE 405 406 a
+NODE 406 407 small
+NODE 407 408 planning
+NODE 408 409 module
+NODE 409 410 with
+NODE 410 411 explicit
+NODE 411 412 task,
+NODE 412 413 dependency,
+NODE 413 414 and
+NODE 414 415 completion
+NODE 415 416 fields.
+NODE 416 417 The
+NODE 417 418 neural
+NODE 418 419 network
+NODE 419 420 can
+NODE 420 421 select
+NODE 421 422 a
+NODE 422 423 supported
+NODE 423 424 operation,
+NODE 424 425 while
+NODE 425 426 deterministic
+NODE 426 427 code
+NODE 427 428 checks
+NODE 428 429 the
+NODE 429 430 plan.
+NODE 430 -1 <eos>
+NODE 431 432 I
+NODE 432 433 cannot
+NODE 433 434 write
+NODE 434 435 or
+NODE 435 436 execute
+NODE 436 437 general
+NODE 437 438 programs.
+NODE 438 439 This
+NODE 439 440 project
+NODE 440 441 is
+NODE 441 442 written
+NODE 442 443 in
+NODE 443 444 C
+NODE 444 445 for
+NODE 445 446 a
+NODE 446 447 small
+NODE 447 448 CPU-only
+NODE 448 449 runtime,
+NODE 449 450 with
+NODE 450 451 Python
+NODE 451 452 scripts
+NODE 452 453 used
+NODE 453 454 only
+NODE 454 455 to
+NODE 455 456 build
+NODE 456 457 and
+NODE 457 458 test
+NODE 458 459 the
+NODE 459 460 model
+NODE 460 461 files.
+NODE 461 462 A
+NODE 462 463 future
+NODE 463 464 tool
+NODE 464 465 layer
+NODE 465 466 could
+NODE 466 467 expose
+NODE 467 468 safe,
+NODE 468 469 predefined
+NODE 469 470 coding
+NODE 470 471 operations.
+NODE 471 -1 <eos>
+NODE 472 473 I
+NODE 473 474 do
+NODE 474 475 not
+NODE 475 476 have
+NODE 476 477 a
+NODE 477 478 general
+NODE 478 479 mathematical
+NODE 479 480 reasoning
+NODE 480 481 engine.
+NODE 481 482 For
+NODE 482 483 reliable
+NODE 483 484 arithmetic,
+NODE 484 485 the
+NODE 485 486 next
+NODE 486 487 extension
+NODE 487 488 should
+NODE 488 489 use
+NODE 489 490 a
+NODE 490 491 tested
+NODE 491 492 deterministic
+NODE 492 493 calculator
+NODE 493 494 and
+NODE 494 495 range
+NODE 495 496 checks.
+NODE 496 497 The
+NODE 497 498 neural
+NODE 498 499 model
+NODE 499 500 should
+NODE 500 501 identify
+NODE 501 502 the
+NODE 502 503 request
+NODE 503 504 type,
+NODE 504 505 not
+NODE 505 506 guess
+NODE 506 507 the
+NODE 507 508 numeric
+NODE 508 509 result.
+NODE 509 -1 <eos>
+NODE 510 511 I
+NODE 511 512 can
+NODE 512 513 only
+NODE 513 514 explain
+NODE 514 515 topics
+NODE 515 516 covered
+NODE 516 517 by
+NODE 517 518 my
+NODE 518 519 fixed
+NODE 519 520 response
+NODE 520 521 paths.
+NODE 521 522 I
+NODE 522 523 do
+NODE 523 524 not
+NODE 524 525 retrieve
+NODE 525 526 external
+NODE 526 527 knowledge.
+NODE 527 528 For
+NODE 528 529 reliable
+NODE 529 530 explanations,
+NODE 530 531 a
+NODE 531 532 future
+NODE 532 533 version
+NODE 533 534 should
+NODE 534 535 use
+NODE 535 536 a
+NODE 536 537 documented
+NODE 537 538 knowledge
+NODE 538 539 base
+NODE 539 540 with
+NODE 540 541 source
+NODE 541 542 references
+NODE 542 543 and
+NODE 543 544 a
+NODE 544 545 clear
+NODE 545 546 unknown-answer
+NODE 546 547 policy.
+NODE 547 -1 <eos>
+NODE 548 549 Run
+NODE 549 550 make
+NODE 550 551 pipeline
+NODE 551 552 to
+NODE 552 553 rebuild
+NODE 553 554 the
+NODE 554 555 model,
+NODE 555 556 compile
+NODE 556 557 the
+NODE 557 558 C
+NODE 558 559 runtime,
+NODE 559 560 run
+NODE 560 561 regression
+NODE 561 562 and
+NODE 562 563 unknown-input
+NODE 563 564 tests,
+NODE 564 565 audit
+NODE 565 566 the
+NODE 566 567 weight
+NODE 567 568 file,
+NODE 568 569 and
+NODE 569 570 measure
+NODE 570 571 latency.
+NODE 571 572 The
+NODE 572 573 report
+NODE 573 574 records
+NODE 574 575 accuracy
+NODE 575 576 on
+NODE 576 577 the
+NODE 577 578 supplied
+NODE 578 579 cases.
+NODE 579 580 Add
+NODE 580 581 new
+NODE 581 582 prompts
+NODE 582 583 to
+NODE 583 584 the
+NODE 584 585 test
+NODE 585 586 files
+NODE 586 587 before
+NODE 587 588 changing
+NODE 588 589 weights,
+NODE 589 590 and
+NODE 590 591 keep
+NODE 591 592 a
+NODE 592 593 copy
+NODE 593 594 of
+NODE 594 595 the
+NODE 595 596 previous
+NODE 596 597 report
+NODE 597 598 for
+NODE 598 599 comparison.
+NODE 599 -1 <eos>
+NODE 600 601 Weight-Space
+NODE 601 602 Programming
+NODE 602 603 is
+NODE 603 604 an
+NODE 604 605 inspiration
+NODE 605 606 for
+NODE 606 607 ZeroLM.
+NODE 607 608 It
+NODE 608 609 explores
+NODE 609 610 how
+NODE 610 611 a
+NODE 611 612 capable
+NODE 612 613 external
+NODE 613 614 language
+NODE 614 615 model
+NODE 615 616 can
+NODE 616 617 inspect
+NODE 617 618 and
+NODE 618 619 directly
+NODE 619 620 write
+NODE 620 621 another
+NODE 621 622 network's
+NODE 622 623 weights
+NODE 623 624 without
+NODE 624 625 gradient
+NODE 625 626 descent.
+NODE 626 627 ZeroLM
+NODE 627 628 can
+NODE 628 629 adopt
+NODE 629 630 this
+NODE 630 631 idea
+NODE 631 632 through
+NODE 632 633 inspectable
+NODE 633 634 weight
+NODE 634 635 files,
+NODE 635 636 small
+NODE 636 637 patch
+NODE 637 638 proposals,
+NODE 638 639 forward-pass
+NODE 639 640 tests,
+NODE 640 641 and
+NODE 641 642 rollback.
+NODE 642 643 The
+NODE 643 644 external
+NODE 644 645 model
+NODE 645 646 is
+NODE 646 647 the
+NODE 647 648 weight
+NODE 648 649 programmer;
+NODE 649 650 ZeroLM
+NODE 650 651 itself
+NODE 651 652 does
+NODE 652 653 not
+NODE 653 654 gain
+NODE 654 655 general
+NODE 655 656 language
+NODE 656 657 ability
+NODE 657 658 from
+NODE 658 659 this
+NODE 659 660 process.
+NODE 660 -1 <eos>
+NODE 661 662 I
+NODE 662 663 do
+NODE 663 664 not
+NODE 664 665 know
+NODE 665 666 how
+NODE 666 667 to
+NODE 667 668 answer
+NODE 668 669 that
+NODE 669 670 request.
+NODE 670 671 I
+NODE 671 672 have
+NODE 672 673 no
+NODE 673 674 general
+NODE 674 675 language
+NODE 675 676 knowledge
+NODE 676 677 or
+NODE 677 678 external
+NODE 678 679 tools.
+NODE 679 680 Try
+NODE 680 681 asking
+NODE 681 682 about
+NODE 682 683 ZeroLM,
+NODE 683 684 its
+NODE 684 685 architecture,
+NODE 685 686 its
+NODE 686 687 weights,
+NODE 687 688 its
+NODE 688 689 limits,
+NODE 689 690 or
+NODE 690 691 its
+NODE 691 692 test
+NODE 692 693 pipeline.
+NODE 693 -1 <eos>

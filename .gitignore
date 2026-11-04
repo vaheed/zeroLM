@@ -1,0 +1,7 @@
+/zerolm
+/zerolm.exe
+*.o
+__pycache__/
+*.pyc
+/model/spec.json.bak
+/reports/*.tmp

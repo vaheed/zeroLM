@@ -1,0 +1,73 @@
+{
+  "project": "ZeroLM",
+  "version": "0.2.0",
+  "training": "none",
+  "regression_cases": 79,
+  "regression_passed": 79,
+  "regression_accuracy": 1.0,
+  "unknown_cases": 18,
+  "unknown_abstained": 18,
+  "unknown_recall": 1.0,
+  "total_cases": 97,
+  "total_passed": 97,
+  "overall_accuracy": 1.0,
+  "wall_time_ms": 492.905,
+  "mean_case_ms": 5.081,
+  "confusion": {
+    "architecture": {
+      "architecture": 5
+    },
+    "capabilities": {
+      "capabilities": 4
+    },
+    "coding": {
+      "coding": 4
+    },
+    "explain": {
+      "explain": 5
+    },
+    "farewell": {
+      "farewell": 3
+    },
+    "greeting": {
+      "greeting": 6
+    },
+    "help": {
+      "help": 4
+    },
+    "identity": {
+      "identity": 6
+    },
+    "inspiration": {
+      "inspiration": 5
+    },
+    "limitations": {
+      "limitations": 5
+    },
+    "math": {
+      "math": 6
+    },
+    "memory": {
+      "memory": 5
+    },
+    "no_training": {
+      "no_training": 5
+    },
+    "planning": {
+      "planning": 4
+    },
+    "testing": {
+      "testing": 5
+    },
+    "thanks": {
+      "thanks": 3
+    },
+    "unknown": {
+      "unknown": 18
+    },
+    "weights": {
+      "weights": 4
+    }
+  },
+  "failures": []
+}

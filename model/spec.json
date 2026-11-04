@@ -1,0 +1,702 @@
+{
+  "project": "ZeroLM",
+  "version": "0.2.0",
+  "description": "A zero-training, manually weighted recurrent language-model experiment.",
+  "language": "English",
+  "training": "none",
+  "architecture": {
+    "input": "manually weighted phrase-to-intent projection",
+    "recurrent": "sparse one-successor recurrent state graph represented as a dense-equivalent matrix",
+    "output": "manually weighted state-to-token projection",
+    "decoder": "greedy autoregressive word generation"
+  },
+  "intents": [
+    {
+      "name": "greeting",
+      "features": [
+        [
+          "hello",
+          2.8
+        ],
+        [
+          "hi",
+          1.8
+        ],
+        [
+          "hey",
+          2.4
+        ],
+        [
+          "good morning",
+          3.0
+        ],
+        [
+          "good afternoon",
+          3.0
+        ],
+        [
+          "good evening",
+          3.0
+        ],
+        [
+          "howdy",
+          2.4
+        ],
+        [
+          "hello there",
+          3.0
+        ]
+      ],
+      "response": "Hello. I am ZeroLM, a small zero-training neural language model experiment. I can answer a limited set of English questions using manually designed weights and response paths."
+    },
+    {
+      "name": "identity",
+      "features": [
+        [
+          "who are you",
+          3.2
+        ],
+        [
+          "what are you",
+          3.2
+        ],
+        [
+          "your name",
+          2.8
+        ],
+        [
+          "what is zerolm",
+          3.6
+        ],
+        [
+          "what does zerolm mean",
+          3.6
+        ],
+        [
+          "what is zero language model",
+          3.2
+        ],
+        [
+          "are you an llm",
+          3.0
+        ]
+      ],
+      "response": "I am ZeroLM. The name means Zero-training Language Model, not Zero Large Model. I am a small neural text-generation experiment with manually designed weights, no pretrained model, and no training."
+    },
+    {
+      "name": "capabilities",
+      "features": [
+        [
+          "what can you do",
+          3.4
+        ],
+        [
+          "your capabilities",
+          3.0
+        ],
+        [
+          "what do you do",
+          2.8
+        ],
+        [
+          "can you help",
+          2.2
+        ],
+        [
+          "what are you able to do",
+          3.2
+        ],
+        [
+          "supported tasks",
+          2.6
+        ],
+        [
+          "what can zerolm",
+          3.2
+        ],
+        [
+          "what tasks are supported",
+          3.1
+        ]
+      ],
+      "response": "I can recognize a small set of English request types, select a response path, and generate its words through a recurrent neural decoder. I can explain this project and report its limits. I cannot browse, call tools, or answer arbitrary questions."
+    },
+    {
+      "name": "thanks",
+      "features": [
+        [
+          "thank you",
+          3.0
+        ],
+        [
+          "thanks",
+          2.5
+        ],
+        [
+          "many thanks",
+          3.0
+        ],
+        [
+          "appreciate it",
+          2.8
+        ],
+        [
+          "much appreciated",
+          2.8
+        ]
+      ],
+      "response": "You are welcome."
+    },
+    {
+      "name": "farewell",
+      "features": [
+        [
+          "goodbye",
+          3.0
+        ],
+        [
+          "bye",
+          2.4
+        ],
+        [
+          "see you",
+          2.6
+        ],
+        [
+          "talk later",
+          2.6
+        ],
+        [
+          "exit",
+          1.8
+        ],
+        [
+          "quit",
+          1.8
+        ]
+      ],
+      "response": "Goodbye. You can start ZeroLM again at any time."
+    },
+    {
+      "name": "help",
+      "features": [
+        [
+          "help",
+          1.8
+        ],
+        [
+          "how do i use",
+          3.0
+        ],
+        [
+          "how to run",
+          3.0
+        ],
+        [
+          "usage",
+          2.2
+        ],
+        [
+          "command line",
+          2.4
+        ],
+        [
+          "start zerolm",
+          3.0
+        ],
+        [
+          "run the model",
+          3.0
+        ],
+        [
+          "how do i run",
+          3.2
+        ],
+        [
+          "how can i use",
+          3.0
+        ],
+        [
+          "how to start",
+          2.8
+        ],
+        [
+          "run it",
+          2.4
+        ]
+      ],
+      "response": "Build the project with make, then start it with ./run.sh. Type a message and press Enter. Type /quit to leave. Run ./zerolm --info for model details and make pipeline to rebuild and run the complete test pipeline."
+    },
+    {
+      "name": "architecture",
+      "features": [
+        [
+          "architecture",
+          3.0
+        ],
+        [
+          "how does it work",
+          2.8
+        ],
+        [
+          "network design",
+          3.0
+        ],
+        [
+          "recurrent network",
+          3.0
+        ],
+        [
+          "rnn",
+          2.4
+        ],
+        [
+          "hidden state",
+          2.8
+        ],
+        [
+          "decoder",
+          2.6
+        ],
+        [
+          "neural architecture",
+          3.2
+        ],
+        [
+          "how do you work",
+          3.0
+        ],
+        [
+          "what happens inside",
+          2.8
+        ]
+      ],
+      "response": "The input side uses manually weighted phrase features to select an intent. That intent activates a hidden state. A sparse recurrent transition matrix moves the hidden state forward, and an output projection selects one word at each step. An end token stops generation. This is a small engineered recurrent system, not a Transformer."
+    },
+    {
+      "name": "weights",
+      "features": [
+        [
+          "weights",
+          2.8
+        ],
+        [
+          "weight file",
+          3.2
+        ],
+        [
+          "weight matrix",
+          3.2
+        ],
+        [
+          "manual weights",
+          3.4
+        ],
+        [
+          "parameter count",
+          3.0
+        ],
+        [
+          "weight values",
+          3.0
+        ],
+        [
+          "how are weights",
+          3.2
+        ],
+        [
+          "how many weights",
+          3.0
+        ],
+        [
+          "inspect the weights",
+          3.0
+        ]
+      ],
+      "response": "The weights are stored in weights.zlm. Feature weights map phrases to intents. Start weights activate the first hidden state. Recurrent weights define the next state. Output weights map each state to a word. The values are authored by a person and are not learned from data."
+    },
+    {
+      "name": "no_training",
+      "features": [
+        [
+          "training",
+          2.8
+        ],
+        [
+          "train",
+          2.2
+        ],
+        [
+          "fine tune",
+          3.0
+        ],
+        [
+          "fine-tune",
+          3.0
+        ],
+        [
+          "gradient descent",
+          3.2
+        ],
+        [
+          "pretraining",
+          3.0
+        ],
+        [
+          "pretrained",
+          3.0
+        ],
+        [
+          "pre-trained",
+          3.0
+        ],
+        [
+          "without training",
+          3.4
+        ],
+        [
+          "zero training",
+          3.4
+        ],
+        [
+          "learn from data",
+          3.0
+        ],
+        [
+          "is it trained",
+          3.0
+        ],
+        [
+          "does it learn",
+          2.8
+        ],
+        [
+          "fine tuned",
+          3.0
+        ],
+        [
+          "was it fine tuned",
+          3.2
+        ]
+      ],
+      "response": "ZeroLM performs no training. It uses no pretrained weights, fine-tuning, gradient descent, distillation, or automatic parameter fitting. The model builder only converts a human-written specification into a readable weight file. Running tests does not train or improve the model."
+    },
+    {
+      "name": "limitations",
+      "features": [
+        [
+          "limitations",
+          3.2
+        ],
+        [
+          "general llm",
+          3.0
+        ],
+        [
+          "general language model",
+          3.0
+        ],
+        [
+          "hallucination",
+          2.8
+        ],
+        [
+          "can you reason",
+          2.8
+        ],
+        [
+          "world knowledge",
+          3.0
+        ],
+        [
+          "answer anything",
+          3.0
+        ],
+        [
+          "understand any",
+          2.8
+        ]
+      ],
+      "response": "I am not a general-purpose language model. I do not have broad world knowledge, open-ended reasoning, or reliable free-form language understanding. My phrase matcher covers known patterns, and my decoder produces fixed response paths. For unknown requests I should abstain rather than invent an answer."
+    },
+    {
+      "name": "memory",
+      "features": [
+        [
+          "remember",
+          2.8
+        ],
+        [
+          "memory",
+          2.8
+        ],
+        [
+          "long term memory",
+          3.2
+        ],
+        [
+          "conversation history",
+          3.0
+        ],
+        [
+          "remember this",
+          3.2
+        ],
+        [
+          "store this",
+          2.8
+        ]
+      ],
+      "response": "This version has no persistent personal memory. Each input is handled on its own. A future extension could add a small external memory store, retrieve only relevant records, and pass selected facts into a structured input layer. That would add memory without making the neural model larger."
+    },
+    {
+      "name": "planning",
+      "features": [
+        [
+          "make a plan",
+          3.2
+        ],
+        [
+          "plan this",
+          2.8
+        ],
+        [
+          "step by step",
+          2.8
+        ],
+        [
+          "break down",
+          2.8
+        ],
+        [
+          "task planning",
+          3.0
+        ],
+        [
+          "make a checklist",
+          3.0
+        ],
+        [
+          "organize these tasks",
+          3.0
+        ]
+      ],
+      "response": "I cannot create a reliable plan from arbitrary text yet. A safe next step is to add a small planning module with explicit task, dependency, and completion fields. The neural network can select a supported operation, while deterministic code checks the plan."
+    },
+    {
+      "name": "coding",
+      "features": [
+        [
+          "write code",
+          3.0
+        ],
+        [
+          "programming",
+          2.6
+        ],
+        [
+          "debug",
+          2.6
+        ],
+        [
+          "compile",
+          2.6
+        ],
+        [
+          "c compiler",
+          2.8
+        ],
+        [
+          "python script",
+          2.8
+        ],
+        [
+          "source code",
+          2.4
+        ],
+        [
+          "software bug",
+          2.8
+        ]
+      ],
+      "response": "I cannot write or execute general programs. This project is written in C for a small CPU-only runtime, with Python scripts used only to build and test the model files. A future tool layer could expose safe, predefined coding operations."
+    },
+    {
+      "name": "math",
+      "features": [
+        [
+          "calculate",
+          3.0
+        ],
+        [
+          "math",
+          2.8
+        ],
+        [
+          "equation",
+          2.8
+        ],
+        [
+          "what is 2 + 2",
+          4.0
+        ],
+        [
+          "solve this",
+          2.6
+        ],
+        [
+          "arithmetic",
+          3.0
+        ],
+        [
+          "multiply",
+          2.6
+        ],
+        [
+          "divide",
+          2.6
+        ],
+        [
+          "what is 2 2",
+          4.2
+        ]
+      ],
+      "response": "I do not have a general mathematical reasoning engine. For reliable arithmetic, the next extension should use a tested deterministic calculator and range checks. The neural model should identify the request type, not guess the numeric result."
+    },
+    {
+      "name": "explain",
+      "features": [
+        [
+          "define",
+          2.4
+        ],
+        [
+          "why does",
+          2.4
+        ],
+        [
+          "how to understand",
+          2.6
+        ],
+        [
+          "meaning of",
+          2.4
+        ],
+        [
+          "describe",
+          2.2
+        ],
+        [
+          "what does a word mean",
+          2.8
+        ],
+        [
+          "what does this term mean",
+          2.8
+        ],
+        [
+          "explain a concept",
+          2.8
+        ],
+        [
+          "explain this",
+          2.6
+        ],
+        [
+          "explain a term",
+          2.8
+        ],
+        [
+          "explain the meaning",
+          2.8
+        ]
+      ],
+      "response": "I can only explain topics covered by my fixed response paths. I do not retrieve external knowledge. For reliable explanations, a future version should use a documented knowledge base with source references and a clear unknown-answer policy."
+    },
+    {
+      "name": "testing",
+      "features": [
+        [
+          "test",
+          2.4
+        ],
+        [
+          "benchmark",
+          3.0
+        ],
+        [
+          "evaluation",
+          2.8
+        ],
+        [
+          "accuracy",
+          2.8
+        ],
+        [
+          "pipeline",
+          2.8
+        ],
+        [
+          "regression",
+          2.8
+        ],
+        [
+          "test suite",
+          3.0
+        ],
+        [
+          "measure performance",
+          3.0
+        ],
+        [
+          "check for regressions",
+          3.0
+        ]
+      ],
+      "response": "Run make pipeline to rebuild the model, compile the C runtime, run regression and unknown-input tests, audit the weight file, and measure latency. The report records accuracy on the supplied cases. Add new prompts to the test files before changing weights, and keep a copy of the previous report for comparison."
+    },
+    {
+      "name": "inspiration",
+      "features": [
+        [
+          "weight space programming",
+          3.6
+        ],
+        [
+          "weight-space",
+          3.6
+        ],
+        [
+          "zero shot weights",
+          3.0
+        ],
+        [
+          "program weights",
+          2.8
+        ],
+        [
+          "write neural weights",
+          3.2
+        ],
+        [
+          "rikiyat",
+          2.4
+        ],
+        [
+          "takehi",
+          2.4
+        ],
+        [
+          "zero shot weight",
+          3.2
+        ]
+      ],
+      "response": "Weight-Space Programming is an inspiration for ZeroLM. It explores how a capable external language model can inspect and directly write another network's weights without gradient descent. ZeroLM can adopt this idea through inspectable weight files, small patch proposals, forward-pass tests, and rollback. The external model is the weight programmer; ZeroLM itself does not gain general language ability from this process."
+    },
+    {
+      "name": "unknown",
+      "features": [],
+      "response": "I do not know how to answer that request. I have no general language knowledge or external tools. Try asking about ZeroLM, its architecture, its weights, its limits, or its test pipeline."
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+name: ZeroLM CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build and test on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Show toolchain
+        run: |
+          cc --version
+          python3 --version
+          make --version
+      - name: Run complete pipeline
+        run: make pipeline
+      - name: Upload evaluation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zerolm-report-${{ matrix.os }}
+          path: |
+            reports/latest.json
+            reports/latest.md
+          if-no-files-found: ignore

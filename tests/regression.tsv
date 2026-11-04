@@ -1,0 +1,79 @@
+greeting	hello
+greeting	hey there
+greeting	good morning
+greeting	good evening
+greeting	howdy
+greeting	hello there
+identity	who are you
+identity	what are you
+identity	what is your name
+identity	what is ZeroLM
+identity	what does ZeroLM mean
+identity	are you an LLM
+capabilities	what can you do
+capabilities	what are your capabilities
+capabilities	what do you do
+capabilities	what tasks are supported
+thanks	thank you
+thanks	many thanks
+thanks	much appreciated
+farewell	goodbye
+farewell	see you
+farewell	talk later
+help	how do I use ZeroLM
+help	how do I run ZeroLM
+help	how to start the model
+help	show me the command line usage
+architecture	explain the architecture
+architecture	how does it work
+architecture	how do you work
+architecture	tell me about the recurrent network
+architecture	what is the hidden state
+weights	show the weight file
+weights	explain the weight matrix
+weights	how many weights are there
+weights	how are manual weights stored
+no_training	does it use training
+no_training	was this model pretrained
+no_training	does it use gradient descent
+no_training	can it learn from data
+no_training	was it fine tuned
+limitations	what are your limitations
+limitations	are you a general LLM
+limitations	can you answer anything
+limitations	do you have world knowledge
+limitations	can you reason about any topic
+memory	do you have memory
+memory	can you remember this
+memory	does it store conversation history
+memory	explain long term memory
+planning	make a plan step by step
+planning	break down this task
+planning	make a checklist
+planning	can you organize these tasks
+coding	write code for me
+coding	can you debug a program
+coding	show me a Python script
+coding	how do I compile the source code
+math	calculate this
+math	solve this math equation
+math	what is 2 + 2
+math	can you multiply numbers
+math	explain arithmetic
+explain	explain a concept
+explain	define a term
+explain	what does a word mean
+explain	why does this happen
+explain	describe the idea
+testing	run the test suite
+testing	show the benchmark
+testing	what is the evaluation accuracy
+testing	run the pipeline again
+testing	check for regressions
+inspiration	explain weight-space programming
+inspiration	tell me about weight-space
+inspiration	who is Rikiya Takehi
+inspiration	can an LLM write neural weights
+inspiration	what is zero shot weight programming
+math	calculate the square root of 12345
+memory	remember that my appointment is Friday
