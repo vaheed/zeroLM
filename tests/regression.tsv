@@ -77,3 +77,43 @@ inspiration	can an LLM write neural weights
 inspiration	what is zero shot weight programming
 math	calculate the square root of 12345
 memory	remember that my appointment is Friday
+install	how do I install ZeroLM
+install	can you tell me how to build this from source
+install	what do I need to compile it
+install	cargo build instructions please
+license	what license does it use
+license	is this open source
+license	which licence is ZeroLM under
+license	is it MIT licensed
+performance	how fast is it
+performance	how much memory does it use
+performance	does it need a gpu
+performance	what hardware do I need
+languages	what languages do you support
+languages	is it english only
+languages	can you handle other languages
+languages	do you speak spanish
+version	which version is this
+version	what version of ZeroLM am I running
+version	show me the changelog
+version	what changed in the latest release
+live	what is zerolm live
+live	how do I teach you new phrases
+live	tell me about the life file
+live	how do tags work
+privacy	does it send data anywhere
+privacy	is my privacy protected
+privacy	does it need internet access
+privacy	does it collect telemetry
+contribute	how can I contribute
+contribute	i want to open a pull request
+contribute	how do I report a bug
+contribute	how do I get involved
+topics	what topics can you talk about
+topics	what can I ask you
+topics	list your intents
+topics	what questions can I ask
+comparison	how are you different from chatgpt
+comparison	is it a transformer
+comparison	compared to GPT is it better
+comparison	what is the difference between you and llama

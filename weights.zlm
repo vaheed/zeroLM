@@ -3,7 +3,7 @@
 # START: intent-to-hidden initialization. NODE: recurrent transition and output token mapping.
 # Implicit inactive matrix values are -8.0; declared active connections are +8.0.
 ZEROLM 1
-META 18 694
+META 28 1039
 INTENT 0 greeting
 INTENT 1 identity
 INTENT 2 capabilities
@@ -21,7 +21,17 @@ INTENT 13 math
 INTENT 14 explain
 INTENT 15 testing
 INTENT 16 inspiration
-INTENT 17 unknown
+INTENT 17 install
+INTENT 18 license
+INTENT 19 performance
+INTENT 20 languages
+INTENT 21 version
+INTENT 22 live
+INTENT 23 privacy
+INTENT 24 contribute
+INTENT 25 topics
+INTENT 26 comparison
+INTENT 27 unknown
 FEATURE 0 2.8000 hello
 FEATURE 0 1.8000 hi
 FEATURE 0 2.4000 hey
@@ -167,6 +177,142 @@ FEATURE 16 3.2000 write neural weights
 FEATURE 16 2.4000 rikiyat
 FEATURE 16 2.4000 takehi
 FEATURE 16 3.2000 zero shot weight
+FEATURE 17 3.4000 install zerolm
+FEATURE 17 3.0000 install it
+FEATURE 17 3.0000 install this
+FEATURE 17 3.4000 build zerolm
+FEATURE 17 2.6000 build it
+FEATURE 17 2.8000 build this
+FEATURE 17 3.2000 build from source
+FEATURE 17 3.2000 compile zerolm
+FEATURE 17 3.0000 compile it
+FEATURE 17 3.0000 compile this
+FEATURE 17 3.2000 cargo build
+FEATURE 17 3.2000 how do i install you
+FEATURE 18 3.2000 what license
+FEATURE 18 3.2000 which license
+FEATURE 18 3.2000 what licence
+FEATURE 18 3.2000 which licence
+FEATURE 18 3.0000 its license
+FEATURE 18 3.0000 your license
+FEATURE 18 3.4000 zerolm license
+FEATURE 18 3.4000 license of zerolm
+FEATURE 18 3.4000 mit license
+FEATURE 18 3.4000 mit licensed
+FEATURE 18 3.0000 is it licensed
+FEATURE 18 3.0000 licensed under
+FEATURE 18 2.8000 open source
+FEATURE 18 2.8000 open-source
+FEATURE 19 3.2000 how fast is it
+FEATURE 19 3.4000 how fast is zerolm
+FEATURE 19 3.2000 how fast are you
+FEATURE 19 2.8000 its speed
+FEATURE 19 2.8000 your speed
+FEATURE 19 2.8000 latency
+FEATURE 19 3.2000 how much memory does it
+FEATURE 19 3.4000 how much memory does zerolm
+FEATURE 19 3.0000 memory usage
+FEATURE 19 3.2000 how much ram does it
+FEATURE 19 3.0000 cpu requirements
+FEATURE 19 3.0000 need a gpu
+FEATURE 19 3.0000 use a gpu
+FEATURE 19 3.0000 what hardware
+FEATURE 19 3.2000 hardware requirements
+FEATURE 19 2.6000 its performance
+FEATURE 19 2.6000 your performance
+FEATURE 19 2.8000 how big is the model
+FEATURE 19 2.8000 model size
+FEATURE 20 3.4000 what languages
+FEATURE 20 3.4000 which languages
+FEATURE 20 3.4000 supported languages
+FEATURE 20 3.0000 other languages
+FEATURE 20 3.2000 multilingual
+FEATURE 20 3.2000 english only
+FEATURE 20 3.0000 non english
+FEATURE 20 2.8000 do you speak
+FEATURE 20 2.6000 unicode
+FEATURE 21 3.4000 version of zerolm
+FEATURE 21 3.4000 zerolm version
+FEATURE 21 3.4000 which version is this
+FEATURE 21 3.4000 what version is this
+FEATURE 21 3.4000 which version are you
+FEATURE 21 3.4000 what version are you
+FEATURE 21 2.6000 this version
+FEATURE 21 2.8000 your version
+FEATURE 21 3.0000 latest version
+FEATURE 21 3.0000 changelog
+FEATURE 21 2.8000 what changed
+FEATURE 21 3.0000 release notes
+FEATURE 21 2.8000 latest release
+FEATURE 22 3.6000 zerolm live
+FEATURE 22 7.2000 what is zerolm live
+FEATURE 22 7.2000 about zerolm live
+FEATURE 22 3.4000 live mode
+FEATURE 22 3.4000 life file
+FEATURE 22 3.0000 session mode
+FEATURE 22 3.2000 persistent session
+FEATURE 22 3.0000 teach you
+FEATURE 22 3.2000 how do i teach
+FEATURE 22 3.0000 tag option
+FEATURE 22 3.0000 session tag
+FEATURE 22 2.8000 use tags
+FEATURE 22 3.2000 how do tags work
+FEATURE 22 3.0000 good and bad feedback
+FEATURE 22 2.8000 learn from me
+FEATURE 23 3.0000 privacy policy
+FEATURE 23 3.4000 is my privacy protected
+FEATURE 23 3.0000 is it private
+FEATURE 23 3.2000 is my data safe
+FEATURE 23 3.0000 need internet
+FEATURE 23 3.2000 internet access
+FEATURE 23 3.0000 use the internet
+FEATURE 23 3.2000 network access
+FEATURE 23 3.2000 network calls
+FEATURE 23 3.0000 send data
+FEATURE 23 3.0000 sends data
+FEATURE 23 3.2000 telemetry
+FEATURE 23 3.2000 data collection
+FEATURE 23 3.0000 work offline
+FEATURE 23 3.0000 run offline
+FEATURE 23 3.2000 phone home
+FEATURE 23 3.0000 is it safe to run
+FEATURE 23 3.0000 is it safe to use
+FEATURE 24 3.4000 contribute to zerolm
+FEATURE 24 3.2000 contribute to this
+FEATURE 24 3.4000 how can i contribute
+FEATURE 24 3.4000 how do i contribute
+FEATURE 24 3.2000 want to contribute
+FEATURE 24 3.2000 contributing
+FEATURE 24 3.2000 contribution guidelines
+FEATURE 24 3.2000 pull request
+FEATURE 24 3.0000 open an issue
+FEATURE 24 3.0000 report a bug
+FEATURE 24 3.0000 bug report
+FEATURE 24 2.8000 get involved
+FEATURE 25 3.6000 what topics can you
+FEATURE 25 3.6000 which topics can you
+FEATURE 25 3.6000 what topics do you
+FEATURE 25 3.4000 list topics
+FEATURE 25 3.4000 list your topics
+FEATURE 25 3.4000 list intents
+FEATURE 25 3.6000 list your intents
+FEATURE 25 3.4000 what intents
+FEATURE 25 3.4000 your intents
+FEATURE 25 3.4000 what can i ask
+FEATURE 25 3.6000 what questions can i ask
+FEATURE 26 3.4000 chatgpt
+FEATURE 26 3.0000 gpt
+FEATURE 26 3.0000 transformer
+FEATURE 26 3.0000 llama
+FEATURE 26 3.4000 compare zerolm
+FEATURE 26 3.4000 compare yourself
+FEATURE 26 3.4000 compared to gpt
+FEATURE 26 3.4000 compared to chatgpt
+FEATURE 26 3.2000 how are you different
+FEATURE 26 3.2000 how is it different
+FEATURE 26 3.4000 different from chatgpt
+FEATURE 26 3.2000 better than gpt
+FEATURE 26 3.2000 better than chatgpt
 START 0 0
 START 1 28
 START 2 59
@@ -185,6 +331,16 @@ START 14 510
 START 15 548
 START 16 600
 START 17 661
+START 18 701
+START 19 725
+START 20 769
+START 21 801
+START 22 815
+START 23 859
+START 24 894
+START 25 923
+START 26 960
+START 27 1006
 NODE 0 1 Hello.
 NODE 1 2 I
 NODE 2 3 am
@@ -846,36 +1002,381 @@ NODE 657 658 from
 NODE 658 659 this
 NODE 659 660 process.
 NODE 660 -1 <eos>
-NODE 661 662 I
-NODE 662 663 do
-NODE 663 664 not
-NODE 664 665 know
-NODE 665 666 how
-NODE 666 667 to
-NODE 667 668 answer
-NODE 668 669 that
-NODE 669 670 request.
-NODE 670 671 I
-NODE 671 672 have
-NODE 672 673 no
-NODE 673 674 general
-NODE 674 675 language
-NODE 675 676 knowledge
-NODE 676 677 or
-NODE 677 678 external
-NODE 678 679 tools.
-NODE 679 680 Try
-NODE 680 681 asking
-NODE 681 682 about
-NODE 682 683 ZeroLM,
-NODE 683 684 its
-NODE 684 685 architecture,
-NODE 685 686 its
-NODE 686 687 weights,
-NODE 687 688 its
-NODE 688 689 limits,
-NODE 689 690 or
-NODE 690 691 its
-NODE 691 692 test
-NODE 692 693 pipeline.
-NODE 693 -1 <eos>
+NODE 661 662 To
+NODE 662 663 build
+NODE 663 664 ZeroLM,
+NODE 664 665 run
+NODE 665 666 make
+NODE 666 667 in
+NODE 667 668 the
+NODE 668 669 repository
+NODE 669 670 root.
+NODE 670 671 It
+NODE 671 672 needs
+NODE 672 673 a
+NODE 673 674 C11
+NODE 674 675 compiler
+NODE 675 676 and
+NODE 676 677 produces
+NODE 677 678 the
+NODE 678 679 zerolm
+NODE 679 680 program.
+NODE 680 681 The
+NODE 681 682 optional
+NODE 682 683 Rust
+NODE 683 684 port
+NODE 684 685 builds
+NODE 685 686 with
+NODE 686 687 cargo
+NODE 687 688 build
+NODE 688 689 --release
+NODE 689 690 inside
+NODE 690 691 the
+NODE 691 692 rust
+NODE 692 693 directory.
+NODE 693 694 See
+NODE 694 695 the
+NODE 695 696 README
+NODE 696 697 for
+NODE 697 698 the
+NODE 698 699 full
+NODE 699 700 steps.
+NODE 700 -1 <eos>
+NODE 701 702 ZeroLM
+NODE 702 703 is
+NODE 703 704 open
+NODE 704 705 source
+NODE 705 706 under
+NODE 706 707 the
+NODE 707 708 MIT
+NODE 708 709 license.
+NODE 709 710 You
+NODE 710 711 can
+NODE 711 712 use,
+NODE 712 713 copy,
+NODE 713 714 modify,
+NODE 714 715 and
+NODE 715 716 share
+NODE 716 717 it
+NODE 717 718 under
+NODE 718 719 the
+NODE 719 720 terms
+NODE 720 721 in
+NODE 721 722 the
+NODE 722 723 LICENSE
+NODE 723 724 file.
+NODE 724 -1 <eos>
+NODE 725 726 ZeroLM
+NODE 726 727 is
+NODE 727 728 built
+NODE 728 729 for
+NODE 729 730 small
+NODE 730 731 computers:
+NODE 731 732 about
+NODE 732 733 2
+NODE 733 734 CPU
+NODE 734 735 cores
+NODE 735 736 and
+NODE 736 737 2
+NODE 737 738 GB
+NODE 738 739 of
+NODE 739 740 RAM,
+NODE 740 741 with
+NODE 741 742 no
+NODE 742 743 GPU
+NODE 743 744 and
+NODE 744 745 no
+NODE 745 746 network.
+NODE 746 747 In
+NODE 747 748 one
+NODE 748 749 container
+NODE 749 750 run
+NODE 750 751 it
+NODE 751 752 handled
+NODE 752 753 about
+NODE 753 754 1,100
+NODE 754 755 interactions
+NODE 755 756 per
+NODE 756 757 second,
+NODE 757 758 including
+NODE 758 759 process
+NODE 759 760 startup.
+NODE 760 761 Measure
+NODE 761 762 on
+NODE 762 763 your
+NODE 763 764 own
+NODE 764 765 machine
+NODE 765 766 with
+NODE 766 767 make
+NODE 767 768 benchmark.
+NODE 768 -1 <eos>
+NODE 769 770 The
+NODE 770 771 shipped
+NODE 771 772 model
+NODE 772 773 understands
+NODE 773 774 English
+NODE 774 775 only,
+NODE 775 776 and
+NODE 776 777 only
+NODE 777 778 plain
+NODE 778 779 ASCII
+NODE 779 780 text.
+NODE 780 781 Other
+NODE 781 782 languages
+NODE 782 783 and
+NODE 783 784 non-ASCII
+NODE 784 785 characters
+NODE 785 786 are
+NODE 786 787 not
+NODE 787 788 part
+NODE 788 789 of
+NODE 789 790 its
+NODE 790 791 phrase
+NODE 791 792 vocabulary,
+NODE 792 793 so
+NODE 793 794 they
+NODE 794 795 will
+NODE 795 796 usually
+NODE 796 797 get
+NODE 797 798 the
+NODE 798 799 unknown
+NODE 799 800 response.
+NODE 800 -1 <eos>
+NODE 801 802 This
+NODE 802 803 is
+NODE 803 804 ZeroLM
+NODE 804 805 version
+NODE 805 806 0.2.0.
+NODE 806 807 See
+NODE 807 808 CHANGELOG.md
+NODE 808 809 for
+NODE 809 810 what
+NODE 810 811 changed
+NODE 811 812 in
+NODE 812 813 each
+NODE 813 814 release.
+NODE 814 -1 <eos>
+NODE 815 816 ZeroLM
+NODE 816 817 Live
+NODE 817 818 is
+NODE 818 819 a
+NODE 819 820 session
+NODE 820 821 mode
+NODE 821 822 in
+NODE 822 823 the
+NODE 823 824 Rust
+NODE 824 825 port.
+NODE 825 826 Run
+NODE 826 827 zerolm
+NODE 827 828 live
+NODE 828 829 to
+NODE 829 830 keep
+NODE 830 831 facts,
+NODE 831 832 teach
+NODE 832 833 it
+NODE 833 834 new
+NODE 834 835 phrases,
+NODE 835 836 and
+NODE 836 837 ask
+NODE 837 838 short
+NODE 838 839 follow-up
+NODE 839 840 questions.
+NODE 840 841 Use
+NODE 841 842 the
+NODE 842 843 tag
+NODE 843 844 option
+NODE 844 845 to
+NODE 845 846 give
+NODE 846 847 each
+NODE 847 848 session
+NODE 848 849 its
+NODE 849 850 own
+NODE 850 851 life
+NODE 851 852 file.
+NODE 852 853 The
+NODE 853 854 base
+NODE 854 855 weights
+NODE 855 856 are
+NODE 856 857 never
+NODE 857 858 modified.
+NODE 858 -1 <eos>
+NODE 859 860 ZeroLM
+NODE 860 861 makes
+NODE 861 862 no
+NODE 862 863 network
+NODE 863 864 calls
+NODE 864 865 and
+NODE 865 866 sends
+NODE 866 867 nothing
+NODE 867 868 anywhere.
+NODE 868 869 It
+NODE 869 870 runs
+NODE 870 871 locally
+NODE 871 872 on
+NODE 872 873 the
+NODE 873 874 CPU
+NODE 874 875 and
+NODE 875 876 reads
+NODE 876 877 only
+NODE 877 878 its
+NODE 878 879 weight
+NODE 879 880 file.
+NODE 880 881 In
+NODE 881 882 live
+NODE 882 883 mode
+NODE 883 884 it
+NODE 884 885 also
+NODE 885 886 writes
+NODE 886 887 a
+NODE 887 888 life
+NODE 888 889 file
+NODE 889 890 on
+NODE 890 891 your
+NODE 891 892 own
+NODE 892 893 disk.
+NODE 893 -1 <eos>
+NODE 894 895 Contributions
+NODE 895 896 are
+NODE 896 897 welcome.
+NODE 897 898 Open
+NODE 898 899 an
+NODE 899 900 issue
+NODE 900 901 or
+NODE 901 902 a
+NODE 902 903 pull
+NODE 903 904 request,
+NODE 904 905 keep
+NODE 905 906 changes
+NODE 906 907 small
+NODE 907 908 and
+NODE 908 909 measurable,
+NODE 909 910 add
+NODE 910 911 regression
+NODE 911 912 tests,
+NODE 912 913 and
+NODE 913 914 keep
+NODE 914 915 the
+NODE 915 916 zero-training
+NODE 916 917 rule.
+NODE 917 918 See
+NODE 918 919 CONTRIBUTING.md
+NODE 919 920 for
+NODE 920 921 the
+NODE 921 922 checklist.
+NODE 922 -1 <eos>
+NODE 923 924 I
+NODE 924 925 can
+NODE 925 926 talk
+NODE 926 927 about
+NODE 927 928 ZeroLM
+NODE 928 929 itself:
+NODE 929 930 greetings,
+NODE 930 931 who
+NODE 931 932 I
+NODE 932 933 am,
+NODE 933 934 what
+NODE 934 935 I
+NODE 935 936 can
+NODE 936 937 do,
+NODE 937 938 how
+NODE 938 939 to
+NODE 939 940 build
+NODE 940 941 and
+NODE 941 942 run
+NODE 942 943 it,
+NODE 943 944 its
+NODE 944 945 architecture,
+NODE 945 946 weights,
+NODE 946 947 limits,
+NODE 947 948 tests,
+NODE 948 949 license,
+NODE 949 950 privacy,
+NODE 950 951 and
+NODE 951 952 how
+NODE 952 953 to
+NODE 953 954 contribute.
+NODE 954 955 Ask
+NODE 955 956 about
+NODE 956 957 any
+NODE 957 958 of
+NODE 958 959 these.
+NODE 959 -1 <eos>
+NODE 960 961 ZeroLM
+NODE 961 962 is
+NODE 962 963 not
+NODE 963 964 a
+NODE 964 965 Transformer
+NODE 965 966 and
+NODE 966 967 not
+NODE 967 968 a
+NODE 968 969 general
+NODE 969 970 chatbot.
+NODE 970 971 It
+NODE 971 972 has
+NODE 972 973 no
+NODE 973 974 attention,
+NODE 974 975 no
+NODE 975 976 learned
+NODE 976 977 embeddings,
+NODE 977 978 and
+NODE 978 979 no
+NODE 979 980 pretraining.
+NODE 980 981 It
+NODE 981 982 maps
+NODE 982 983 phrases
+NODE 983 984 to
+NODE 984 985 a
+NODE 985 986 fixed
+NODE 986 987 set
+NODE 987 988 of
+NODE 988 989 intents
+NODE 989 990 and
+NODE 990 991 replays
+NODE 991 992 hand-written
+NODE 992 993 answers,
+NODE 993 994 so
+NODE 994 995 it
+NODE 995 996 is
+NODE 996 997 far
+NODE 997 998 smaller
+NODE 998 999 and
+NODE 999 1000 far
+NODE 1000 1001 less
+NODE 1001 1002 capable
+NODE 1002 1003 than
+NODE 1003 1004 GPT-style
+NODE 1004 1005 models.
+NODE 1005 -1 <eos>
+NODE 1006 1007 I
+NODE 1007 1008 do
+NODE 1008 1009 not
+NODE 1009 1010 know
+NODE 1010 1011 how
+NODE 1011 1012 to
+NODE 1012 1013 answer
+NODE 1013 1014 that
+NODE 1014 1015 request.
+NODE 1015 1016 I
+NODE 1016 1017 have
+NODE 1017 1018 no
+NODE 1018 1019 general
+NODE 1019 1020 language
+NODE 1020 1021 knowledge
+NODE 1021 1022 or
+NODE 1022 1023 external
+NODE 1023 1024 tools.
+NODE 1024 1025 Try
+NODE 1025 1026 asking
+NODE 1026 1027 about
+NODE 1027 1028 ZeroLM,
+NODE 1028 1029 its
+NODE 1029 1030 architecture,
+NODE 1030 1031 its
+NODE 1031 1032 weights,
+NODE 1032 1033 its
+NODE 1033 1034 limits,
+NODE 1034 1035 or
+NODE 1035 1036 its
+NODE 1036 1037 test
+NODE 1037 1038 pipeline.
+NODE 1038 -1 <eos>

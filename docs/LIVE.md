@@ -11,7 +11,7 @@ trained model and does not change the zero-training boundary:
 - Nothing is optimized. There are no gradients, datasets, or loss functions.
   Every change to the life file is either something the user said explicitly
   ("remember…", "teach…") or a fixed-rule nudge from feedback ("good"/"bad").
-- It still has no general language understanding. It knows 18 intents, plus
+- It still has no general language understanding. It knows 27 topics (plus "unknown"), plus
   whatever the user told it.
 
 ## Life cycle

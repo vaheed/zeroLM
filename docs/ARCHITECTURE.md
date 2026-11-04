@@ -63,7 +63,7 @@ The weight file contains:
 
 Inactive values are represented implicitly as `-8`; active recurrent and output connections are `+8`. This sparse format makes the file readable and small.
 
-The number reported as `dense-equivalent weight slots` is a logical matrix-size estimate. It must not be described as 749,904 independently learned parameters. The actual values are authored by hand and most are implicit defaults.
+The number reported as `dense-equivalent weight slots` is a logical matrix-size estimate. It must not be described as 1,645,332 independently learned parameters. The actual values are authored by hand and most are implicit defaults.
 
 ## 6. Why it is not a Transformer
 

@@ -694,6 +694,610 @@
       "response": "Weight-Space Programming is an inspiration for ZeroLM. It explores how a capable external language model can inspect and directly write another network's weights without gradient descent. ZeroLM can adopt this idea through inspectable weight files, small patch proposals, forward-pass tests, and rollback. The external model is the weight programmer; ZeroLM itself does not gain general language ability from this process."
     },
     {
+      "name": "install",
+      "features": [
+        [
+          "install zerolm",
+          3.4
+        ],
+        [
+          "install it",
+          3.0
+        ],
+        [
+          "install this",
+          3.0
+        ],
+        [
+          "build zerolm",
+          3.4
+        ],
+        [
+          "build it",
+          2.6
+        ],
+        [
+          "build this",
+          2.8
+        ],
+        [
+          "build from source",
+          3.2
+        ],
+        [
+          "compile zerolm",
+          3.2
+        ],
+        [
+          "compile it",
+          3.0
+        ],
+        [
+          "compile this",
+          3.0
+        ],
+        [
+          "cargo build",
+          3.2
+        ],
+        [
+          "how do i install you",
+          3.2
+        ]
+      ],
+      "response": "To build ZeroLM, run make in the repository root. It needs a C11 compiler and produces the zerolm program. The optional Rust port builds with cargo build --release inside the rust directory. See the README for the full steps."
+    },
+    {
+      "name": "license",
+      "features": [
+        [
+          "what license",
+          3.2
+        ],
+        [
+          "which license",
+          3.2
+        ],
+        [
+          "what licence",
+          3.2
+        ],
+        [
+          "which licence",
+          3.2
+        ],
+        [
+          "its license",
+          3.0
+        ],
+        [
+          "your license",
+          3.0
+        ],
+        [
+          "zerolm license",
+          3.4
+        ],
+        [
+          "license of zerolm",
+          3.4
+        ],
+        [
+          "mit license",
+          3.4
+        ],
+        [
+          "mit licensed",
+          3.4
+        ],
+        [
+          "is it licensed",
+          3.0
+        ],
+        [
+          "licensed under",
+          3.0
+        ],
+        [
+          "open source",
+          2.8
+        ],
+        [
+          "open-source",
+          2.8
+        ]
+      ],
+      "response": "ZeroLM is open source under the MIT license. You can use, copy, modify, and share it under the terms in the LICENSE file."
+    },
+    {
+      "name": "performance",
+      "features": [
+        [
+          "how fast is it",
+          3.2
+        ],
+        [
+          "how fast is zerolm",
+          3.4
+        ],
+        [
+          "how fast are you",
+          3.2
+        ],
+        [
+          "its speed",
+          2.8
+        ],
+        [
+          "your speed",
+          2.8
+        ],
+        [
+          "latency",
+          2.8
+        ],
+        [
+          "how much memory does it",
+          3.2
+        ],
+        [
+          "how much memory does zerolm",
+          3.4
+        ],
+        [
+          "memory usage",
+          3.0
+        ],
+        [
+          "how much ram does it",
+          3.2
+        ],
+        [
+          "cpu requirements",
+          3.0
+        ],
+        [
+          "need a gpu",
+          3.0
+        ],
+        [
+          "use a gpu",
+          3.0
+        ],
+        [
+          "what hardware",
+          3.0
+        ],
+        [
+          "hardware requirements",
+          3.2
+        ],
+        [
+          "its performance",
+          2.6
+        ],
+        [
+          "your performance",
+          2.6
+        ],
+        [
+          "how big is the model",
+          2.8
+        ],
+        [
+          "model size",
+          2.8
+        ]
+      ],
+      "response": "ZeroLM is built for small computers: about 2 CPU cores and 2 GB of RAM, with no GPU and no network. In one container run it handled about 1,100 interactions per second, including process startup. Measure on your own machine with make benchmark."
+    },
+    {
+      "name": "languages",
+      "features": [
+        [
+          "what languages",
+          3.4
+        ],
+        [
+          "which languages",
+          3.4
+        ],
+        [
+          "supported languages",
+          3.4
+        ],
+        [
+          "other languages",
+          3.0
+        ],
+        [
+          "multilingual",
+          3.2
+        ],
+        [
+          "english only",
+          3.2
+        ],
+        [
+          "non english",
+          3.0
+        ],
+        [
+          "do you speak",
+          2.8
+        ],
+        [
+          "unicode",
+          2.6
+        ]
+      ],
+      "response": "The shipped model understands English only, and only plain ASCII text. Other languages and non-ASCII characters are not part of its phrase vocabulary, so they will usually get the unknown response."
+    },
+    {
+      "name": "version",
+      "features": [
+        [
+          "version of zerolm",
+          3.4
+        ],
+        [
+          "zerolm version",
+          3.4
+        ],
+        [
+          "which version is this",
+          3.4
+        ],
+        [
+          "what version is this",
+          3.4
+        ],
+        [
+          "which version are you",
+          3.4
+        ],
+        [
+          "what version are you",
+          3.4
+        ],
+        [
+          "this version",
+          2.6
+        ],
+        [
+          "your version",
+          2.8
+        ],
+        [
+          "latest version",
+          3.0
+        ],
+        [
+          "changelog",
+          3.0
+        ],
+        [
+          "what changed",
+          2.8
+        ],
+        [
+          "release notes",
+          3.0
+        ],
+        [
+          "latest release",
+          2.8
+        ]
+      ],
+      "response": "This is ZeroLM version 0.2.0. See CHANGELOG.md for what changed in each release."
+    },
+    {
+      "name": "live",
+      "features": [
+        [
+          "zerolm live",
+          3.6
+        ],
+        [
+          "what is zerolm live",
+          7.2
+        ],
+        [
+          "about zerolm live",
+          7.2
+        ],
+        [
+          "live mode",
+          3.4
+        ],
+        [
+          "life file",
+          3.4
+        ],
+        [
+          "session mode",
+          3.0
+        ],
+        [
+          "persistent session",
+          3.2
+        ],
+        [
+          "teach you",
+          3.0
+        ],
+        [
+          "how do i teach",
+          3.2
+        ],
+        [
+          "tag option",
+          3.0
+        ],
+        [
+          "session tag",
+          3.0
+        ],
+        [
+          "use tags",
+          2.8
+        ],
+        [
+          "how do tags work",
+          3.2
+        ],
+        [
+          "good and bad feedback",
+          3.0
+        ],
+        [
+          "learn from me",
+          2.8
+        ]
+      ],
+      "response": "ZeroLM Live is a session mode in the Rust port. Run zerolm live to keep facts, teach it new phrases, and ask short follow-up questions. Use the tag option to give each session its own life file. The base weights are never modified."
+    },
+    {
+      "name": "privacy",
+      "features": [
+        [
+          "privacy policy",
+          3.0
+        ],
+        [
+          "is my privacy protected",
+          3.4
+        ],
+        [
+          "is it private",
+          3.0
+        ],
+        [
+          "is my data safe",
+          3.2
+        ],
+        [
+          "need internet",
+          3.0
+        ],
+        [
+          "internet access",
+          3.2
+        ],
+        [
+          "use the internet",
+          3.0
+        ],
+        [
+          "network access",
+          3.2
+        ],
+        [
+          "network calls",
+          3.2
+        ],
+        [
+          "send data",
+          3.0
+        ],
+        [
+          "sends data",
+          3.0
+        ],
+        [
+          "telemetry",
+          3.2
+        ],
+        [
+          "data collection",
+          3.2
+        ],
+        [
+          "work offline",
+          3.0
+        ],
+        [
+          "run offline",
+          3.0
+        ],
+        [
+          "phone home",
+          3.2
+        ],
+        [
+          "is it safe to run",
+          3.0
+        ],
+        [
+          "is it safe to use",
+          3.0
+        ]
+      ],
+      "response": "ZeroLM makes no network calls and sends nothing anywhere. It runs locally on the CPU and reads only its weight file. In live mode it also writes a life file on your own disk."
+    },
+    {
+      "name": "contribute",
+      "features": [
+        [
+          "contribute to zerolm",
+          3.4
+        ],
+        [
+          "contribute to this",
+          3.2
+        ],
+        [
+          "how can i contribute",
+          3.4
+        ],
+        [
+          "how do i contribute",
+          3.4
+        ],
+        [
+          "want to contribute",
+          3.2
+        ],
+        [
+          "contributing",
+          3.2
+        ],
+        [
+          "contribution guidelines",
+          3.2
+        ],
+        [
+          "pull request",
+          3.2
+        ],
+        [
+          "open an issue",
+          3.0
+        ],
+        [
+          "report a bug",
+          3.0
+        ],
+        [
+          "bug report",
+          3.0
+        ],
+        [
+          "get involved",
+          2.8
+        ]
+      ],
+      "response": "Contributions are welcome. Open an issue or a pull request, keep changes small and measurable, add regression tests, and keep the zero-training rule. See CONTRIBUTING.md for the checklist."
+    },
+    {
+      "name": "topics",
+      "features": [
+        [
+          "what topics can you",
+          3.6
+        ],
+        [
+          "which topics can you",
+          3.6
+        ],
+        [
+          "what topics do you",
+          3.6
+        ],
+        [
+          "list topics",
+          3.4
+        ],
+        [
+          "list your topics",
+          3.4
+        ],
+        [
+          "list intents",
+          3.4
+        ],
+        [
+          "list your intents",
+          3.6
+        ],
+        [
+          "what intents",
+          3.4
+        ],
+        [
+          "your intents",
+          3.4
+        ],
+        [
+          "what can i ask",
+          3.4
+        ],
+        [
+          "what questions can i ask",
+          3.6
+        ]
+      ],
+      "response": "I can talk about ZeroLM itself: greetings, who I am, what I can do, how to build and run it, its architecture, weights, limits, tests, license, privacy, and how to contribute. Ask about any of these."
+    },
+    {
+      "name": "comparison",
+      "features": [
+        [
+          "chatgpt",
+          3.4
+        ],
+        [
+          "gpt",
+          3.0
+        ],
+        [
+          "transformer",
+          3.0
+        ],
+        [
+          "llama",
+          3.0
+        ],
+        [
+          "compare zerolm",
+          3.4
+        ],
+        [
+          "compare yourself",
+          3.4
+        ],
+        [
+          "compared to gpt",
+          3.4
+        ],
+        [
+          "compared to chatgpt",
+          3.4
+        ],
+        [
+          "how are you different",
+          3.2
+        ],
+        [
+          "how is it different",
+          3.2
+        ],
+        [
+          "different from chatgpt",
+          3.4
+        ],
+        [
+          "better than gpt",
+          3.2
+        ],
+        [
+          "better than chatgpt",
+          3.2
+        ]
+      ],
+      "response": "ZeroLM is not a Transformer and not a general chatbot. It has no attention, no learned embeddings, and no pretraining. It maps phrases to a fixed set of intents and replays hand-written answers, so it is far smaller and far less capable than GPT-style models."
+    },
+    {
       "name": "unknown",
       "features": [],
       "response": "I do not know how to answer that request. I have no general language knowledge or external tools. Try asking about ZeroLM, its architecture, its weights, its limits, or its test pipeline."

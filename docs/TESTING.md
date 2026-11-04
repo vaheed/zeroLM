@@ -62,7 +62,7 @@ Do not use only the current test prompts to claim language quality. Add new prom
 
 ## Current baseline
 
-The repository's initial v0.2.0 test set contains 79 regression prompts and 18 unknown prompts. The current build passes all 97. This is a check of the included hand-authored cases only; it is not a general language benchmark.
+The repository's initial v0.2.0 test set contains 79 regression prompts and 18 unknown prompts. The current build has 119 regression prompts and 31 unknown prompts and passes all 150. This is a check of the included hand-authored cases only; it is not a general language benchmark.
 
 ### Online benchmark (CLINC150)
 
