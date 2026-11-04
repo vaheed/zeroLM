@@ -12,6 +12,7 @@ Thanks for helping with the experiment. Keep changes small, measurable, and hone
 - The Rust port (`rust/`) must stay std-only and byte-identical to the C runtime for one-shot prompts (`cargo test` plus the CI parity job).
 - Live mode may keep runtime state (facts, learned phrase weights) only in a separate life file. It must never modify `weights.zlm`, and updates must be explicit user input or fixed rules, never gradient or loss based. Call it adaptation or state, not training.
 - Every behavior change must include regression or unknown-input test cases.
+- New phrase features must be tied to ZeroLM or to "it/this/you" (`install zerolm`, not `install`). Add near-miss prompts to `tests/unknown.tsv` for any broad phrase; bare words cause false positives such as "how do I install Photoshop".
 
 ## Development loop
 
@@ -22,6 +23,21 @@ cp reports/latest.json reports/baseline.json
 make pipeline
 python3 scripts/compare_reports.py reports/baseline.json reports/latest.json
 ```
+
+### Rust and Docker changes
+
+```sh
+cd rust
+cargo test                                   # unit tests + end-to-end tests of zerolm live
+cargo clippy --all-targets -- -D warnings
+cd .. && make && (cd rust && cargo build --release)
+# the Rust output must match the C runtime on every test prompt; CI diffs them (see docs/TESTING.md)
+scripts/docker_smoke.sh                      # if you touched the Dockerfile, compose file or locking
+python3 scripts/benchmark_all.py --no-write  # if you touched anything performance-relevant
+```
+
+Changes to live mode need an end-to-end test in `rust/tests/live_cli.rs`, and the docs in
+`docs/LIVE.md` must stay accurate (several bugs so far were found by those tests).
 
 ## Editing the model
 
