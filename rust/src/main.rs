@@ -4,7 +4,10 @@ use std::process::ExitCode;
 
 use zerolm::{Model, C_MODEL_STRUCT_BYTES, MAX_STEPS, MAX_TEXT};
 
-const DEFAULT_MODEL: &str = "weights.zlm";
+/// Model path when `--model` is not given: `$ZEROLM_MODEL`, else `weights.zlm`.
+fn default_model() -> String {
+    env::var("ZEROLM_MODEL").unwrap_or_else(|_| "weights.zlm".to_string())
+}
 
 fn respond(m: &Model, raw: &str, verbose: bool, faithful: bool) {
     let (intent, score) = m.decide(raw);
@@ -96,7 +99,7 @@ fn self_test(m: &Model, faithful: bool) -> bool {
 /// from sharing one life file.
 fn run_live(args: &[String]) -> ExitCode {
     let (mut model_path, mut life, mut capacity) =
-        (DEFAULT_MODEL.to_string(), "life.zlm".to_string(), zerolm::memory::DEFAULT_CAPACITY);
+        (default_model(), "life.zlm".to_string(), zerolm::memory::DEFAULT_CAPACITY);
     let mut context = zerolm::context::DEFAULT_CONTEXT_BUDGET;
     let mut jsonl = false;
     let mut explicit_life = false;
@@ -236,7 +239,7 @@ fn main() -> ExitCode {
         return run_live(&args[2..]);
     }
     let (mut model_path, mut info, mut test, mut verbose, mut faithful) =
-        (DEFAULT_MODEL.to_string(), false, false, false, false);
+        (default_model(), false, false, false, false);
     let mut text_start = None;
     let mut i = 1;
     while i < args.len() {
