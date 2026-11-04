@@ -4,8 +4,13 @@
 
 use crate::context::{Transcript, Turn, DEFAULT_CONTEXT_BUDGET};
 use crate::memory::Memory;
-use crate::{normalize_text, Model, ABSTAIN_THRESHOLD, MAX_TEXT};
+use crate::{normalize_text, Feature, Model, ABSTAIN_THRESHOLD, MAX_TEXT};
 use std::path::PathBuf;
+
+/// Weight given to a taught phrase (same scale as the base model's +8).
+const TEACH_WEIGHT: f64 = 8.0;
+const GOOD_DELTA: f64 = 1.0;
+const BAD_DELTA: f64 = -4.0;
 
 /// A short, unclear turn may borrow its meaning from the previous one.
 const FOLLOW_UP_MAX_WORDS: usize = 4;
@@ -109,6 +114,15 @@ impl<'a> Session<'a> {
             });
         }
 
+        if let Some(rest) = strip_prefix_ci(raw, "teach ") {
+            return Outcome::meta(self.cmd_teach(rest));
+        }
+        match norm_str.as_str() {
+            "good" | "good answer" | "good bot" => return Outcome::meta(self.cmd_feedback(true)),
+            "bad" | "bad answer" | "bad bot" | "wrong" => return Outcome::meta(self.cmd_feedback(false)),
+            _ => {}
+        }
+
         if let Some(rest) = strip_prefix_ci(raw, "remember ") {
             return Outcome::plain(self.cmd_remember(rest));
         }
@@ -127,7 +141,9 @@ impl<'a> Session<'a> {
             }
         }
 
-        let (mut intent, score) = self.model.decide(raw);
+        let extra = self.overlay();
+        let (mut intent, score) = self.model.decide_with(raw, &extra);
+        let mut basis = norm.clone();
         // Follow-up: a short turn that the classifier cannot place on its own
         // is read together with the last real question.
         if score < ABSTAIN_THRESHOLD && norm_str.split(' ').count() <= FOLLOW_UP_MAX_WORDS {
@@ -138,12 +154,15 @@ impl<'a> Session<'a> {
                 .find(|t| !t.meta && t.intent.is_some_and(|i| i != unknown))
                 .map(|t| t.user.clone());
             if let Some(prev) = prev {
-                let (ci, cs) = self.model.decide(&format!("{prev} {raw}"));
+                let combined = format!("{prev} {raw}");
+                let (ci, cs) = self.model.decide_with(&combined, &extra);
                 if cs >= ABSTAIN_THRESHOLD {
                     intent = ci;
+                    basis = normalize_text(combined.as_bytes(), MAX_TEXT);
                 }
             }
         }
+        let matched = self.model.matched_phrases(&basis, intent, &extra);
 
         if self.model.intent_name[intent] == "memory" {
             return Outcome {
@@ -153,15 +172,72 @@ Say \"remember X is Y\", ask \"what is X\", or say \"forget X\".",
                     self.memory.capacity
                 ),
                 intent: Some(intent),
-                matched: Vec::new(),
+                matched,
                 meta: false,
             };
         }
         Outcome {
             text: self.model.generate(intent).join(" "),
             intent: Some(intent),
-            matched: Vec::new(),
+            matched,
             meta: false,
+        }
+    }
+
+    /// Learned reflexes as extra model features (unknown intent names are skipped).
+    fn overlay(&self) -> Vec<Feature> {
+        self.memory
+            .learned
+            .iter()
+            .filter_map(|l| {
+                self.model.intent_index(&l.intent).map(|i| Feature {
+                    intent: i,
+                    weight: l.weight,
+                    phrase: l.phrase.clone().into_bytes(),
+                })
+            })
+            .collect()
+    }
+
+    /// `teach <phrase> as <intent>`
+    fn cmd_teach(&mut self, rest: &str) -> String {
+        let usage = "Say it like: teach <phrase> as <intent>.".to_string();
+        let lower = rest.to_ascii_lowercase();
+        let Some(i) = lower.rfind(" as ") else { return usage };
+        let phrase = norm_string(&rest[..i]);
+        let name = rest[i + 4..].trim().trim_end_matches(['.', '!']).to_ascii_lowercase();
+        if phrase.is_empty() || name.is_empty() {
+            return usage;
+        }
+        if self.model.intent_index(&name).is_none() {
+            return format!("I have no intent called {name}. I know: {}.", self.model.intent_name.join(", "));
+        }
+        self.memory.learn(&name, &phrase, TEACH_WEIGHT);
+        format!("Okay, \"{phrase}\" now means {name}.")
+    }
+
+    /// Hebbian-style nudge of the phrases behind the last classified answer.
+    fn cmd_feedback(&mut self, good: bool) -> String {
+        let last = self
+            .transcript
+            .recent()
+            .find(|t| !t.meta && t.intent.is_some())
+            .map(|t| (t.intent.unwrap_or(0), t.matched.clone()));
+        let Some((intent, matched)) = last else {
+            return "There is no answer to rate yet.".to_string();
+        };
+        if matched.is_empty() {
+            return "Noted, but no phrase of mine produced that answer, so there is nothing to adjust.".to_string();
+        }
+        let name = self.model.intent_name[intent].clone();
+        let delta = if good { GOOD_DELTA } else { BAD_DELTA };
+        for p in &matched {
+            self.memory.learn(&name, p, delta);
+        }
+        if good {
+            "Thanks, I will lean that way again.".to_string()
+        } else {
+            "Understood, I will trust that wording less.".to_string()
         }
     }
 
@@ -246,6 +322,44 @@ NODE 0 1 canned\nNODE 1 -1 <eos>\nNODE 2 3 w\nNODE 3 -1 <eos>\nNODE 4 5 sorry\nN
         assert_eq!(s.turn("what did I say?"), "You said: show weights");
         // meta turns do not become the thing that is repeated
         assert_eq!(s.turn("again"), "w");
+    }
+
+    #[test]
+    fn teach_changes_behaviour_and_validates() {
+        let m = Model::parse(TINY).unwrap();
+        let mut s = session(&m);
+        assert_eq!(s.turn("show me the goods"), "sorry");
+        assert!(s.turn("teach show me the goods as weights").contains("now means weights"));
+        assert_eq!(s.turn("show me the goods"), "w");
+        assert!(s.turn("teach foo as nonsense").contains("no intent called nonsense"));
+        assert!(s.turn("teach foo").starts_with("Say it like"));
+    }
+
+    #[test]
+    fn bad_feedback_erodes_a_reflex_and_good_strengthens() {
+        let m = Model::parse(TINY).unwrap();
+        let mut s = session(&m);
+        assert_eq!(s.turn("bad"), "There is no answer to rate yet.");
+        assert_eq!(s.turn("show weights"), "w");
+        s.turn("bad");
+        assert_eq!(s.turn("show weights"), "w"); // 8 - 4 = 4: still above threshold
+        s.turn("bad");
+        assert_eq!(s.turn("show weights"), "sorry"); // eroded below the abstain line
+        // the abstained turn matched no phrase, so rating it changes nothing
+        assert!(s.turn("good").contains("nothing to adjust"));
+        let learned = s.memory.learned.iter().find(|l| l.phrase == "weights").unwrap();
+        assert!(learned.weight < -7.0 && learned.weight > -8.0);
+    }
+
+    #[test]
+    fn learned_reflexes_never_touch_the_base_model() {
+        let m = Model::parse(TINY).unwrap();
+        let before = format!("{:?}", m.features);
+        let mut s = session(&m);
+        s.turn("teach hello as weights");
+        s.turn("show weights");
+        s.turn("bad");
+        assert_eq!(before, format!("{:?}", m.features));
     }
 
     #[test]

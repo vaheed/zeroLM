@@ -25,11 +25,30 @@ pub struct Entry {
     pub last_used: u64,
 }
 
+/// Per-turn decay of learned reflexes (much slower than facts).
+pub const LEARN_DECAY: f64 = 0.995;
+/// Learned weights weaker than this (in absolute value) are dropped.
+pub const LEARN_FORGET_BELOW: f64 = 0.25;
+/// Learned weights are clamped to +/- this, so the base weights stay in charge.
+pub const LEARN_CLAMP: f64 = 16.0;
+pub const MAX_LEARNED: usize = 256;
+
+/// A learned reflex: an extra phrase->intent weight layered over the base
+/// model. Updated by explicit teaching and good/bad feedback, never by gradients.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Learned {
+    pub intent: String,
+    /// Normalized phrase.
+    pub phrase: String,
+    pub weight: f64,
+}
+
 #[derive(Debug, Clone)]
 pub struct Memory {
     pub capacity: usize,
     pub clock: u64,
     pub entries: Vec<Entry>,
+    pub learned: Vec<Learned>,
 }
 
 /// Remove tabs/newlines (file format separators), trim, and bound the length.
@@ -48,7 +67,45 @@ fn clean(s: &str) -> String {
 
 impl Memory {
     pub fn new(capacity: usize) -> Memory {
-        Memory { capacity: capacity.max(1), clock: 0, entries: Vec::new() }
+        Memory { capacity: capacity.max(1), clock: 0, entries: Vec::new(), learned: Vec::new() }
+    }
+
+    /// Nudge the (intent, phrase) reflex by `delta`, clamped; creates it if new.
+    pub fn learn(&mut self, intent: &str, phrase: &str, delta: f64) {
+        let phrase = clean(phrase);
+        if phrase.is_empty() {
+            return;
+        }
+        match self.learned.iter().position(|l| l.intent == intent && l.phrase == phrase) {
+            Some(i) => {
+                let w = (self.learned[i].weight + delta).clamp(-LEARN_CLAMP, LEARN_CLAMP);
+                if w.abs() < LEARN_FORGET_BELOW {
+                    self.learned.remove(i);
+                } else {
+                    self.learned[i].weight = w;
+                }
+            }
+            None => {
+                self.learned.push(Learned {
+                    intent: intent.to_string(),
+                    phrase,
+                    weight: delta.clamp(-LEARN_CLAMP, LEARN_CLAMP),
+                });
+                if self.learned.len() > MAX_LEARNED {
+                    if let Some(i) = self
+                        .learned
+                        .iter()
+                        .enumerate()
+                        .min_by(|(_, a), (_, b)| {
+                            a.weight.abs().partial_cmp(&b.weight.abs()).unwrap_or(std::cmp::Ordering::Equal)
+                        })
+                        .map(|(i, _)| i)
+                    {
+                        self.learned.remove(i);
+                    }
+                }
+            }
+        }
     }
 
     /// Advance one turn: everything fades a little; the faintest are forgotten.
@@ -58,6 +115,10 @@ impl Memory {
             e.strength *= DECAY;
         }
         self.entries.retain(|e| e.strength >= FORGET_BELOW);
+        for l in &mut self.learned {
+            l.weight *= LEARN_DECAY;
+        }
+        self.learned.retain(|l| l.weight.abs() >= LEARN_FORGET_BELOW);
     }
 
     /// Store or overwrite. Returns the key of an evicted entry, if capacity forced one out.
@@ -123,6 +184,9 @@ impl Memory {
         for e in &self.entries {
             out.push_str(&format!("MEM {:.6} {} {}\t{}\n", e.strength, e.last_used, e.key, e.value));
         }
+        for l in &self.learned {
+            out.push_str(&format!("FEAT {} {:.6} {}\n", l.intent, l.weight, l.phrase));
+        }
         let mut tmp = path.as_os_str().to_owned();
         tmp.push(".tmp");
         let tmp = std::path::PathBuf::from(tmp);
@@ -169,6 +233,20 @@ impl Memory {
                     value: value.to_string(),
                     strength: strength.clamp(0.0, 1.0),
                     last_used,
+                });
+            } else if let Some(rest) = line.strip_prefix("FEAT ") {
+                let bad = || format!("invalid FEAT at line {n}");
+                let mut it = rest.splitn(3, ' ');
+                let intent = it.next().filter(|s| !s.is_empty()).ok_or_else(bad)?;
+                let weight: f64 = it.next().and_then(|s| s.parse().ok()).ok_or_else(bad)?;
+                let phrase = it.next().filter(|s| !s.is_empty()).ok_or_else(bad)?;
+                if !weight.is_finite() {
+                    return Err(bad());
+                }
+                mem.learned.push(Learned {
+                    intent: intent.to_string(),
+                    phrase: phrase.to_string(),
+                    weight: weight.clamp(-LEARN_CLAMP, LEARN_CLAMP),
                 });
             } else {
                 return Err(format!("unknown record at line {n}"));
@@ -221,6 +299,30 @@ mod tests {
         }
         assert!(m.entries.iter().any(|e| e.key == "kept"));
         assert!(!m.entries.iter().any(|e| e.key == "lost"));
+    }
+
+    #[test]
+    fn learn_clamps_merges_decays_and_roundtrips() {
+        let mut m = Memory::new(4);
+        m.learn("weights", "show me stuff", 8.0);
+        m.learn("weights", "show me stuff", 20.0);
+        assert_eq!(m.learned.len(), 1);
+        assert_eq!(m.learned[0].weight, LEARN_CLAMP);
+        m.learn("weights", "show me stuff", -LEARN_CLAMP);
+        assert!(m.learned.is_empty()); // cancelled out
+        m.learn("coding", "hack", 1.0);
+        let dir = std::env::temp_dir().join(format!("zerolm-learn-{}", std::process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("life.zlm");
+        m.save(&p).unwrap();
+        let back = Memory::load(&p, 4).unwrap();
+        assert_eq!(back.learned.len(), 1);
+        assert_eq!(back.learned[0].intent, "coding");
+        for _ in 0..400 {
+            m.tick();
+        }
+        assert!(m.learned.is_empty()); // faded away
+        fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

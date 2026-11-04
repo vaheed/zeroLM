@@ -241,8 +241,14 @@ impl Model {
     /// Result of `classify`: (selected intent, raw logit score). Abstention
     /// (score below threshold) is applied by the caller via `decide`.
     pub fn classify(&self, normalized: &[u8]) -> (usize, f64) {
+        self.classify_with(normalized, &[])
+    }
+
+    /// Like `classify`, with extra (learned) features added on top of the base
+    /// weights. Extra features must reference valid intent ids.
+    pub fn classify_with(&self, normalized: &[u8], extra: &[Feature]) -> (usize, f64) {
         let mut logits = vec![0.0f64; self.intents];
-        for f in &self.features {
+        for f in self.features.iter().chain(extra.iter()) {
             if contains_phrase(normalized, &f.phrase) {
                 logits[f.intent] += f.weight;
             }
@@ -251,10 +257,32 @@ impl Model {
         (best, logits[best])
     }
 
+    /// Distinct phrases (base + extra) that fired for `intent` on this input.
+    pub fn matched_phrases(&self, normalized: &[u8], intent: usize, extra: &[Feature]) -> Vec<String> {
+        let mut out: Vec<String> = Vec::new();
+        for f in self.features.iter().chain(extra.iter()) {
+            if f.intent == intent && contains_phrase(normalized, &f.phrase) {
+                let p = String::from_utf8_lossy(&f.phrase).into_owned();
+                if !out.contains(&p) {
+                    out.push(p);
+                }
+            }
+        }
+        out
+    }
+
+    pub fn intent_index(&self, name: &str) -> Option<usize> {
+        self.intent_name.iter().position(|n| n == name)
+    }
+
     /// Classify and apply the abstain rule (last intent is `unknown`).
     pub fn decide(&self, raw: &str) -> (usize, f64) {
+        self.decide_with(raw, &[])
+    }
+
+    pub fn decide_with(&self, raw: &str, extra: &[Feature]) -> (usize, f64) {
         let norm = normalize_text(raw.as_bytes(), MAX_TEXT);
-        let (intent, score) = self.classify(&norm);
+        let (intent, score) = self.classify_with(&norm, extra);
         if score < ABSTAIN_THRESHOLD {
             (self.intents - 1, score)
         } else {
