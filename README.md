@@ -4,7 +4,9 @@
 
 ZeroLM is an open-source research experiment in building a small neural text-generation system with manually engineered weights. The project explores direct network design and **Weight-Space Programming** instead of conventional pretraining or fine-tuning.
 
-> **Current status:** ZeroLM is an intentionally limited research prototype. It recognizes a small set of English request patterns and emits predefined response paths through a manually specified recurrent decoder. It is not a general-purpose LLM and does not yet understand arbitrary text.
+> **Current status:** ZeroLM is an intentionally limited research prototype. It recognizes a small set of English request patterns (27 topics, listed [below](#what-you-can-ask)) and emits predefined response paths through a manually specified recurrent decoder. It is not a general-purpose LLM and does not yet understand arbitrary text.
+
+**Ways to run it:** the original C runtime (stateless), a Rust port with **ZeroLM Live** (a session with memory that survives restarts), and a Docker image of the Rust build. See [INSTALL.md](INSTALL.md).
 
 ## Get started
 
@@ -91,6 +93,42 @@ To send one prompt without starting an interactive session:
 
 On Windows, `run.bat` provides a basic launch path when GCC (for example, MinGW-w64) is installed. The documented full `make pipeline` workflow is currently aimed at Linux and macOS.
 
+### 5. Other ways to run it
+
+```bash
+# Rust port with ZeroLM Live (memory that persists across restarts)
+cd rust && cargo build --release && cd ..
+rust/target/release/zerolm live --tag me
+
+# Docker (no toolchain needed)
+docker compose run --rm zerolm
+```
+
+Details, options and troubleshooting are in [INSTALL.md](INSTALL.md).
+
+## What you can ask
+
+Each topic is one intent with a hand-written answer. Anything else gets the `unknown` response.
+
+| Topic | Example prompt | Topic | Example prompt |
+| --- | --- | --- | --- |
+| greeting | hello | install | how do I install ZeroLM |
+| identity | who are you | license | what license does it use |
+| capabilities | what can you do | performance | how fast is it |
+| thanks | thank you | languages | what languages do you support |
+| farewell | goodbye | version | which version is this |
+| help | how do I use ZeroLM | live | what is zerolm live |
+| architecture | explain the architecture | privacy | does it send data anywhere |
+| weights | show the weight file | contribute | how can I contribute |
+| no_training | does it use training | topics | what topics can you talk about |
+| limitations | what are your limitations | comparison | how are you different from chatgpt |
+| memory | do you have memory | planning | make a plan step by step |
+| coding | write code for me | math | calculate this |
+| explain | explain a concept | testing | run the test suite |
+| inspiration | explain weight-space programming | | |
+
+Phrases are tied to ZeroLM or to "it/this/you" (for example `install zerolm`, `how fast is it`) rather than bare words, so unrelated questions such as "how do I install Photoshop" still get `unknown`. The cost is that some natural rewordings also fall through to `unknown`. Matching is exact-phrase and context-blind, so false positives and misses remain possible.
+
 ## Test ZeroLM
 
 Run the complete pipeline whenever you change code, model features, weights, or response paths:
@@ -103,17 +141,23 @@ You can also run individual checks:
 
 | Command | What it checks |
 | --- | --- |
-| `./zerolm --self-test` | Classifier smoke cases and decoder paths |
+| `./zerolm --self-test` | Classifier smoke cases and decoder paths (48 checks) |
 | `python3 scripts/evaluate.py --write-report` | Labeled regression cases and unknown-input abstention |
 | `python3 scripts/weight_audit.py` | Model format, intent starts, state links, and decoder paths |
 | `python3 scripts/benchmark.py --iterations 500` | Repeated interactive inference on the current machine |
 | `python3 scripts/inspect_weights.py` | A readable summary of the manually authored model |
+| `cd rust && cargo test` | Rust unit tests and 16 end-to-end tests of `zerolm live` |
+| `cd rust && cargo clippy --all-targets -- -D warnings` | Rust lint |
+| `scripts/docker_smoke.sh` | Builds the image; checks persistence, tags, and the session lock |
+| `python3 scripts/benchmark_all.py` | C vs Rust vs ZeroLM Live; writes [reports/benchmarks.md](reports/benchmarks.md) |
 
 ### What the tests do — and do not — prove
 
 The included tests check that known prompts select their expected intent, that the decoder emits a response, and that selected out-of-scope prompts are rejected. They also check model-file consistency and basic runtime performance.
 
 **Passing these tests does not prove general language understanding, factual accuracy, or reasoning ability.** The current regression suite is hand-authored and finite. Add new paraphrases, ambiguous prompts, misspellings, and genuinely unseen examples. Review response meaning manually; the evaluator primarily checks intent selection and non-empty output.
+
+The Rust port is also checked against the C runtime: CI diffs their output on every test prompt. See [docs/TESTING.md](docs/TESTING.md) for all test layers.
 
 Benchmark numbers depend on the operating system, compiler, CPU, and system load. Compare runs on the same machine and setup. The project targets small CPU-only systems, including a two-core / 2 GB RAM environment, but users should measure resource use on their own hardware.
 
@@ -153,7 +197,9 @@ Contributions are welcome, especially reproducible experiments that improve cove
 - The model builder may validate and serialize the hand-authored specification; it must not learn or optimize weights.
 - Do not describe repeated test runs as training or learning.
 - Do not claim general language understanding based on phrase coverage or passing the included tests.
-- Keep the C runtime small and dependency-light.
+- Keep the C runtime small and dependency-light, and the Rust port standard-library only.
+- The Rust one-shot output must stay identical to the C runtime's (CI diffs them).
+- Live mode may keep runtime state only in a separate life file and must never modify `weights.zlm`.
 - Add tests for new behavior and include unknown or ambiguous cases where relevant.
 - Explain limitations, false matches, and any trade-offs in your pull request.
 
@@ -171,12 +217,17 @@ The recurrent decoder is deliberately represented in a compact form so it can ru
 
 ## ZeroLM Live
 
-The Rust port in [`rust/`](rust) adds `zerolm live`, a long-lived session with a decaying memory, a rolling transcript, and user-taught phrases, saved to a separate life file. The base weights are never modified and nothing is trained. See [docs/LIVE.md](docs/LIVE.md).
+`zerolm live` (Rust port) is a long-lived session around the same model. It remembers facts you tell it (and lets unused ones fade), keeps a rolling transcript so short follow-ups work, lets you teach it phrases and rate answers, and saves all of that to a separate life file. The base weights are never modified and nothing is trained.
 
-```bash
-cd rust && cargo build --release
-./target/release/zerolm live --model ../weights.zlm --life life.zlm
+```text
+you> remember my name is Vahid
+you> what is my name?          -> my name is Vahid.
+you> does it use training
+you> why?                      -> (answers about training again)
+you> teach yo whats up as greeting
 ```
+
+`--tag NAME` gives each session its own life file (`life.NAME.zlm`), and a file lock stops two sessions, or two containers, from sharing one. `--jsonl` turns it into a line-oriented JSON service. Full details: [docs/LIVE.md](docs/LIVE.md). Measured speed and memory: [reports/benchmarks.md](reports/benchmarks.md).
 
 ## Zero training means zero training
 
@@ -212,18 +263,40 @@ Areas we want to explore include:
 
 Improvements must remain measurable and must preserve the zero-training constraint.
 
+## Project layout
+
+```text
+main.c                  C runtime (stateless): classifier + recurrent decoder
+weights.zlm             generated weight file (do not edit by hand)
+model/spec.json         the hand-authored model: intents, phrase weights, responses
+build_model.py          serializes spec.json -> weights.zlm (no training)
+rust/                   Rust port of the runtime + ZeroLM Live (std only)
+  src/                  model, memory, context, live session, lock, JSON-lines
+  tests/live_cli.rs     end-to-end tests of zerolm live
+Dockerfile, docker-compose.yml   container image and compose service
+scripts/                evaluation, audit, benchmarks, patch tool, docker smoke test
+tests/                  regression.tsv and unknown.tsv prompt sets
+examples/               prompts used by the documented-examples check
+experiments/patches/    example weight-space patch
+reports/                evaluation and benchmark results
+docs/                   architecture, testing, live mode, CI, hardware, research notes
+```
+
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) — current network and inference path.
-- [Testing and experiments](docs/TESTING.md) — test layers, reports, and repeatable evaluation.
+- [Install and run](INSTALL.md) — C, Rust and Docker, with troubleshooting.
+- [Architecture](docs/ARCHITECTURE.md) — current network and inference path, the two runtimes, and live mode.
+- [ZeroLM Live](docs/LIVE.md) — memory, tags, locking, commands, JSON-lines, limits.
+- [Testing and experiments](docs/TESTING.md) — test layers, benchmarks, reports, and repeatable evaluation.
+- [Continuous integration](docs/CI.md) — what each CI job checks.
+- [Hardware notes](docs/HARDWARE.md) — runtime and resource targets, with measurements.
 - [Weight-Space Programming](docs/WEIGHT_SPACE_PROGRAMMING.md) — research inspiration and project-specific directions.
-- [Hardware notes](docs/HARDWARE.md) — runtime and resource targets.
 - [Contributing](CONTRIBUTING.md) — development rules and pull request expectations.
 - [Changelog](CHANGELOG.md) — project changes.
 
 ## Continuous integration
 
-GitHub Actions runs the build and test pipeline on Ubuntu and macOS for pushes and pull requests. See the [latest workflow runs](https://github.com/vaheed/zeroLM/actions).
+GitHub Actions runs three jobs on pushes and pull requests: the full C pipeline on Ubuntu and macOS, the Rust port (tests, clippy, and a diff of its output against the C runtime), and the Docker image. See [docs/CI.md](docs/CI.md) and the [latest workflow runs](https://github.com/vaheed/zeroLM/actions).
 
 ## License
 
