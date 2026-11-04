@@ -3,7 +3,7 @@ name = "zerolm"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "ZeroLM runtime in safe Rust (port of main.c); foundation for the LLLM live language model"
+description = "ZeroLM runtime in safe Rust (port of main.c); includes ZeroLM Live, a persistent session mode"
 
 [lib]
 name = "zerolm"

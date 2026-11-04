@@ -1,5 +1,5 @@
 //! Live session: the model plus a persistent, decaying memory and a rolling
-//! transcript (the "LLLM" layer). The base `weights.zlm` is never modified;
+//! transcript (ZeroLM Live). The base `weights.zlm` is never modified;
 //! all life lives in the life file.
 
 use crate::context::{Transcript, Turn, DEFAULT_CONTEXT_BUDGET};

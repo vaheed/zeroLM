@@ -1,10 +1,10 @@
-# LLLM — the Live Language Model mode
+# ZeroLM Live
 
-`zerolm live` runs the ZeroLM base model as a **Live Language Model (LLLM)**: a
+`zerolm live` runs the ZeroLM base model as a **live session**: a
 long-lived session with state that survives restarts. It is implemented in the
 Rust port under [`rust/`](../rust). The C runtime stays stateless.
 
-LLLM is a runtime layer around the same hand-authored model. It is **not** a
+ZeroLM Live is a runtime layer around the same hand-authored model. It is **not** a
 trained model and does not change the zero-training boundary:
 
 - `weights.zlm` is never written. A session only writes its own *life file*.
