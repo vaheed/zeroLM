@@ -1,0 +1,11 @@
+# expected_intent<TAB>prompt
+# These are demonstration prompts, not a general language benchmark.
+greeting	Hello
+identity	Who are you?
+capabilities	What can you do?
+architecture	Explain your architecture.
+weights	Show me how your weights work.
+no_training	Does ZeroLM use training?
+limitations	What are your limitations?
+inspiration	Tell me about Weight-Space Programming.
+unknown	What is the weather in Paris?
