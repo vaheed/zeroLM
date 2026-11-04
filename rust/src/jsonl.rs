@@ -75,11 +75,48 @@ fn parse_string_chars(it: &mut std::str::Chars<'_>, strict: bool) -> Option<Stri
     }
 }
 
-/// A parsed JSON value, reduced to what the API needs: strings are kept,
-/// everything else is validated and discarded.
-enum Json {
+/// A parsed JSON value.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Json {
     Str(String),
-    Other,
+    Num(f64),
+    Bool(bool),
+    Null,
+    Arr(Vec<Json>),
+    Obj(std::collections::HashMap<String, Json>),
+}
+
+impl Json {
+    pub fn as_str(&self) -> Option<&str> {
+        match self {
+            Json::Str(s) => Some(s),
+            _ => None,
+        }
+    }
+    pub fn as_f64(&self) -> Option<f64> {
+        match self {
+            Json::Num(n) => Some(*n),
+            _ => None,
+        }
+    }
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            Json::Bool(b) => Some(*b),
+            _ => None,
+        }
+    }
+    pub fn as_array(&self) -> Option<&[Json]> {
+        match self {
+            Json::Arr(a) => Some(a),
+            _ => None,
+        }
+    }
+    pub fn get(&self, key: &str) -> Option<&Json> {
+        match self {
+            Json::Obj(m) => m.get(key),
+            _ => None,
+        }
+    }
 }
 
 const MAX_DEPTH: usize = 8;
@@ -100,20 +137,21 @@ fn parse_value(it: &mut std::str::Chars<'_>, depth: usize) -> Option<Json> {
             it.next();
             parse_string_chars(it, true).map(Json::Str)
         }
-        '{' => parse_members(it, depth + 1).map(|_| Json::Other),
+        '{' => parse_members(it, depth + 1).map(Json::Obj),
         '[' => {
             it.next();
             skip_ws(it);
+            let mut items = Vec::new();
             if it.clone().next()? == ']' {
                 it.next();
-                return Some(Json::Other);
+                return Some(Json::Arr(items));
             }
             loop {
-                parse_value(it, depth + 1)?;
+                items.push(parse_value(it, depth + 1)?);
                 skip_ws(it);
                 match it.next()? {
                     ',' => continue,
-                    ']' => return Some(Json::Other),
+                    ']' => return Some(Json::Arr(items)),
                     _ => return None,
                 }
             }
@@ -127,10 +165,17 @@ fn parse_value(it: &mut std::str::Chars<'_>, depth: usize) -> Option<Json> {
                 tok.push(c);
                 it.next();
             }
-            let number = !tok.is_empty()
-                && tok.chars().all(|c| c.is_ascii_digit() || matches!(c, '+' | '-' | '.' | 'e' | 'E'))
-                && tok.parse::<f64>().is_ok();
-            (number || matches!(tok.as_str(), "true" | "false" | "null")).then_some(Json::Other)
+            match tok.as_str() {
+                "true" => Some(Json::Bool(true)),
+                "false" => Some(Json::Bool(false)),
+                "null" => Some(Json::Null),
+                t if !t.is_empty()
+                    && t.chars().all(|c| c.is_ascii_digit() || matches!(c, '+' | '-' | '.' | 'e' | 'E')) =>
+                {
+                    t.parse::<f64>().ok().filter(|n| n.is_finite()).map(Json::Num)
+                }
+                _ => None,
+            }
         }
     }
 }
@@ -170,6 +215,15 @@ fn parse_members(
     }
 }
 
+/// Parse a complete JSON document (any value) with no trailing data and nesting of at
+/// most 8 levels. Strings are checked strictly (no raw control characters).
+pub fn parse(body: &str) -> Option<Json> {
+    let mut it = body.chars();
+    let v = parse_value(&mut it, 0)?;
+    skip_ws(&mut it);
+    it.next().is_none().then_some(v)
+}
+
 /// Parse a JSON document that must be a single object, and return its string-valued
 /// members. Other member types are validated but ignored. Returns `None` for anything
 /// that is not well-formed JSON (including trailing data and nesting deeper than 8).
@@ -185,7 +239,7 @@ pub fn parse_object(body: &str) -> Option<std::collections::HashMap<String, Stri
             .into_iter()
             .filter_map(|(k, v)| match v {
                 Json::Str(s) => Some((k, s)),
-                Json::Other => None,
+                _ => None,
             })
             .collect(),
     )
@@ -229,6 +283,22 @@ mod tests {
         assert_eq!(m.len(), 1, "non-string members are ignored: {m:?}");
         assert_eq!(parse_object("{}").unwrap().len(), 0);
         assert_eq!(parse_object(r#"{"a":"1","a":"2"}"#).unwrap()["a"], "2");
+    }
+
+    #[test]
+    fn parse_builds_a_full_tree() {
+        let v = parse(r#"{"model":"m","n":2.5,"stream":true,"x":null,"messages":[{"role":"user","content":[{"type":"text","text":"hi"}]}]}"#).unwrap();
+        assert_eq!(v.get("model").and_then(Json::as_str), Some("m"));
+        assert_eq!(v.get("n").and_then(Json::as_f64), Some(2.5));
+        assert_eq!(v.get("stream").and_then(Json::as_bool), Some(true));
+        assert_eq!(v.get("x"), Some(&Json::Null));
+        let msg = &v.get("messages").and_then(Json::as_array).unwrap()[0];
+        assert_eq!(msg.get("role").and_then(Json::as_str), Some("user"));
+        let part = &msg.get("content").and_then(Json::as_array).unwrap()[0];
+        assert_eq!(part.get("text").and_then(Json::as_str), Some("hi"));
+        assert_eq!(parse("[1, 2 ,3]").unwrap().as_array().unwrap().len(), 3);
+        assert!(parse("1e999").is_none(), "non-finite numbers are rejected");
+        assert!(parse("[1,]").is_none() && parse("{} {}").is_none() && parse("").is_none());
     }
 
     #[test]
