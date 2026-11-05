@@ -9,117 +9,117 @@
   },
   "model": {
     "intents": 28,
-    "bytes": 29873
+    "bytes": 37380
   },
   "one_shot": {
     "c": {
       "n": 200,
-      "mean_ms": 12.9728,
-      "p50_ms": 12.7687,
-      "p95_ms": 17.4441,
-      "p99_ms": 19.5439,
-      "max_ms": 34.1534
+      "mean_ms": 19.9121,
+      "p50_ms": 18.35,
+      "p95_ms": 36.642,
+      "p99_ms": 47.5582,
+      "max_ms": 49.8613
     },
     "rust": {
       "n": 200,
-      "mean_ms": 7.2979,
-      "p50_ms": 7.0222,
-      "p95_ms": 9.1793,
-      "p99_ms": 11.9531,
-      "max_ms": 12.1245
+      "mean_ms": 10.4099,
+      "p50_ms": 10.0524,
+      "p95_ms": 15.6318,
+      "p99_ms": 18.0409,
+      "max_ms": 19.2384
     },
     "c_load": {
       "n": 200,
-      "mean_ms": 10.5573,
-      "p50_ms": 9.7212,
-      "p95_ms": 17.0852,
-      "p99_ms": 19.7362,
-      "max_ms": 22.657
+      "mean_ms": 15.8364,
+      "p50_ms": 15.388,
+      "p95_ms": 19.4351,
+      "p99_ms": 33.3988,
+      "max_ms": 41.1969
     },
     "rust_load": {
       "n": 200,
-      "mean_ms": 7.6116,
-      "p50_ms": 7.2877,
-      "p95_ms": 10.6235,
-      "p99_ms": 12.2819,
-      "max_ms": 12.7289
+      "mean_ms": 10.4952,
+      "p50_ms": 9.8422,
+      "p95_ms": 15.7794,
+      "p99_ms": 20.3403,
+      "max_ms": 23.1056
     }
   },
   "batch": {
     "c": {
       "n": 5000,
-      "seconds": 5.3734,
-      "turns_per_second": 930.5
+      "seconds": 6.9851,
+      "turns_per_second": 715.8
     },
     "rust": {
       "n": 5000,
-      "seconds": 0.2396,
-      "turns_per_second": 20867.2
+      "seconds": 0.6105,
+      "turns_per_second": 8190.3
     },
     "rust_faithful": {
       "n": 5000,
-      "seconds": 5.4088,
-      "turns_per_second": 924.4
+      "seconds": 6.4201,
+      "turns_per_second": 778.8
     }
   },
   "memory": {
-    "c": 2800,
-    "rust": 2664
+    "c": 2928,
+    "rust": 2872
   },
   "live": {
     "life file on disk, empty memory": {
       "n": 500,
-      "mean_ms": 3.6893,
-      "p50_ms": 3.323,
-      "p95_ms": 5.5602,
-      "p99_ms": 5.7793,
-      "max_ms": 9.1326,
-      "turns_per_second": 271.1,
-      "peak_rss_kib": 2736,
+      "mean_ms": 4.4395,
+      "p50_ms": 4.0674,
+      "p95_ms": 6.4674,
+      "p99_ms": 7.6214,
+      "max_ms": 11.5807,
+      "turns_per_second": 225.2,
+      "peak_rss_kib": 3068,
       "memories_at_end": 0,
       "life_file_bytes": 17
     },
     "life file on disk, 64 facts, recalling them": {
       "n": 500,
-      "mean_ms": 3.4231,
-      "p50_ms": 3.3013,
-      "p95_ms": 4.3573,
-      "p99_ms": 5.7686,
-      "max_ms": 7.8579,
-      "turns_per_second": 292.1,
-      "peak_rss_kib": 2844,
+      "mean_ms": 3.7409,
+      "p50_ms": 3.595,
+      "p95_ms": 4.7879,
+      "p99_ms": 7.2613,
+      "max_ms": 12.7159,
+      "turns_per_second": 267.3,
+      "peak_rss_kib": 3084,
       "memories_at_end": 64,
       "life_file_bytes": 2045
     },
     "life file on disk, tiny context budget (64 B)": {
       "n": 500,
-      "mean_ms": 3.5325,
-      "p50_ms": 3.403,
-      "p95_ms": 4.4296,
-      "p99_ms": 5.7833,
-      "max_ms": 8.5619,
-      "turns_per_second": 283.1,
-      "peak_rss_kib": 2756,
+      "mean_ms": 3.73,
+      "p50_ms": 3.6346,
+      "p95_ms": 4.5886,
+      "p99_ms": 5.7391,
+      "max_ms": 12.6405,
+      "turns_per_second": 268.1,
+      "peak_rss_kib": 3008,
       "memories_at_end": 0,
       "life_file_bytes": 17
     },
     "life file on tmpfs, 64 facts, recalling them": {
       "n": 500,
-      "mean_ms": 0.3095,
-      "p50_ms": 0.2858,
-      "p95_ms": 0.4447,
-      "p99_ms": 0.5913,
-      "max_ms": 1.4218,
-      "turns_per_second": 3231.0,
-      "peak_rss_kib": 2856,
+      "mean_ms": 0.3136,
+      "p50_ms": 0.2837,
+      "p95_ms": 0.57,
+      "p99_ms": 0.67,
+      "max_ms": 1.2452,
+      "turns_per_second": 3188.8,
+      "peak_rss_kib": 3124,
       "memories_at_end": 64,
       "life_file_bytes": 2045
     }
   },
   "notes": [
-    "One-shot: C 12.9728 ms vs Rust 7.2979 ms mean. Loading the model alone (`--info`) takes C 10.5573 ms and Rust 7.6116 ms, so start-up and model loading, not decoding, are what a one-shot call pays for.",
-    "Steady state: the C runtime and `rust --faithful` run the same softmax decoder (930.5 vs 924.4 turns/s). The default Rust decoder walks successor pointers instead, which is mathematically identical here (output is diffed against C in CI) and gives 20,867.2 turns/s.",
-    "ZeroLM Live: mean 3.4231 ms per turn with the life file on disk. On tmpfs it is 0.3095 ms, so nearly all of the disk figure is the per-turn fsync of the life file, not the model or the memory lookup.",
+    "One-shot: C 19.9121 ms vs Rust 10.4099 ms mean. Loading the model alone (`--info`) takes C 15.8364 ms and Rust 10.4952 ms, so start-up and model loading, not decoding, are what a one-shot call pays for.",
+    "Steady state: the C runtime and `rust --faithful` run the same softmax decoder (715.8 vs 778.8 turns/s). The default Rust decoder walks successor pointers instead, which is mathematically identical here (output is diffed against C in CI) and gives 8,190.3 turns/s.",
+    "ZeroLM Live: mean 3.7409 ms per turn with the life file on disk. On tmpfs it is 0.3136 ms, so nearly all of the disk figure is the per-turn fsync of the life file, not the model or the memory lookup.",
     "Memory size barely matters: compare the empty and 64-fact rows. Facts are kept alive in the 64-fact rows by asking about each in rotation (unused facts fade after about 100 turns); the run aborts if fewer than 64 remain at the end.",
     "Latency rows are lock-step round trips (send one line, wait for its reply), not pipelined throughput."
   ]

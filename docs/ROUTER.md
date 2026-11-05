@@ -6,7 +6,7 @@ the intents and their trigger phrases by hand; nothing is trained. It does not u
 language: it only recognises the phrases you gave it, so it fits where inputs are predictable
 (support desks, command palettes, chatbot front doors) and does badly on free-form text.
 The numbers so far, honestly: the shipped 28-intent model scored 41-44% on two sets of 120-130
-paraphrased prompts I wrote before widening its phrases, and 83-85% after (`tests/heldout.tsv`,
+paraphrased prompts I wrote before widening its phrases, and 84-88% after (`tests/heldout.tsv`,
 `tests/heldout_test.tsv`; the test set was frozen and scored once, and I wrote both sets, so real users
 would likely score lower). On the public CLINC150 benchmark, which these weights were not written for,
 in-scope accuracy is about 30%. Your accuracy depends on how well your phrases cover your users'
@@ -58,9 +58,9 @@ author wrote both sides; it shows the tool works, not that the model is good.
 
 Matching tolerates small damage without any weights: input and phrases are stemmed alike ("tests" =
 "test"), and an unknown word of six or more letters is snapped to the one phrase word a single edit
-away with the same first letter ("benchmrk" -> "benchmark"). On 156 correctly routed prompts, each
+away with the same first letter ("benchmrk" -> "benchmark"). On the ~155 correctly routed prompts, each
 with its longest word swapped, shortened, doubled or mistyped (seeded; `scripts/robustness.py`), the answer survives
-in 85% of cases, against 24% for the same weights without this step. It does not help with
+in 85% of cases (84.7%), against 24% for the same weights without this step. It does not help with
 different wording ("yo", "what's the deal"), only with spelling and word forms. Rules and limits:
 [ARCHITECTURE.md](ARCHITECTURE.md).
 

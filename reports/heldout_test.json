@@ -1,0 +1,414 @@
+{
+  "model": "/root/zerolm/weights.zlm",
+  "data": "tests/heldout_test.tsv",
+  "cases": 123,
+  "accuracy": 0.8292682926829268,
+  "abstained": 0.23577235772357724,
+  "per_intent": {
+    "architecture": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    "capabilities": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "coding": {
+      "support": 4,
+      "precision": 0.75,
+      "recall": 0.75,
+      "f1": 0.75
+    },
+    "comparison": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "contribute": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "explain": {
+      "support": 4,
+      "precision": 0.5,
+      "recall": 0.25,
+      "f1": 0.3333333333333333
+    },
+    "farewell": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "greeting": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    "help": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666
+    },
+    "identity": {
+      "support": 4,
+      "precision": 0.8,
+      "recall": 1.0,
+      "f1": 0.888888888888889
+    },
+    "inspiration": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "install": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "languages": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    "license": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "limitations": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1": 0.6666666666666666
+    },
+    "live": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    "math": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "memory": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.25,
+      "f1": 0.4
+    },
+    "no_training": {
+      "support": 4,
+      "precision": 0.75,
+      "recall": 0.75,
+      "f1": 0.75
+    },
+    "performance": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "planning": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "privacy": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    "testing": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "thanks": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "topics": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1": 0.8571428571428571
+    },
+    "unknown": {
+      "support": 15,
+      "precision": 0.41379310344827586,
+      "recall": 0.8,
+      "f1": 0.5454545454545454
+    },
+    "version": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "weights": {
+      "support": 4,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "sweep": [
+    {
+      "min_score": 0.75,
+      "accuracy": 0.8292682926829268,
+      "answered": 0.7642276422764228
+    },
+    {
+      "min_score": 1.5,
+      "accuracy": 0.8292682926829268,
+      "answered": 0.7642276422764228
+    },
+    {
+      "min_score": 2.0,
+      "accuracy": 0.8292682926829268,
+      "answered": 0.7642276422764228
+    },
+    {
+      "min_score": 2.5,
+      "accuracy": 0.8130081300813008,
+      "answered": 0.7317073170731707
+    },
+    {
+      "min_score": 3.0,
+      "accuracy": 0.6747967479674797,
+      "answered": 0.5772357723577236
+    },
+    {
+      "min_score": 3.5,
+      "accuracy": 0.35772357723577236,
+      "answered": 0.25203252032520324
+    }
+  ],
+  "confusions": [
+    {
+      "expected": "memory",
+      "got": "unknown",
+      "count": 3
+    },
+    {
+      "expected": "explain",
+      "got": "unknown",
+      "count": 3
+    },
+    {
+      "expected": "help",
+      "got": "unknown",
+      "count": 2
+    },
+    {
+      "expected": "greeting",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "architecture",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "no_training",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "limitations",
+      "got": "identity",
+      "count": 1
+    },
+    {
+      "expected": "limitations",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "coding",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "languages",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "live",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "privacy",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "topics",
+      "got": "unknown",
+      "count": 1
+    },
+    {
+      "expected": "unknown",
+      "got": "explain",
+      "count": 1
+    },
+    {
+      "expected": "unknown",
+      "got": "no_training",
+      "count": 1
+    }
+  ],
+  "misses": [
+    {
+      "expected": "greeting",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "greetings"
+    },
+    {
+      "expected": "help",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "how does this work"
+    },
+    {
+      "expected": "help",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "give me instructions"
+    },
+    {
+      "expected": "architecture",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "tell me about the components inside you"
+    },
+    {
+      "expected": "no_training",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "did you learn from a dataset"
+    },
+    {
+      "expected": "limitations",
+      "got": "identity",
+      "score": 3.2,
+      "text": "what are you not good at"
+    },
+    {
+      "expected": "limitations",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "what are your restrictions"
+    },
+    {
+      "expected": "memory",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "can you store information about me"
+    },
+    {
+      "expected": "memory",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "will you forget this conversation"
+    },
+    {
+      "expected": "memory",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "is there any persistence"
+    },
+    {
+      "expected": "coding",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "can you run scripts"
+    },
+    {
+      "expected": "explain",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "can you explain quantum physics"
+    },
+    {
+      "expected": "explain",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "tell me why the sky is blue"
+    },
+    {
+      "expected": "explain",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "what is machine learning"
+    },
+    {
+      "expected": "languages",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "can you speak german"
+    },
+    {
+      "expected": "live",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "how do sessions work"
+    },
+    {
+      "expected": "privacy",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "what happens to my messages"
+    },
+    {
+      "expected": "topics",
+      "got": "unknown",
+      "score": 0.0,
+      "text": "what do you know about"
+    },
+    {
+      "expected": "unknown",
+      "got": "explain",
+      "score": 2.4,
+      "text": "what is the meaning of life"
+    },
+    {
+      "expected": "unknown",
+      "got": "no_training",
+      "score": 5.0,
+      "text": "when does the next train leave"
+    },
+    {
+      "expected": "unknown",
+      "got": "coding",
+      "score": 2.6,
+      "text": "what is the best programming language to learn"
+    }
+  ]
+}

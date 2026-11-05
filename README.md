@@ -221,11 +221,11 @@ The recurrent decoder is deliberately represented in a compact form so it can ru
 `zerolm live` (Rust port) is a long-lived session around the same model. It remembers facts you tell it (and lets unused ones fade), keeps a rolling transcript so short follow-ups work, lets you teach it phrases and rate answers, and saves all of that to a separate life file. The base weights are never modified and nothing is trained.
 
 ```text
-you> remember my name is Vahid
-you> what is my name?          -> my name is Vahid.
+you> remember my name is vaheeD
+you> what is my name?          -> my name is vaheeD.
 you> does it use training
 you> why?                      -> (answers about training again)
-you> teach yo whats up as greeting
+you> teach ahoy matey as greeting
 ```
 
 `--tag NAME` gives each session its own life file (`life.NAME.zlm`), and a file lock stops two sessions, or two containers, from sharing one. `--jsonl` turns it into a line-oriented JSON service. Full details: [docs/LIVE.md](docs/LIVE.md). Measured speed and memory: [reports/benchmarks.md](reports/benchmarks.md).
@@ -265,6 +265,10 @@ ZeroLM is inspired by research into **Weight-Space Programming**: treating neura
 An important inspiration is [Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights](https://rikiyat.github.io/blog/weight-space-programming/). That work explores several settings, including small networks created for specific tasks and direct editing of existing pretrained models. ZeroLM takes inspiration from the direct-weight-design direction, but starts from manually specified weights and no pretrained language model.
 
 Read [the Weight-Space Programming research notes](docs/WEIGHT_SPACE_PROGRAMMING.md) for the relationship, distinctions, and possible experiments.
+
+## Measurements
+
+[docs/REPORT.md](docs/REPORT.md) is a measurement report in the style of a research blog post: reading, writing, fixing and hardening hand-written weights, how accuracy scales with the number of phrases, the public CLINC150 benchmark, runtime parity and speed, with the limits stated. Headline numbers: 87.7% / 83.7% on two held-out prompt sets (from 40.8% / 43.9%), 84.7% of typo-corrupted prompts still answered correctly, and 36.3% in-scope accuracy on CLINC150.
 
 ## Does ZeroLM need GGUF?
 
@@ -310,6 +314,7 @@ docs/                   architecture, testing, live mode, CI, hardware, research
 - [Architecture](docs/ARCHITECTURE.md) — current network and inference path, the two runtimes, and live mode.
 - [ZeroLM Live](docs/LIVE.md) — memory, tags, locking, commands, JSON-lines, limits.
 - [HTTP API](docs/API.md) — OpenAI-compatible and native endpoints, auth, limits, security.
+- [Measurement report](docs/REPORT.md) — benchmarks, tests and the reasoning behind them, with limits.
 - [Using ZeroLM as an intent router](docs/ROUTER.md) — your own intents, `classify`, measuring accuracy, safe per-deployment adaptation.
 - [Testing and experiments](docs/TESTING.md) — test layers, benchmarks, reports, and repeatable evaluation.
 - [Continuous integration](docs/CI.md) — what each CI job checks.
