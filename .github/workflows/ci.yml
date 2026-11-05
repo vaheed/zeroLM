@@ -186,6 +186,22 @@ jobs:
           echo "$out" | tail -1 | grep -q '"intent":"greeting"'
           [ "$before" = "$(sha256sum weights.zlm)" ]
 
+      - name: HTTP API - validate the OpenAPI document and run the official OpenAI SDK against the server
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q openai openapi-spec-validator
+          "$RUNNER_TEMP/venv/bin/openapi-spec-validator" rust/openapi.yaml
+          dir="$(mktemp -d)"
+          token="ci-token-0123456789abcdef"
+          ZEROLM_TOKEN="$token" rust/target/release/zerolm serve --addr 127.0.0.1:0 --dir "$dir" > "$dir/out.log" &
+          pid=$!
+          trap 'kill $pid' EXIT
+          for _ in $(seq 1 50); do grep -q listening "$dir/out.log" && break; sleep 0.2; done
+          addr="$(grep -o '127.0.0.1:[0-9]*' "$dir/out.log")"
+          "$RUNNER_TEMP/venv/bin/python" scripts/check_openai_sdk.py "$addr" "$token"
+
   docker:
     name: Docker image (ubuntu-latest)
     runs-on: ubuntu-latest
