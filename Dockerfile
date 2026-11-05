@@ -21,6 +21,9 @@ WORKDIR /data
 VOLUME /data
 USER zerolm
 
+# The HTTP API listens on 8080 when started with `serve` (see docker-compose.yml).
+EXPOSE 8080
+
 # Interactive ZeroLM Live session; override the command for one-shot use:
 #   docker run --rm zerolm "hello"
 ENTRYPOINT ["zerolm"]

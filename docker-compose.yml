@@ -4,6 +4,9 @@
 #   docker compose run --rm zerolm live --tag work    a separate session with its own memory
 #   docker compose run --rm zerolm "hello"            one-shot question (no memory)
 #   docker compose up -d zerolm-daemon                JSON-lines server on stdin/stdout (attach)
+#   ZEROLM_TOKEN=<16+ chars> docker compose up -d zerolm-api
+#                                                     HTTP + OpenAI-compatible API on 127.0.0.1:8080
+#                                                     (set ZEROLM_PORT to change the host port)
 #
 # Memory lives in the "zerolm-data" volume, one life.<tag>.zlm file per tag.
 
@@ -28,6 +31,32 @@ services:
     tty: false
     command: ["live", "--jsonl", "--tag", "daemon"]
     restart: unless-stopped
+
+  # The HTTP API. Unlike the services above it needs a network, so it is a separate service:
+  # it publishes the port on the host's loopback only (put a reverse proxy with TLS in front
+  # to expose it further) and refuses to start without a token of at least 16 characters.
+  zerolm-api:
+    image: zerolm:latest
+    build: .
+    profiles: ["api"]
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    environment:
+      ZEROLM_TOKEN: ${ZEROLM_TOKEN:-}
+    ports:
+      - "127.0.0.1:${ZEROLM_PORT:-8080}:8080"
+    volumes:
+      - zerolm-data:/data
+    command: ["serve", "--addr", "0.0.0.0:8080", "--dir", "/data"]
+    healthcheck:
+      test: ["CMD", "zerolm", "health", "--addr", "127.0.0.1:8080"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: on-failure:3
 
 volumes:
   zerolm-data:
