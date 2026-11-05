@@ -83,6 +83,66 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '413':
           $ref: '#/components/responses/TooLarge'
+  /v1/classify:
+    post:
+      operationId: classify
+      summary: Route text to an intent, with ranked scores (no reply text)
+      description: |
+        The intent-router endpoint. Send one `text` or a batch of up to 100 `texts`. Each result has
+        the decision (`unknown` with `abstained: true` when the best score is below 0.75), the best
+        raw score, and the top-N scoring intents with the phrases that fired. With `session`, that
+        existing session's learned reflexes (from `teach`, `good`, `bad`) are applied; nothing is
+        stored or changed. Stateless otherwise.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                texts:
+                  type: array
+                  minItems: 1
+                  maxItems: 100
+                  items:
+                    type: string
+                top:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  default: 3
+                session:
+                  type: string
+                  description: Tag of an existing session whose learned reflexes to apply.
+      responses:
+        '200':
+          description: 'One result for `text`, or an object with a `results` array for `texts` (same order).'
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Classification'
+                  - type: object
+                    required: [results]
+                    properties:
+                      results:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Classification'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: The named session does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          $ref: '#/components/responses/TooLarge'
   /v1/chat/completions:
     post:
       operationId: createChatCompletion
@@ -427,6 +487,33 @@ components:
         score:
           type: number
           description: Raw phrase score for the chosen intent (not a probability). Below 0.75 the intent is `unknown`.
+    Classification:
+      type: object
+      required: [intent, score, abstained, candidates]
+      properties:
+        intent:
+          type: string
+          description: The decision. `unknown` when abstained.
+        score:
+          type: number
+          description: Best raw phrase score (not a probability).
+        abstained:
+          type: boolean
+        candidates:
+          type: array
+          description: Highest-scoring real intents, best first; only intents with a positive score.
+          items:
+            type: object
+            required: [intent, score, matched]
+            properties:
+              intent:
+                type: string
+              score:
+                type: number
+              matched:
+                type: array
+                items:
+                  type: string
     Turn:
       type: object
       required: [reply, intent, age, memories]

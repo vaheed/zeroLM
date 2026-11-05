@@ -2,8 +2,9 @@
 
 ## Unreleased
 
+- Added intent-router tooling: `zerolm classify` (JSON lines with ranked intents and matched phrases), `POST /v1/classify` (single or batch, optional session reflexes), `build_model.py --spec/--out` for custom models, `scripts/evaluate_router.py` (accuracy, per-intent precision/recall, threshold sweep), the `examples/router/` sample, and `docs/ROUTER.md`.
 - Added `zerolm serve`, an HTTP/JSON API (std only): an OpenAI-compatible `/v1/chat/completions` and `/v1/models` (models `zerolm`, stateless with the messages as context, and `zerolm-live`, a persistent session per `user`; streaming, `max_tokens`, OpenAI error envelope; tools/functions/`n>1` rejected) plus native `/v1/ask` and `/v1/sessions/{tag}` endpoints. Safe by default: loopback bind, token required elsewhere, request deadline, connection and session caps, shared life-file lock with the CLI. Contract in `rust/openapi.yaml` (validated in CI); docs in `docs/API.md`.
-- Added a `zerolm-api` Docker Compose service with a health check (`zerolm health`), 19 API end-to-end tests, and a CI check with the official OpenAI Python SDK.
+- Added a `zerolm-api` Docker Compose service with a health check (`zerolm health`), 20 API end-to-end tests, and a CI check with the official OpenAI Python SDK.
 - Made the `privacy` answer precise about the optional API server (1,053 recurrent states, 515 vocabulary entries now).
 - Grew the model from 18 to 28 intents (1,039 recurrent states at the time, 281 features): install, license, performance, languages, version, live, privacy, contribute, topics and comparison. Phrases are tied to ZeroLM ("install zerolm", "how fast is it") rather than bare words, and 13 near-miss prompts ("how do I install Photoshop") were added to the unknown tests. Regression is 119/119 and unknown abstention 31/31.
 - Raised `MAX_FEATURES` to 512 and `MAX_VOCAB` to 1024 in the C runtime, Rust port and tools (model structure about 514 KiB).

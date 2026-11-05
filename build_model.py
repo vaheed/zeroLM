@@ -16,8 +16,8 @@ SPEC_PATH = ROOT / "model" / "spec.json"
 WEIGHTS_PATH = ROOT / "weights.zlm"
 
 
-def load_spec() -> dict:
-    spec = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
+def load_spec(path: Path = SPEC_PATH) -> dict:
+    spec = json.loads(path.read_text(encoding="utf-8"))
     intents = spec.get("intents")
     if not isinstance(intents, list) or not intents:
         raise SystemExit("spec must contain a non-empty intents list")
@@ -97,19 +97,22 @@ def compile_spec(spec: dict) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Serialize the manually authored ZeroLM model.")
     parser.add_argument("--check", action="store_true", help="fail if weights.zlm is not up to date")
+    parser.add_argument("--spec", type=Path, default=SPEC_PATH, help="spec to compile (default model/spec.json)")
+    parser.add_argument("--out", type=Path, default=WEIGHTS_PATH, help="weight file to write or check (default weights.zlm)")
     args = parser.parse_args()
-    spec = load_spec()
+    weights_path = args.out
+    spec = load_spec(args.spec)
     content = compile_spec(spec)
     states = sum(len(item["response"].split()) + 1 for item in spec["intents"])
     features = sum(len(item.get("features", [])) for item in spec["intents"])
     if args.check:
-        if not WEIGHTS_PATH.exists() or WEIGHTS_PATH.read_text(encoding="utf-8") != content:
-            print("weights.zlm is stale. Run `make build-model`.")
+        if not weights_path.exists() or weights_path.read_text(encoding="utf-8") != content:
+            print(f"{weights_path} is stale. Rebuild it from the spec.")
             return 1
         print(f"Generated weights are up to date: {len(spec['intents'])} intents, {features} features, {states} states.")
     else:
-        WEIGHTS_PATH.write_text(content, encoding="utf-8")
-        print(f"Wrote {WEIGHTS_PATH.relative_to(ROOT)}: {len(spec['intents'])} intents, {features} features, {states} recurrent states.")
+        weights_path.write_text(content, encoding="utf-8")
+        print(f"Wrote {weights_path}: {len(spec['intents'])} intents, {features} features, {states} recurrent states.")
     print("Mode: manual serialization only; no training or optimization.")
     return 0
 

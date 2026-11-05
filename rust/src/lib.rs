@@ -294,6 +294,30 @@ impl Model {
         }
     }
 
+    /// Full classification for routing: the decision (after abstention), the raw best
+    /// intent, and the `top` highest-scoring intents with the phrases that fired.
+    pub fn rank(&self, raw: &str, extra: &[Feature], top: usize) -> Ranking {
+        let norm = normalize_text(raw.as_bytes(), MAX_TEXT);
+        let mut logits = vec![0.0f64; self.intents];
+        for f in self.features.iter().chain(extra.iter()) {
+            if contains_phrase(&norm, &f.phrase) {
+                logits[f.intent] += f.weight;
+            }
+        }
+        let best = argmax(&logits);
+        let abstained = logits[best] < ABSTAIN_THRESHOLD;
+        let intent = if abstained { self.intents - 1 } else { best };
+        let mut order: Vec<usize> = (0..self.intents - 1).collect(); // `unknown` is never a candidate
+        order.sort_by(|&a, &b| logits[b].partial_cmp(&logits[a]).unwrap_or(std::cmp::Ordering::Equal).then(a.cmp(&b)));
+        let candidates = order
+            .into_iter()
+            .take(top)
+            .filter(|&i| logits[i] > 0.0)
+            .map(|i| Candidate { intent: i, score: logits[i], matched: self.matched_phrases(&norm, i, extra) })
+            .collect();
+        Ranking { intent, score: logits[best], abstained, candidates }
+    }
+
     /// Greedy decode by following successor pointers. The C softmax/recurrent
     /// path on a one-hot state reduces to exactly this walk.
     pub fn generate(&self, intent: usize) -> Vec<String> {
@@ -352,6 +376,51 @@ impl Model {
             h = next_h;
         }
         out
+    }
+}
+
+/// One scored intent in a `Ranking`.
+#[derive(Debug, Clone)]
+pub struct Candidate {
+    pub intent: usize,
+    pub score: f64,
+    pub matched: Vec<String>,
+}
+
+/// Result of `Model::rank`. `intent` is the decision (the `unknown` intent when the
+/// best score is below `ABSTAIN_THRESHOLD`); `score` is the best raw score.
+#[derive(Debug, Clone)]
+pub struct Ranking {
+    pub intent: usize,
+    pub score: f64,
+    pub abstained: bool,
+    pub candidates: Vec<Candidate>,
+}
+
+impl Ranking {
+    /// One JSON object: decision, score, abstained flag and ranked candidates.
+    pub fn to_json(&self, model: &Model) -> String {
+        use crate::jsonl::escape;
+        let cands: Vec<String> = self
+            .candidates
+            .iter()
+            .map(|c| {
+                let m: Vec<String> = c.matched.iter().map(|p| format!("\"{}\"", escape(p))).collect();
+                format!(
+                    "{{\"intent\":\"{}\",\"score\":{:.2},\"matched\":[{}]}}",
+                    escape(&model.intent_name[c.intent]),
+                    c.score,
+                    m.join(",")
+                )
+            })
+            .collect();
+        format!(
+            "{{\"intent\":\"{}\",\"score\":{:.2},\"abstained\":{},\"candidates\":[{}]}}",
+            escape(&model.intent_name[self.intent]),
+            self.score,
+            self.abstained,
+            cands.join(",")
+        )
     }
 }
 
@@ -447,6 +516,20 @@ mod tests {
     const TINY: &str = "ZEROLM 1\nMETA 2 4\nINTENT 0 greeting\nINTENT 1 unknown\n\
 FEATURE 0 8.0 hello\nSTART 0 0\nSTART 1 2\n\
 NODE 0 1 hi\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
+
+    #[test]
+    fn rank_orders_candidates_and_abstains() {
+        let m = Model::parse(TINY).unwrap();
+        let hit = m.rank("hello there", &[], 3);
+        assert!(!hit.abstained);
+        assert_eq!(m.intent_name[hit.intent], "greeting");
+        assert_eq!(hit.candidates[0].intent, hit.intent);
+        assert!(!hit.candidates[0].matched.is_empty());
+        let miss = m.rank("qwerty", &[], 3);
+        assert!(miss.abstained && miss.candidates.is_empty());
+        assert_eq!(m.intent_name[miss.intent], "unknown");
+        assert!(hit.to_json(&m).starts_with("{\"intent\":\"greeting\""));
+    }
 
     #[test]
     fn classifies_and_abstains() {

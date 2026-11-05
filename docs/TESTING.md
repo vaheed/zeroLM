@@ -48,7 +48,7 @@ cargo test
 cargo clippy --all-targets -- -D warnings
 ```
 
-- **Unit tests (42)** in the library: parsing and rejection of bad model files, phrase matching,
+- **Unit tests (43)** in the library: parsing and rejection of bad model files, phrase matching,
   decoder equivalence between the pointer walk and the softmax path, memory (overwrite, recall,
   eviction, fading, persistence), the transcript budget, commands, follow-ups, tags, JSON helpers,
   the file lock, the strict JSON parser, and the HTTP request parser.
@@ -65,8 +65,8 @@ cargo clippy --all-targets -- -D warnings
   - a corrupt life file and invalid arguments exit with code 2 and leave the file untouched;
   - one-shot mode stays stateless and honours `ZEROLM_MODEL`.
 
-- **API end-to-end tests (19)** in `rust/tests/api.rs` start `zerolm serve` on a random port and speak
-  hand-written HTTP over TCP (the 19th checks that an oversized request still gets its 413 while the client keeps streaming):
+- **API end-to-end tests (20)** in `rust/tests/api.rs` start `zerolm serve` on a random port and speak
+  hand-written HTTP over TCP (including `/v1/classify` and a check that an oversized request still gets its 413 while the client keeps streaming):
   - the spec and the route table list exactly the same operations, and the served spec is the file;
   - sessions survive a server restart; tags are isolated; deleting one removes only its file;
   - bearer auth (wrong, short and long tokens, case-insensitive scheme, open health, no route probing);

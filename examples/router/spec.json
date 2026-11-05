@@ -1,0 +1,15 @@
+{
+  "project": "support-router example",
+  "version": "0.2.0",
+  "description": "A tiny hand-authored intent router for a support desk. Weights are written by hand; nothing is trained.",
+  "language": "English",
+  "training": "none",
+  "architecture": "phrase features -> intent logits, abstain below 0.75",
+  "intents": [
+    {"name": "billing", "features": [["invoice", 3.0], ["refund", 3.0], ["charged twice", 3.2], ["payment failed", 3.2], ["billing", 2.4], ["credit card", 2.2], ["receipt", 2.4]], "response": "Routing to billing."},
+    {"name": "login", "features": [["reset my password", 3.4], ["forgot my password", 3.4], ["cannot log in", 3.2], ["cant log in", 3.2], ["locked out", 3.0], ["two factor", 2.6], ["password", 1.6]], "response": "Routing to account access."},
+    {"name": "bug", "features": [["crashes", 2.8], ["error message", 2.6], ["not working", 2.4], ["broken", 2.2], ["bug", 2.4], ["stopped working", 3.0]], "response": "Routing to engineering."},
+    {"name": "cancel", "features": [["cancel my subscription", 3.6], ["cancel my account", 3.6], ["close my account", 3.4], ["unsubscribe", 3.0], ["cancel", 1.8]], "response": "Routing to retention."},
+    {"name": "unknown", "features": [], "response": "I could not route that."}
+  ]
+}

@@ -102,6 +102,7 @@ intent router.
 | `GET /v1/model` | Intent names, feature/state/vocabulary counts. |
 | `GET /v1/openapi.yaml` | This server's OpenAPI document. |
 | `POST /v1/ask` `{"text"}` | One stateless answer: `{"reply","intent","score"}`. |
+| `POST /v1/classify` `{"text"}` or `{"texts":[...]}` | Intent routing with ranked candidates, no reply text; optional `top` (1-10) and `session` (apply that session's learned reflexes). See [ROUTER.md](ROUTER.md). |
 | `POST /v1/sessions/{tag}/turns` `{"text"}` | One message in a ZeroLM Live session (created on first use): `{"reply","intent","age","memories"}`. Handles `remember`, `forget`, `teach`, `good`/`bad`, `again`, follow-ups and recall. |
 | `GET /v1/sessions/{tag}` | `{"tag","age","memories","learned","capacity"}`; 404 if the session never existed. |
 | `GET /v1/sessions/{tag}/memories` | Stored facts, strongest first. |
@@ -143,6 +144,6 @@ is not a hardened internet-facing server: terminate TLS and apply rate limits in
 - `python3 scripts/check_openai_sdk.py HOST:PORT [KEY]` runs 15 checks with the official OpenAI Python
   SDK (`pip install openai`).
 - `openapi-spec-validator rust/openapi.yaml` validates the spec (`pip install openapi-spec-validator`).
-- `cargo test --test api` runs the 19 end-to-end API tests.
+- `cargo test --test api` runs the 20 end-to-end API tests.
 
 All three run in CI.

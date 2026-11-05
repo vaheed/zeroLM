@@ -300,6 +300,54 @@ fn run_serve(args: &[String]) -> ExitCode {
     }
 }
 
+/// `zerolm classify [--model FILE] [--top N]`: read one text per line from stdin and print one JSON
+/// object per line with the routing decision and the top-N ranked intents. Stateless; no replies.
+fn run_classify(args: &[String]) -> ExitCode {
+    let (mut model_path, mut top) = (default_model(), 3usize);
+    let mut i = 0;
+    while i < args.len() {
+        match (args[i].as_str(), args.get(i + 1)) {
+            ("--model", Some(v)) => model_path = v.clone(),
+            ("--top", Some(v)) => match v.parse::<usize>() {
+                Ok(n) if (1..=10).contains(&n) => top = n,
+                _ => {
+                    eprintln!("error: --top must be 1-10");
+                    return ExitCode::from(2);
+                }
+            },
+            _ => {
+                eprintln!("usage: zerolm classify [--model FILE] [--top N]   (texts on stdin, one per line)");
+                return ExitCode::from(2);
+            }
+        }
+        i += 2;
+    }
+    let model = match Model::load(&model_path) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("model error: {e}");
+            return ExitCode::from(2);
+        }
+    };
+    let out = io::stdout();
+    let mut out = out.lock();
+    for line in io::stdin().lock().lines() {
+        let Ok(line) = line else { break };
+        let text = line.trim();
+        if text.is_empty() {
+            continue;
+        }
+        let mut t = text.to_string();
+        while t.len() > MAX_TEXT - 2 {
+            t.pop();
+        }
+        if writeln!(out, "{}", model.rank(&t, &[], top).to_json(&model)).is_err() {
+            break;
+        }
+    }
+    ExitCode::SUCCESS
+}
+
 /// `zerolm health [--addr HOST:PORT]`: exit 0 if the server answers `GET /v1/health` with 200.
 /// Used as the container health check (the image has no curl).
 fn run_health(args: &[String]) -> ExitCode {
@@ -339,6 +387,7 @@ fn main() -> ExitCode {
         Some("live") => return run_live(&args[2..]),
         Some("serve") => return run_serve(&args[2..]),
         Some("health") => return run_health(&args[2..]),
+        Some("classify") => return run_classify(&args[2..]),
         _ => {}
     }
     let (mut model_path, mut info, mut test, mut verbose, mut faithful) =

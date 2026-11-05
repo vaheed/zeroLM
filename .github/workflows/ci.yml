@@ -202,6 +202,24 @@ jobs:
           addr="$(grep -o '127.0.0.1:[0-9]*' "$dir/out.log")"
           "$RUNNER_TEMP/venv/bin/python" scripts/check_openai_sdk.py "$addr" "$token"
 
+      - name: Intent router - build the example, check it is up to date, evaluate it, call /v1/classify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 build_model.py --spec examples/router/spec.json --out examples/router/weights.zlm --check
+          python3 scripts/evaluate_router.py --model examples/router/weights.zlm --data examples/router/labelled.tsv --min-accuracy 0.9
+          python3 scripts/evaluate_router.py --model weights.zlm --data tests/regression.tsv --min-accuracy 1.0
+          dir="$(mktemp -d)"
+          rust/target/release/zerolm serve --model examples/router/weights.zlm --addr 127.0.0.1:0 --dir "$dir" > "$dir/out.log" &
+          pid=$!
+          trap 'kill $pid' EXIT
+          for _ in $(seq 1 50); do grep -q listening "$dir/out.log" && break; sleep 0.2; done
+          addr="$(grep -o '127.0.0.1:[0-9]*' "$dir/out.log")"
+          out=$(curl -sf -d '{"texts":["I was charged twice","tell me a joke"]}' "http://$addr/v1/classify")
+          echo "$out"
+          echo "$out" | grep -q '"intent":"billing"'
+          echo "$out" | grep -q '"abstained":true'
+
   docker:
     name: Docker image (ubuntu-latest)
     runs-on: ubuntu-latest

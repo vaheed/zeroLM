@@ -146,7 +146,7 @@ You can also run individual checks:
 | `python3 scripts/weight_audit.py` | Model format, intent starts, state links, and decoder paths |
 | `python3 scripts/benchmark.py --iterations 500` | Repeated interactive inference on the current machine |
 | `python3 scripts/inspect_weights.py` | A readable summary of the manually authored model |
-| `cd rust && cargo test` | Rust: 42 unit tests, 16 end-to-end tests of `zerolm live`, 19 of `zerolm serve` |
+| `cd rust && cargo test` | Rust: 43 unit tests, 16 end-to-end tests of `zerolm live`, 20 of `zerolm serve` |
 | `python3 scripts/check_openai_sdk.py HOST:PORT [KEY]` | The official OpenAI Python SDK against a running `zerolm serve` |
 | `cd rust && cargo clippy --all-targets -- -D warnings` | Rust lint |
 | `scripts/docker_smoke.sh` | Builds the image; checks persistence, tags, and the session lock |
@@ -306,6 +306,7 @@ docs/                   architecture, testing, live mode, CI, hardware, research
 - [Architecture](docs/ARCHITECTURE.md) — current network and inference path, the two runtimes, and live mode.
 - [ZeroLM Live](docs/LIVE.md) — memory, tags, locking, commands, JSON-lines, limits.
 - [HTTP API](docs/API.md) — OpenAI-compatible and native endpoints, auth, limits, security.
+- [Using ZeroLM as an intent router](docs/ROUTER.md) — your own intents, `classify`, measuring accuracy, safe per-deployment adaptation.
 - [Testing and experiments](docs/TESTING.md) — test layers, benchmarks, reports, and repeatable evaluation.
 - [Continuous integration](docs/CI.md) — what each CI job checks.
 - [Hardware notes](docs/HARDWARE.md) — runtime and resource targets, with measurements.

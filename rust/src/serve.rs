@@ -32,6 +32,7 @@ pub const ROUTES: &[(&str, &str)] = &[
     ("GET", "/v1/model"),
     ("GET", "/v1/openapi.yaml"),
     ("POST", "/v1/ask"),
+    ("POST", "/v1/classify"),
     ("POST", "/v1/chat/completions"),
     ("GET", "/v1/models"),
     ("GET", "/v1/models/{id}"),
@@ -292,6 +293,7 @@ fn route_inner(state: &State<'_>, req: &Request) -> Resp {
             Ok(Resp { status: 200, content_type: "application/yaml", extra: Vec::new(), body: OPENAPI.to_string(), msg: None })
         }
         ("POST", "/v1/ask") => ask(state, req),
+        ("POST", "/v1/classify") => classify(state, req),
         ("POST", "/v1/chat/completions") => chat_completions(state, req),
         ("GET", "/v1/models") => Ok(models_list()),
         ("GET", "/v1/models/{id}") => decode(2).and_then(|id| model_one(&id)),
@@ -327,6 +329,62 @@ fn ask(state: &State<'_>, req: &Request) -> Result<Resp, Resp> {
             escape(&state.model.intent_name[intent]),
             score
         ),
+    ))
+}
+
+/// `POST /v1/classify`: routing decision plus ranked candidates for one `text` or a batch of
+/// `texts` (at most 100). With `session`, that session's learned reflexes are applied (the
+/// session must exist; nothing is stored). Stateless otherwise.
+fn classify(state: &State<'_>, req: &Request) -> Result<Resp, Resp> {
+    let text = std::str::from_utf8(&req.body).map_err(|_| error(400, "body must be UTF-8 JSON"))?;
+    let body = crate::jsonl::parse(text).ok_or_else(|| error(400, "body must be a JSON object"))?;
+    let check = |t: &str| -> Result<String, Resp> {
+        if t.trim().is_empty() {
+            return Err(error(400, "text must not be empty"));
+        }
+        if t.len() > MAX_TEXT {
+            return Err(error(400, &format!("text is too long (max {MAX_TEXT} bytes)")));
+        }
+        Ok(t.to_string())
+    };
+    let (texts, batch) = match (body.get("text"), body.get("texts")) {
+        (Some(t), None) => (vec![check(t.as_str().ok_or_else(|| error(400, "\"text\" must be a string"))?)?], false),
+        (None, Some(a)) => {
+            let items = a.as_array().ok_or_else(|| error(400, "\"texts\" must be an array of strings"))?;
+            if items.is_empty() || items.len() > 100 {
+                return Err(error(400, "\"texts\" must hold 1-100 strings"));
+            }
+            let mut v = Vec::new();
+            for i in items {
+                v.push(check(i.as_str().ok_or_else(|| error(400, "\"texts\" must be an array of strings"))?)?);
+            }
+            (v, true)
+        }
+        _ => return Err(error(400, "send exactly one of \"text\" or \"texts\"")),
+    };
+    let top = match body.get("top") {
+        None => 3,
+        Some(n) => match n.as_f64() {
+            Some(n) if n.fract() == 0.0 && (1.0..=10.0).contains(&n) => n as usize,
+            _ => return Err(error(400, "\"top\" must be an integer from 1 to 10")),
+        },
+    };
+    let extra = match body.get("session") {
+        None | Some(crate::jsonl::Json::Null) => Vec::new(),
+        Some(t) => {
+            let tag = t.as_str().ok_or_else(|| error(400, "\"session\" must be a string"))?;
+            let arc = state.session(tag, false)?;
+            let slot = lock(&arc);
+            if slot.deleted {
+                return Err(error(404, "this session was deleted"));
+            }
+            slot.session.overlay()
+        }
+    };
+    let results: Vec<String> = texts.iter().map(|t| state.model.rank(t, &extra, top).to_json(state.model)).collect();
+    Ok(json(
+        200,
+        if batch { format!("{{\"results\":[{}]}}", results.join(",")) } else { results.into_iter().next().unwrap_or_default() },
     ))
 }
 

@@ -196,6 +196,35 @@ fn ask_is_stateless_and_writes_nothing() {
 }
 
 #[test]
+fn classify_routes_ranks_batches_and_applies_a_sessions_reflexes() {
+    let d = sandbox("classify");
+    let s = Server::start(&d, None, &[]);
+    let post = |body: &str| req(&s.addr, "POST", "/v1/classify", None, Some(body));
+    let one = post(r#"{"text":"What license does it use?","top":2}"#);
+    assert_eq!(one.status, 200, "{}", one.body);
+    assert_eq!(field(&one.body, "intent"), "license");
+    assert!(one.body.contains("\"abstained\":false") && one.body.contains("\"matched\":[\"what license\"]"), "{}", one.body);
+    let batch = post(r#"{"texts":["hello","what is the speed of light"]}"#);
+    assert_eq!(batch.status, 200, "{}", batch.body);
+    assert!(batch.body.starts_with("{\"results\":[{\"intent\":\"greeting\""), "{}", batch.body);
+    assert!(batch.body.contains("\"intent\":\"unknown\",\"score\":0.00,\"abstained\":true,\"candidates\":[]"), "{}", batch.body);
+    // A session's taught phrase changes the routing only when that session is named.
+    assert_eq!(turn(&s.addr, "r", "teach yo what is up as greeting").status, 200);
+    assert_eq!(field(&post(r#"{"text":"yo what is up"}"#).body, "intent"), "unknown");
+    let with = post(r#"{"text":"yo what is up","session":"r"}"#);
+    assert_eq!(field(&with.body, "intent"), "greeting", "{}", with.body);
+    assert_eq!(post(r#"{"text":"hi","session":"nobody"}"#).status, 404);
+    for bad in [
+        "{}", r#"{"text":"a","texts":["b"]}"#, r#"{"text":5}"#, r#"{"text":" "}"#, r#"{"texts":[]}"#,
+        r#"{"texts":[1]}"#, r#"{"text":"a","top":0}"#, r#"{"text":"a","top":2.5}"#, r#"{"text":"a","session":7}"#, "nope",
+    ] {
+        assert_eq!(post(bad).status, 400, "{bad}");
+    }
+    let many = format!("{{\"texts\":[{}]}}", vec!["\"hi\""; 101].join(","));
+    assert_eq!(post(&many).status, 400);
+}
+
+#[test]
 fn a_session_remembers_teaches_forgets_and_survives_a_server_restart() {
     let d = sandbox("session");
     let before = fs::read(model()).unwrap();

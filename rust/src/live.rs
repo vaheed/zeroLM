@@ -227,7 +227,7 @@ Say \"remember X is Y\", ask \"what is X\", or say \"forget X\".",
     }
 
     /// Learned reflexes as extra model features (unknown intent names are skipped).
-    fn overlay(&self) -> Vec<Feature> {
+    pub fn overlay(&self) -> Vec<Feature> {
         self.memory
             .learned
             .iter()
