@@ -1,0 +1,126 @@
+# FROZEN TEST set: intent<TAB>text. Written before improving the matcher, without looking at dev misses.
+# Score it only to report; do not tune on it and do not copy its phrases into the spec.
+# Caveat: the model's author wrote it, so it is less independent than text from real users.
+greeting	good day to you
+greeting	hey, whats going on
+greeting	greetings
+greeting	hello bot
+identity	could you introduce yourself
+identity	what are you exactly
+identity	who made you and what is your name
+identity	are you an AI
+capabilities	what tasks can you perform
+capabilities	how can you assist me
+capabilities	what are your features
+capabilities	what services do you offer
+thanks	thank you very much
+thanks	i appreciate your help
+thanks	thanks, you were helpful
+thanks	awesome, thanks
+farewell	goodbye
+farewell	see you tomorrow
+farewell	i am leaving, bye
+farewell	until next time
+help	i need some help please
+help	how does this work
+help	what is the way to use it
+help	give me instructions
+architecture	how are you built
+architecture	what is your architecture
+architecture	tell me about the components inside you
+architecture	what does the hidden state do
+weights	how are your weights defined
+weights	what is in weights.zlm
+weights	were your parameters hand written
+weights	where is the model file
+no_training	do you use machine learning
+no_training	was any training involved
+no_training	did you learn from a dataset
+no_training	are you pretrained
+limitations	what are your weaknesses
+limitations	what are you not good at
+limitations	do you make mistakes
+limitations	what are your restrictions
+memory	do you remember things
+memory	can you store information about me
+memory	will you forget this conversation
+memory	is there any persistence
+planning	can you make a plan for me
+planning	i need a project schedule
+planning	help me prepare a study plan
+planning	how should I organise my tasks
+coding	can you program in c
+coding	write a function that reverses a string
+coding	help me with my code
+coding	can you run scripts
+math	compute 45 plus 67
+math	can you do calculus
+math	what is the square root of 144
+math	help me with my math homework
+explain	can you explain quantum physics
+explain	describe how the internet works
+explain	tell me why the sky is blue
+explain	what is machine learning
+testing	how do I test the project
+testing	what tests exist
+testing	how do you check for regressions
+testing	can I run the pipeline
+inspiration	what influenced the design
+inspiration	what is weight space programming
+inspiration	who came up with this idea
+inspiration	what is the motivation behind zerolm
+install	how do I build it
+install	what are the installation steps
+install	do I need a compiler
+install	how do I get zerolm running
+license	what is the license
+license	is it free to use
+license	can I redistribute the code
+license	is this mit licensed
+performance	how fast is it
+performance	what hardware does it need
+performance	can it run on a small laptop
+performance	how much cpu does it use
+languages	what languages do you support
+languages	can you speak german
+languages	does it work in other languages
+languages	is there support for arabic
+version	what version is this
+version	which version are you
+version	is there a newer release
+version	what changed recently
+live	what is zerolm live
+live	can it remember facts
+live	what does the live mode do
+live	how do sessions work
+privacy	is my data private
+privacy	do you track me
+privacy	does it connect to the internet
+privacy	what happens to my messages
+contribute	how can I contribute
+contribute	can I open a pull request
+contribute	how do I report a bug
+contribute	i want to help develop it
+topics	what can we talk about
+topics	which topics do you cover
+topics	what do you know about
+topics	what questions can i ask
+comparison	how do you compare to a transformer
+comparison	are you like chatgpt
+comparison	what is the difference between you and an llm
+comparison	do you have attention
+unknown	who is the president of france
+unknown	what is the meaning of life
+unknown	give me a recipe for pancakes
+unknown	how far is the moon
+unknown	sing me a song
+unknown	where can I buy shoes
+unknown	what is the stock market doing
+unknown	tell me about dinosaurs
+unknown	how do I lose weight
+unknown	when does the next train leave
+unknown	set an alarm for seven
+unknown	kdfj sldkfj
+unknown	who invented the telephone
+unknown	what is the best programming language to learn
+unknown	do you like pizza
