@@ -668,15 +668,38 @@ fn send(stream: &mut TcpStream, r: &Resp) {
     let _ = stream.shutdown(Shutdown::Write);
 }
 
+/// After rejecting a request early (413, 431, 400, ...) the client may still be sending. Closing
+/// a socket that has unread input makes the OS reset the connection, and the client can lose the
+/// error response. So read and discard what is left, briefly and with a hard cap, before closing.
+fn drain(stream: &mut TcpStream) {
+    const MAX_DRAIN: usize = 1024 * 1024;
+    const DRAIN_TIME: Duration = Duration::from_millis(500);
+    let until = Instant::now() + DRAIN_TIME;
+    let mut buf = [0u8; 8192];
+    let mut total = 0usize;
+    while total < MAX_DRAIN {
+        let left = until.saturating_duration_since(Instant::now());
+        if left.is_zero() || stream.set_read_timeout(Some(left)).is_err() {
+            break;
+        }
+        match stream.read(&mut buf) {
+            Ok(0) | Err(_) => break,
+            Ok(n) => total += n,
+        }
+    }
+}
+
 fn handle(state: &State<'_>, stream: TcpStream) {
     let _ = stream.set_nodelay(true);
     let _ = stream.set_write_timeout(Some(state.cfg.request_timeout));
     let mut conn = Deadline { stream, until: Instant::now() + state.cfg.request_timeout };
-    let resp = match http::read_request(&mut conn, MAX_BODY_BYTES) {
-        Ok(req) => route(state, &req),
-        Err((code, msg)) => error(code, msg),
-    };
-    send(&mut conn.stream, &resp);
+    match http::read_request(&mut conn, MAX_BODY_BYTES) {
+        Ok(req) => send(&mut conn.stream, &route(state, &req)),
+        Err((code, msg)) => {
+            send(&mut conn.stream, &error(code, msg));
+            drain(&mut conn.stream);
+        }
+    }
 }
 
 /// Bind, announce the address through `ready`, and serve forever.

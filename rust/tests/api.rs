@@ -79,7 +79,9 @@ impl Resp {
 fn raw(addr: &str, bytes: &[u8]) -> Resp {
     let mut s = TcpStream::connect(addr).unwrap();
     s.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
-    s.write_all(bytes).unwrap();
+    // The server may answer and close before it has read everything we send (e.g. a 413), so a
+    // failed write is not an error; what matters is the response that comes back.
+    let _ = s.write_all(bytes);
     read_response(&mut s)
 }
 
@@ -693,4 +695,35 @@ fn openai_errors_use_openai_s_envelope_and_unsupported_features_are_refused() {
     // the native API keeps its own, simpler error shape
     assert!(req(&s.addr, "POST", "/v1/ask", tok, Some("{")).body.starts_with("{\"error\":\""));
     assert_eq!(fs::read_dir(&d).unwrap().count(), 0, "no failed request may create a session");
+}
+
+#[test]
+fn rejected_oversized_requests_always_deliver_their_error_response() {
+    // The client keeps streaming its body (like curl uploading a big file) while the server has
+    // already decided to reject it. If the server closed with that input unread, the OS would reset
+    // the connection and the client could lose the 413, so repeat to make a flaky server fail.
+    let d = sandbox("drain");
+    let s = Server::start(&d, None, &[]);
+    for round in 0..30 {
+        let mut writer = TcpStream::connect(&s.addr).unwrap();
+        writer.set_read_timeout(Some(Duration::from_secs(10))).unwrap();
+        let mut reader = writer.try_clone().unwrap();
+        let head = "POST /v1/ask HTTP/1.1\r\nHost: t\r\nContent-Length: 50000000\r\n\r\n";
+        let feeder = std::thread::spawn(move || {
+            let chunk = vec![b'a'; 16 * 1024];
+            if writer.write_all(head.as_bytes()).is_err() {
+                return;
+            }
+            for _ in 0..64 {
+                if writer.write_all(&chunk).is_err() {
+                    return; // the server hung up: fine
+                }
+            }
+        });
+        let r = read_response(&mut reader);
+        feeder.join().unwrap();
+        assert_eq!(r.status, 413, "round {round}: {}", r.body);
+        assert!(r.body.contains("too large"), "round {round}: {}", r.body);
+    }
+    assert_eq!(req(&s.addr, "GET", "/v1/health", None, None).status, 200);
 }
