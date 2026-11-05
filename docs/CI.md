@@ -28,12 +28,16 @@ optimizes weights.
    and `--faithful` decoder modes.
 4. Smoke-tests live mode: a fact and a taught phrase survive a restart, and `weights.zlm` has the
    same checksum afterwards.
+5. Starts `zerolm serve` and runs `scripts/check_openai_sdk.py` (official OpenAI Python SDK, installed with
+   pip), after validating `rust/openapi.yaml` with `openapi-spec-validator`.
 
 ### `docker` — container image (Ubuntu)
 
 Runs `scripts/docker_smoke.sh`: builds the image, then checks a one-shot answer, memory across
 containers, tag isolation, JSON-lines mode, refusal of a second container on a busy tag, and
-reuse of the tag after the holder is killed.
+reuse of the tag after the holder is killed. It also checks the `zerolm-api` service: it refuses to start
+without a token, passes its health check, rejects unauthenticated requests, serves chat completions
+on the published port, persists a session across a restart, and holds that session against a CLI container.
 
 ## Reading the results
 

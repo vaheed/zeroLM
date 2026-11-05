@@ -7,6 +7,7 @@ There are three ways to run ZeroLM. Pick the one that fits.
 | The original stateless chat, tests, and model editing | [C runtime](#1-c-runtime) | C11 compiler, `make`, Python 3.10+ |
 | ZeroLM Live (memory, teaching, JSON-lines mode) | [Rust port](#2-rust-port) | Rust (tested with 1.75) |
 | ZeroLM Live without installing toolchains | [Docker](#3-docker) | Docker with the Compose plugin |
+| Other programs calling ZeroLM over HTTP (OpenAI-compatible) | [HTTP API](#4-http-api) | the Rust build, or Docker |
 
 The C and Rust runtimes read the same `weights.zlm` and give identical answers for
 one-shot prompts (CI checks this on every change).
@@ -78,6 +79,19 @@ Notes:
   daemon and pipe lines through
   `docker compose run --rm -T zerolm live --jsonl --tag NAME`.
 - `scripts/docker_smoke.sh` builds the image and checks all of the above end to end.
+
+## 4. HTTP API
+
+```bash
+rust/target/release/zerolm serve                                   # http://127.0.0.1:8080
+ZEROLM_TOKEN=a-long-secret-token rust/target/release/zerolm serve --addr 0.0.0.0:8080
+ZEROLM_TOKEN=a-long-secret-token docker compose up -d zerolm-api   # host port 8080, or set ZEROLM_PORT
+curl localhost:8080/v1/health
+```
+
+It refuses to listen on a non-loopback address without a token of at least 16 characters, and has no
+TLS (put a reverse proxy in front to expose it). Session files go in `--dir` (the `zerolm-data` volume
+in Docker). Full reference: [docs/API.md](docs/API.md).
 
 ## Checking an install
 

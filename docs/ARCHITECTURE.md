@@ -63,7 +63,7 @@ The weight file contains:
 
 Inactive values are represented implicitly as `-8`; active recurrent and output connections are `+8`. This sparse format makes the file readable and small.
 
-The number reported as `dense-equivalent weight slots` is a logical matrix-size estimate. It must not be described as 1,645,332 independently learned parameters. The actual values are authored by hand and most are implicit defaults.
+The number reported as `dense-equivalent weight slots` is a logical matrix-size estimate. It must not be described as 1,688,456 independently learned parameters. The actual values are authored by hand and most are implicit defaults.
 
 ## 6. Why it is not a Transformer
 
@@ -116,3 +116,13 @@ byte-budgeted **transcript**. Facts and reflexes are saved to a life file after 
 through a temp file and rename; the transcript is not saved. A kernel file lock
 (`flock`) on `<life file>.lock` ensures one live session per life file, including across
 containers. `weights.zlm` is never written. Details and limits: [LIVE.md](LIVE.md).
+
+## 10. HTTP API layer
+
+`zerolm serve` (module `serve`, over a small `http` layer on `std::net`) exposes the same two
+things as HTTP: stateless answers, and ZeroLM Live sessions keyed by tag. Each session is one
+`Session` behind a mutex plus the same `flock` lock as the CLI, so a tag has exactly one owner
+process. OpenAI-compatible requests map onto it: model `zerolm` builds a throwaway session and
+replays the earlier user messages (the `messages` array is the context), and `zerolm-live` runs the
+last message in the session named by `user`. The server adds no new model behaviour; it only
+transports requests. Contract and limits: [API.md](API.md).

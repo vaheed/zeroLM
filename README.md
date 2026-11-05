@@ -6,7 +6,7 @@ ZeroLM is an open-source research experiment in building a small neural text-gen
 
 > **Current status:** ZeroLM is an intentionally limited research prototype. It recognizes a small set of English request patterns (27 topics, listed [below](#what-you-can-ask)) and emits predefined response paths through a manually specified recurrent decoder. It is not a general-purpose LLM and does not yet understand arbitrary text.
 
-**Ways to run it:** the original C runtime (stateless), a Rust port with **ZeroLM Live** (a session with memory that survives restarts), and a Docker image of the Rust build. See [INSTALL.md](INSTALL.md).
+**Ways to run it:** the original C runtime (stateless), a Rust port with **ZeroLM Live** (a session with memory that survives restarts) and an **OpenAI-compatible HTTP API**, and a Docker image of the Rust build. See [INSTALL.md](INSTALL.md).
 
 ## Get started
 
@@ -146,7 +146,8 @@ You can also run individual checks:
 | `python3 scripts/weight_audit.py` | Model format, intent starts, state links, and decoder paths |
 | `python3 scripts/benchmark.py --iterations 500` | Repeated interactive inference on the current machine |
 | `python3 scripts/inspect_weights.py` | A readable summary of the manually authored model |
-| `cd rust && cargo test` | Rust unit tests and 16 end-to-end tests of `zerolm live` |
+| `cd rust && cargo test` | Rust: 42 unit tests, 16 end-to-end tests of `zerolm live`, 18 of `zerolm serve` |
+| `python3 scripts/check_openai_sdk.py HOST:PORT [KEY]` | The official OpenAI Python SDK against a running `zerolm serve` |
 | `cd rust && cargo clippy --all-targets -- -D warnings` | Rust lint |
 | `scripts/docker_smoke.sh` | Builds the image; checks persistence, tags, and the session lock |
 | `python3 scripts/benchmark_all.py` | C vs Rust vs ZeroLM Live; writes [reports/benchmarks.md](reports/benchmarks.md) |
@@ -229,6 +230,22 @@ you> teach yo whats up as greeting
 
 `--tag NAME` gives each session its own life file (`life.NAME.zlm`), and a file lock stops two sessions, or two containers, from sharing one. `--jsonl` turns it into a line-oriented JSON service. Full details: [docs/LIVE.md](docs/LIVE.md). Measured speed and memory: [reports/benchmarks.md](reports/benchmarks.md).
 
+## HTTP API (OpenAI-compatible)
+
+`zerolm serve` lets other programs talk to ZeroLM. It speaks the OpenAI wire format, so OpenAI SDKs and tools work by changing the base URL, and it has a native session API with memory.
+
+```bash
+rust/target/release/zerolm serve                      # http://127.0.0.1:8080
+```
+
+```python
+from openai import OpenAI
+client = OpenAI(base_url="http://127.0.0.1:8080/v1", api_key="your-token")
+client.chat.completions.create(model="zerolm", messages=[{"role": "user", "content": "what license does it use"}])
+```
+
+Model `zerolm` is stateless (the `messages` array is the context); `zerolm-live` keeps a persistent session per `user`. Streaming, `max_tokens` and typed errors work; tools/functions are rejected because ZeroLM cannot call them. The server binds to loopback by default, requires a token of 16+ characters on any other address, and has no TLS (use a reverse proxy). Everything, including limits and what differs from OpenAI, is in [docs/API.md](docs/API.md); the contract is [rust/openapi.yaml](rust/openapi.yaml).
+
 ## Zero training means zero training
 
 ZeroLM's research boundary is intentionally strict:
@@ -271,8 +288,9 @@ weights.zlm             generated weight file (do not edit by hand)
 model/spec.json         the hand-authored model: intents, phrase weights, responses
 build_model.py          serializes spec.json -> weights.zlm (no training)
 rust/                   Rust port of the runtime + ZeroLM Live (std only)
-  src/                  model, memory, context, live session, lock, JSON-lines
-  tests/live_cli.rs     end-to-end tests of zerolm live
+  src/                  model, memory, context, live session, lock, JSON, HTTP, API server
+  openapi.yaml          the HTTP API contract (OpenAPI 3.0)
+  tests/                end-to-end tests of zerolm live and zerolm serve
 Dockerfile, docker-compose.yml   container image and compose service
 scripts/                evaluation, audit, benchmarks, patch tool, docker smoke test
 tests/                  regression.tsv and unknown.tsv prompt sets
@@ -287,6 +305,7 @@ docs/                   architecture, testing, live mode, CI, hardware, research
 - [Install and run](INSTALL.md) — C, Rust and Docker, with troubleshooting.
 - [Architecture](docs/ARCHITECTURE.md) — current network and inference path, the two runtimes, and live mode.
 - [ZeroLM Live](docs/LIVE.md) — memory, tags, locking, commands, JSON-lines, limits.
+- [HTTP API](docs/API.md) — OpenAI-compatible and native endpoints, auth, limits, security.
 - [Testing and experiments](docs/TESTING.md) — test layers, benchmarks, reports, and repeatable evaluation.
 - [Continuous integration](docs/CI.md) — what each CI job checks.
 - [Hardware notes](docs/HARDWARE.md) — runtime and resource targets, with measurements.

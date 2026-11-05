@@ -97,6 +97,12 @@ docker compose up -d zerolm-daemon                # optional JSON-lines service
 Life files live in the `zerolm-data` volume. The container is read-only, has no network,
 and runs as an unprivileged user. See [INSTALL.md](../INSTALL.md).
 
+### HTTP API
+
+`zerolm serve` exposes the same sessions over HTTP (native `/v1/sessions/{tag}` endpoints and the
+OpenAI-compatible `zerolm-live` model). It takes the same file lock as the CLI, so a tag is used by
+the server or by a CLI/Docker session, never both. See [API.md](API.md).
+
 ### Exit codes
 
 `0` on a normal exit (`/quit`, `/exit`, or end of input). `2` for bad arguments, an unreadable

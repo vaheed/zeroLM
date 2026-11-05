@@ -36,6 +36,9 @@ scripts/docker_smoke.sh                      # if you touched the Dockerfile, co
 python3 scripts/benchmark_all.py --no-write  # if you touched anything performance-relevant
 ```
 
+Changes to the HTTP API must update `rust/openapi.yaml` (a test fails if routes and spec differ; validate it with
+`openapi-spec-validator`), add a case to `rust/tests/api.rs`, and keep `scripts/check_openai_sdk.py` passing.
+
 Changes to live mode need an end-to-end test in `rust/tests/live_cli.rs`, and the docs in
 `docs/LIVE.md` must stay accurate (several bugs so far were found by those tests).
 

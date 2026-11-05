@@ -53,5 +53,8 @@ Xeon E5-2697 v4 host, one measurement each):
   life file is saved with an fsync every turn, so slow or networked disks will be slower. A life
   file with 64 facts is about 2 KB.
 
+The `zerolm-api` Docker service is capped at 256 MB like the others; the API server adds one thread per open
+connection (at most 64 by default) and one in-memory session per open tag (at most 256).
+
 The earlier "Local constrained run" above was measured on a previous 18-intent model; the numbers
 in the report are the current ones. Locking relies on `flock`, which needs a local filesystem.

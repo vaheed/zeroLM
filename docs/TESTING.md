@@ -48,10 +48,10 @@ cargo test
 cargo clippy --all-targets -- -D warnings
 ```
 
-- **Unit tests (27)** in the library: parsing and rejection of bad model files, phrase matching,
+- **Unit tests (42)** in the library: parsing and rejection of bad model files, phrase matching,
   decoder equivalence between the pointer walk and the softmax path, memory (overwrite, recall,
   eviction, fading, persistence), the transcript budget, commands, follow-ups, tags, JSON helpers,
-  and the file lock.
+  the file lock, the strict JSON parser, and the HTTP request parser.
 - **End-to-end tests (16)** in `rust/tests/live_cli.rs` run the real binary against the real
   `weights.zlm` as subprocesses:
   - facts survive a restart; tags are isolated;
@@ -64,6 +64,35 @@ cargo clippy --all-targets -- -D warnings
   - hostile input (a 120 KB line, NUL bytes, emoji, empty commands) does not crash;
   - a corrupt life file and invalid arguments exit with code 2 and leave the file untouched;
   - one-shot mode stays stateless and honours `ZEROLM_MODEL`.
+
+- **API end-to-end tests (18)** in `rust/tests/api.rs` start `zerolm serve` on a random port and speak
+  hand-written HTTP over TCP:
+  - the spec and the route table list exactly the same operations, and the served spec is the file;
+  - sessions survive a server restart; tags are isolated; deleting one removes only its file;
+  - bearer auth (wrong, short and long tokens, case-insensitive scheme, open health, no route probing);
+  - a public bind without a strong token refuses to start;
+  - malformed and hostile requests: bad JSON, wrong types, oversized body and headers, chunked bodies,
+    repeated `Content-Length`, path-traversal tags, wrong methods (with `Allow`);
+  - slow clients are cut off by a total deadline (including a one-byte-at-a-time trickle) without
+    blocking others; connection and session caps return 503 and recover;
+  - the CLI and the API cannot share a session in either direction, and errors leak no server paths;
+  - 8 concurrent clients lose no turns;
+  - OpenAI compatibility: model list, completion shape and usage, messages as context, `zerolm-live`
+    per `user`, SSE streaming, `max_tokens`, and 23 invalid-request cases that must use OpenAI's error
+    envelope.
+
+### API compatibility with real clients
+
+```sh
+pip install openai openapi-spec-validator
+openapi-spec-validator rust/openapi.yaml
+python3 scripts/check_openai_sdk.py HOST:PORT [KEY]   # against a running `zerolm serve`
+```
+
+The validator checks `rust/openapi.yaml` against the OpenAPI 3.0 schema (the Rust contract test only
+compares operations, so it cannot catch invalid YAML; the validator found one such mistake). The SDK
+script runs 15 checks with the official OpenAI Python SDK: models, completions, context, streaming,
+`max_tokens`, live sessions, and typed errors.
 
 ### C / Rust parity
 
@@ -80,7 +109,9 @@ scripts/docker_smoke.sh
 
 Builds the image and checks a one-shot answer, memory across containers, tag isolation, JSON-lines
 mode, refusal of a second container on a busy tag, and reuse of the tag after the holder is
-killed. It uses its own compose project and removes it afterwards.
+killed. It also starts the `zerolm-api` service: it must refuse to start without a token, become
+healthy, reject requests without a key, answer chat completions through the published port, keep a
+session across a restart, and hold that session against a CLI container. It uses its own compose project and removes it afterwards.
 
 ## Full pipeline
 
