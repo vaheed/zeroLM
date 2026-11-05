@@ -359,7 +359,7 @@ impl Model {
                 out.push(b' ');
             }
             let s = stem_word(w);
-            if s.len() >= MIN_SNAP_LEN && is_lower_alpha(&s) && !self.snap_words.iter().any(|x| *x == s) {
+            if s.len() >= MIN_SNAP_LEN && is_lower_alpha(&s) && !self.snap_words.contains(&s) {
                 let mut hit: Option<&Vec<u8>> = None;
                 let mut count = 0;
                 for cand in &self.snap_words {
