@@ -146,7 +146,7 @@ You can also run individual checks:
 | `python3 scripts/weight_audit.py` | Model format, intent starts, state links, and decoder paths |
 | `python3 scripts/benchmark.py --iterations 500` | Repeated interactive inference on the current machine |
 | `python3 scripts/inspect_weights.py` | A readable summary of the manually authored model |
-| `cd rust && cargo test` | Rust: 42 unit tests, 16 end-to-end tests of `zerolm live`, 18 of `zerolm serve` |
+| `cd rust && cargo test` | Rust: 42 unit tests, 16 end-to-end tests of `zerolm live`, 19 of `zerolm serve` |
 | `python3 scripts/check_openai_sdk.py HOST:PORT [KEY]` | The official OpenAI Python SDK against a running `zerolm serve` |
 | `cd rust && cargo clippy --all-targets -- -D warnings` | Rust lint |
 | `scripts/docker_smoke.sh` | Builds the image; checks persistence, tags, and the session lock |

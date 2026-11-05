@@ -143,6 +143,6 @@ is not a hardened internet-facing server: terminate TLS and apply rate limits in
 - `python3 scripts/check_openai_sdk.py HOST:PORT [KEY]` runs 15 checks with the official OpenAI Python
   SDK (`pip install openai`).
 - `openapi-spec-validator rust/openapi.yaml` validates the spec (`pip install openapi-spec-validator`).
-- `cargo test --test api` runs the 18 end-to-end API tests.
+- `cargo test --test api` runs the 19 end-to-end API tests.
 
 All three run in CI.

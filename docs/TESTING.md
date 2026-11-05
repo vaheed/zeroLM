@@ -65,8 +65,8 @@ cargo clippy --all-targets -- -D warnings
   - a corrupt life file and invalid arguments exit with code 2 and leave the file untouched;
   - one-shot mode stays stateless and honours `ZEROLM_MODEL`.
 
-- **API end-to-end tests (18)** in `rust/tests/api.rs` start `zerolm serve` on a random port and speak
-  hand-written HTTP over TCP:
+- **API end-to-end tests (19)** in `rust/tests/api.rs` start `zerolm serve` on a random port and speak
+  hand-written HTTP over TCP (the 19th checks that an oversized request still gets its 413 while the client keeps streaming):
   - the spec and the route table list exactly the same operations, and the served spec is the file;
   - sessions survive a server restart; tags are isolated; deleting one removes only its file;
   - bearer auth (wrong, short and long tokens, case-insensitive scheme, open health, no route probing);

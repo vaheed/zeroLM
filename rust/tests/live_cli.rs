@@ -241,7 +241,7 @@ fn capacity_evicts_the_weakest_memory() {
 fn unused_facts_fade_but_used_facts_stay() {
     let d = sandbox("fade");
     let mut lines = vec!["remember the kept fact is alive", "remember the lost fact is gone"];
-    lines.extend(std::iter::repeat("hello").take(60));
+    lines.extend(vec!["hello"; 60]);
     // Recalling reinforces; ask about the kept one every 20 turns.
     let mut script: Vec<&str> = Vec::new();
     for (i, l) in lines.iter().enumerate() {
@@ -250,7 +250,7 @@ fn unused_facts_fade_but_used_facts_stay() {
             script.push("what is the kept fact");
         }
     }
-    script.extend(std::iter::repeat("hello").take(60));
+    script.extend(vec!["hello"; 60]);
     script.push("what is the kept fact");
     script.push("what is the lost fact");
     let out = jsonl(&d, &["--tag", "fade"], &script);
