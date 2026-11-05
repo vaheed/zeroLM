@@ -46,9 +46,9 @@ def main() -> int:
         {"role": "user", "content": "why?"}])
     check(follow.choices[0].message.content == first.choices[0].message.content, "messages array is the context")
     mem = client.chat.completions.create(model="zerolm", messages=[
-        {"role": "user", "content": "remember my name is Vahid"},
+        {"role": "user", "content": "remember my name is vaheeD"},
         {"role": "user", "content": "what is my name"}])
-    check(mem.choices[0].message.content == "my name is Vahid.", "in-request memory")
+    check(mem.choices[0].message.content == "my name is vaheeD.", "in-request memory")
 
     plain = client.chat.completions.create(model="zerolm", messages=[{"role": "user", "content": "who are you"}])
     chunks = list(client.chat.completions.create(model="zerolm", stream=True, messages=[{"role": "user", "content": "who are you"}]))

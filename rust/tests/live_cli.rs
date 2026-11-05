@@ -186,8 +186,8 @@ fn jsonl_contract() {
 fn teaching_persists_and_never_touches_the_base_weights() {
     let d = sandbox("teach");
     let before = fs::read(model()).unwrap();
-    jsonl(&d, &["--tag", "t"], &["teach yo whats up as greeting", "bad", "good"]);
-    let out = jsonl(&d, &["--tag", "t"], &["yo whats up", "what is the speed of light"]);
+    jsonl(&d, &["--tag", "t"], &["teach ahoy matey as greeting", "bad", "good"]);
+    let out = jsonl(&d, &["--tag", "t"], &["ahoy matey", "what is the speed of light"]);
     assert_eq!(intent(&out[0]).as_deref(), Some("greeting"));
     assert_eq!(intent(&out[1]).as_deref(), Some("unknown"));
     assert_eq!(fs::read(model()).unwrap(), before, "weights.zlm must be byte-identical");

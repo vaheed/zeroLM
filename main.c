@@ -233,6 +233,18 @@ static int load_model(const char *path, Model *m, char *err, size_t errcap) {
         }
     }
 
+    /* Phrases of one intent that share a stemmed key are the same evidence: only the heaviest keeps a
+     * key (ties: the first); the others stay in the file but never match. */
+    for (int i = 0; i < m->feature_count; ++i) {
+        for (int j = 0; j < i; ++j) {
+            Feature *a = &m->features[j], *b = &m->features[i];
+            if (a->intent == b->intent && a->key[0] != '\0' && strcmp(a->key, b->key) == 0) {
+                if (b->weight > a->weight) a->key[0] = '\0';
+                else b->key[0] = '\0';
+                break;
+            }
+        }
+    }
     for (int f = 0; f < m->feature_count; ++f) add_snap_words(m, m->features[f].key);
 
     /* Build the output vocabulary once at load time. */
@@ -422,7 +434,7 @@ static void classify(const Model *m, const char *input, double *prob, int *selec
     char prepared[MAX_TEXT * 2];
     prepare_text(m, input, prepared, sizeof(prepared));
     for (int f = 0; f < m->feature_count; ++f) {
-        if (contains_phrase(prepared, m->features[f].key))
+        if (m->features[f].key[0] != '\0' && contains_phrase(prepared, m->features[f].key))
             logits[m->features[f].intent] += m->features[f].weight;
     }
     for (int i = 0; i < m->intents; ++i) prob[i] = logits[i];

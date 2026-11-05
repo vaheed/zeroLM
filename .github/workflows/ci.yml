@@ -172,6 +172,9 @@ jobs:
             diff <(./zerolm --verbose "$p") <($R --verbose --faithful "$p") >/dev/null || { echo "FAITHFUL DIFF: $p"; exit 1; }
           done < <(cat tests/regression.tsv tests/unknown.tsv examples/prompts.tsv)
 
+      - name: Parity on typo-damaged inputs
+        run: python3 scripts/parity_fuzz.py --variants 3
+
       - name: Live mode persists across restarts and never touches weights
         shell: bash
         run: |
@@ -179,8 +182,8 @@ jobs:
           R=rust/target/release/zerolm
           before=$(sha256sum weights.zlm)
           life="$(mktemp -d)/life.zlm"
-          printf 'remember the code word is plum\nteach yo whats up as greeting\n' | $R live --life "$life" >/dev/null
-          out=$(printf 'what is the code word\nyo whats up\n' | $R live --jsonl --life "$life")
+          printf 'remember the code word is plum\nteach ahoy matey as greeting\n' | $R live --life "$life" >/dev/null
+          out=$(printf 'what is the code word\nahoy matey\n' | $R live --jsonl --life "$life")
           echo "$out"
           echo "$out" | head -1 | grep -q 'the code word is plum'
           echo "$out" | tail -1 | grep -q '"intent":"greeting"'

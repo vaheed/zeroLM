@@ -111,7 +111,7 @@ intent router.
 | `DELETE /v1/sessions/{tag}` | Delete the session and its life file; 204. |
 
 ```bash
-curl -H "Authorization: Bearer $T" -d '{"text":"remember my name is Vahid"}' localhost:8080/v1/sessions/me/turns
+curl -H "Authorization: Bearer $T" -d '{"text":"remember my name is vaheeD"}' localhost:8080/v1/sessions/me/turns
 curl -H "Authorization: Bearer $T" -d '{"text":"what is my name"}'           localhost:8080/v1/sessions/me/turns
 ```
 

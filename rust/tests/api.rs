@@ -209,9 +209,9 @@ fn classify_routes_ranks_batches_and_applies_a_sessions_reflexes() {
     assert!(batch.body.starts_with("{\"results\":[{\"intent\":\"greeting\""), "{}", batch.body);
     assert!(batch.body.contains("\"intent\":\"unknown\",\"score\":0.00,\"abstained\":true,\"candidates\":[]"), "{}", batch.body);
     // A session's taught phrase changes the routing only when that session is named.
-    assert_eq!(turn(&s.addr, "r", "teach yo what is up as greeting").status, 200);
-    assert_eq!(field(&post(r#"{"text":"yo what is up"}"#).body, "intent"), "unknown");
-    let with = post(r#"{"text":"yo what is up","session":"r"}"#);
+    assert_eq!(turn(&s.addr, "r", "teach ahoy matey as greeting").status, 200);
+    assert_eq!(field(&post(r#"{"text":"ahoy matey"}"#).body, "intent"), "unknown");
+    let with = post(r#"{"text":"ahoy matey","session":"r"}"#);
     assert_eq!(field(&with.body, "intent"), "greeting", "{}", with.body);
     assert_eq!(post(r#"{"text":"hi","session":"nobody"}"#).status, 404);
     for bad in [
@@ -229,31 +229,31 @@ fn a_session_remembers_teaches_forgets_and_survives_a_server_restart() {
     let d = sandbox("session");
     let before = fs::read(model()).unwrap();
     let s = Server::start(&d, None, &[]);
-    let r = turn(&s.addr, "me", "remember my name is Vahid");
+    let r = turn(&s.addr, "me", "remember my name is vaheeD");
     assert_eq!((r.status, field(&r.body, "age"), field(&r.body, "memories")), (200, "1".into(), "1".into()));
     assert_eq!(field(&r.body, "intent"), "null");
-    assert_eq!(field(&turn(&s.addr, "me", "what is my name").body, "reply"), "my name is Vahid.");
+    assert_eq!(field(&turn(&s.addr, "me", "what is my name").body, "reply"), "my name is vaheeD.");
 
     let st = req(&s.addr, "GET", "/v1/sessions/me", None, None);
     assert_eq!((field(&st.body, "age"), field(&st.body, "capacity")), ("2".into(), "64".into()));
     let mem = req(&s.addr, "GET", "/v1/sessions/me/memories", None, None);
-    assert!(mem.body.contains("\"key\":\"my name\"") && mem.body.contains("\"value\":\"Vahid\""), "{}", mem.body);
+    assert!(mem.body.contains("\"key\":\"my name\"") && mem.body.contains("\"value\":\"vaheeD\""), "{}", mem.body);
 
-    let t = req(&s.addr, "POST", "/v1/sessions/me/teach", None, Some(r#"{"phrase":"Yo, what's up!","intent":"Greeting"}"#));
-    assert_eq!((t.status, field(&t.body, "phrase"), field(&t.body, "intent")), (200, "yo what s up".into(), "greeting".into()));
-    assert_eq!(field(&turn(&s.addr, "me", "yo whats up").body, "intent"), "unknown", "a different phrase must not match");
-    assert_eq!(field(&turn(&s.addr, "me", "yo what s up").body, "intent"), "greeting");
+    let t = req(&s.addr, "POST", "/v1/sessions/me/teach", None, Some(r#"{"phrase":"Ahoy, matey!","intent":"Greeting"}"#));
+    assert_eq!((t.status, field(&t.body, "phrase"), field(&t.body, "intent")), (200, "ahoy matey".into(), "greeting".into()));
+    assert_eq!(field(&turn(&s.addr, "me", "ahoy there").body, "intent"), "unknown", "a different phrase must not match");
+    assert_eq!(field(&turn(&s.addr, "me", "ahoy matey").body, "intent"), "greeting");
 
     s.stop(); // restart: everything above must come back from the life file
     let s = Server::start(&d, None, &[]);
-    assert_eq!(field(&turn(&s.addr, "me", "what is my name").body, "reply"), "my name is Vahid.");
-    assert_eq!(field(&turn(&s.addr, "me", "yo what s up").body, "intent"), "greeting");
+    assert_eq!(field(&turn(&s.addr, "me", "what is my name").body, "reply"), "my name is vaheeD.");
+    assert_eq!(field(&turn(&s.addr, "me", "ahoy matey").body, "intent"), "greeting");
     let age: u32 = field(&req(&s.addr, "GET", "/v1/sessions/me", None, None).body, "age").parse().unwrap();
     assert_eq!(age, 6, "age counts turns across restarts");
 
     assert_eq!(req(&s.addr, "DELETE", "/v1/sessions/me/memories/my%20name", None, None).status, 204);
     assert_eq!(req(&s.addr, "DELETE", "/v1/sessions/me/memories/my%20name", None, None).status, 404);
-    assert_ne!(field(&turn(&s.addr, "me", "what is my name").body, "reply"), "my name is Vahid.");
+    assert_ne!(field(&turn(&s.addr, "me", "what is my name").body, "reply"), "my name is vaheeD.");
     assert_eq!(fs::read(model()).unwrap(), before, "weights.zlm must be byte-identical");
 }
 
@@ -579,10 +579,10 @@ fn openai_messages_are_the_context() {
     let alone = completion(&s.addr, "zerolm", &["why?"]);
     assert_eq!(field(&alone.body, "intent"), "unknown", "without context it is not understood");
 
-    let mem = completion(&s.addr, "zerolm", &["remember my name is Vahid", "what is my name"]);
-    assert_eq!(field(&mem.body, "content"), "my name is Vahid.");
+    let mem = completion(&s.addr, "zerolm", &["remember my name is vaheeD", "what is my name"]);
+    assert_eq!(field(&mem.body, "content"), "my name is vaheeD.");
     let none = completion(&s.addr, "zerolm", &["what is my name"]);
-    assert_ne!(field(&none.body, "content"), "my name is Vahid.", "nothing leaks between requests");
+    assert_ne!(field(&none.body, "content"), "my name is vaheeD.", "nothing leaks between requests");
 
     // system and assistant messages cannot change the answer; content parts are accepted
     let body = r#"{"model":"zerolm","messages":[

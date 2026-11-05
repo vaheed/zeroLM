@@ -49,6 +49,14 @@
         [
           "good day",
           2.8
+        ],
+        [
+          "yo",
+          2.0
+        ],
+        [
+          "morning",
+          2.0
         ]
       ],
       "response": "Hello. I am ZeroLM, a small zero-training neural language model experiment. I can answer a limited set of English questions using manually designed weights and response paths."
@@ -209,6 +217,10 @@
         [
           "what you can do",
           3.0
+        ],
+        [
+          "able to do",
+          2.6
         ]
       ],
       "response": "I can recognize a small set of English request types, select a response path, and generate its words through a recurrent neural decoder. I can explain this project and report its limits. I cannot browse, call tools, or answer arbitrary questions."
@@ -369,10 +381,6 @@
           3.0
         ],
         [
-          "getting started",
-          3.0
-        ],
-        [
           "i need help",
           3.0
         ],
@@ -489,6 +497,14 @@
         [
           "how is the network",
           2.8
+        ],
+        [
+          "layers",
+          2.2
+        ],
+        [
+          "components",
+          2.4
         ]
       ],
       "response": "The input side uses manually weighted phrase features to select an intent. That intent activates a hidden state. A sparse recurrent transition matrix moves the hidden state forward, and an output projection selects one word at each step. An end token stops generation. This is a small engineered recurrent system, not a Transformer."
@@ -549,10 +565,6 @@
           3.0
         ],
         [
-          "weights file",
-          3.2
-        ],
-        [
           "hand written parameters",
           3.0
         ],
@@ -575,10 +587,6 @@
           2.8
         ],
         [
-          "train",
-          2.2
-        ],
-        [
           "fine tune",
           3.0
         ],
@@ -592,10 +600,6 @@
         ],
         [
           "pretraining",
-          3.0
-        ],
-        [
-          "pretrained",
           3.0
         ],
         [
@@ -718,10 +722,6 @@
         ],
         [
           "weaknesses",
-          3.0
-        ],
-        [
-          "weakness",
           3.0
         ],
         [
@@ -879,6 +879,10 @@
         [
           "prepare a plan",
           3.0
+        ],
+        [
+          "organize",
+          2.0
         ]
       ],
       "response": "I cannot create a reliable plan from arbitrary text yet. A safe next step is to add a small planning module with explicit task, dependency, and completion fields. The neural network can select a supported operation, while deterministic code checks the plan."
@@ -1097,8 +1101,8 @@
       "name": "testing",
       "features": [
         [
-          "test",
-          2.4
+          "tests",
+          2.6
         ],
         [
           "benchmark",
@@ -1141,18 +1145,6 @@
           3.0
         ],
         [
-          "tests",
-          2.6
-        ],
-        [
-          "testing",
-          2.6
-        ],
-        [
-          "regressions",
-          2.8
-        ],
-        [
           "regression tests",
           3.0
         ],
@@ -1187,8 +1179,8 @@
           3.6
         ],
         [
-          "zero shot weights",
-          3.0
+          "zero shot weight",
+          3.2
         ],
         [
           "program weights",
@@ -1205,10 +1197,6 @@
         [
           "takehi",
           2.4
-        ],
-        [
-          "zero shot weight",
-          3.2
         ],
         [
           "inspired",
@@ -1347,10 +1335,6 @@
         [
           "to compile it",
           3.0
-        ],
-        [
-          "installing zerolm",
-          3.2
         ]
       ],
       "response": "To build ZeroLM, run make in the repository root. It needs a C11 compiler and produces the zerolm program. The optional Rust port builds with cargo build --release inside the rust directory. See the README for the full steps."
@@ -1392,10 +1376,6 @@
         ],
         [
           "mit license",
-          3.4
-        ],
-        [
-          "mit licensed",
           3.4
         ],
         [
@@ -1575,6 +1555,10 @@
         [
           "run on a laptop",
           2.6
+        ],
+        [
+          "cpu",
+          2.0
         ]
       ],
       "response": "ZeroLM is built for small computers: about 2 CPU cores and 2 GB of RAM, with no GPU and no network. In one container run it handled about 1,100 interactions per second, including process startup. Measure on your own machine with make benchmark."
@@ -1617,10 +1601,6 @@
         [
           "unicode",
           2.6
-        ],
-        [
-          "other language",
-          3.0
         ],
         [
           "understand french",
@@ -1882,10 +1862,6 @@
         ],
         [
           "send data",
-          3.0
-        ],
-        [
-          "sends data",
           3.0
         ],
         [

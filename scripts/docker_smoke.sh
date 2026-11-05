@@ -21,11 +21,11 @@ echo "== one-shot answer"
 run "does it use training" | grep -q "no training"
 
 echo "== memory persists across containers"
-printf 'remember my name is Vahid\n' | run >/dev/null
-printf 'what is my name\n' | run | grep -q "my name is Vahid\."
+printf 'remember my name is vaheeD\n' | run >/dev/null
+printf 'what is my name\n' | run | grep -q "my name is vaheeD\."
 
 echo "== tags are isolated"
-if printf 'what is my name\n' | run live --tag other | grep -q "Vahid"; then
+if printf 'what is my name\n' | run live --tag other | grep -q "vaheeD"; then
   echo "tag 'other' saw the default tag's memory" >&2; exit 1
 fi
 
@@ -64,12 +64,12 @@ curl -fsS "$URL/v1/health" | grep -q '"status":"ok"'
 AUTH="Authorization: Bearer $ZEROLM_TOKEN"
 curl -fsS -H "$AUTH" -d '{"model":"zerolm","messages":[{"role":"user","content":"what license does it use"}]}' \
   "$URL/v1/chat/completions" | grep -q 'MIT license'
-curl -fsS -H "$AUTH" -d '{"model":"zerolm-live","user":"api","messages":[{"role":"user","content":"remember my name is Vahid"}]}' \
+curl -fsS -H "$AUTH" -d '{"model":"zerolm-live","user":"api","messages":[{"role":"user","content":"remember my name is vaheeD"}]}' \
   "$URL/v1/chat/completions" >/dev/null
 docker compose restart zerolm-api >/dev/null
 for _ in $(seq 1 40); do curl -fsS "$URL/v1/health" >/dev/null 2>&1 && break; sleep 1; done
 curl -fsS -H "$AUTH" -d '{"model":"zerolm-live","user":"api","messages":[{"role":"user","content":"what is my name"}]}' \
-  "$URL/v1/chat/completions" | grep -q 'my name is Vahid'
+  "$URL/v1/chat/completions" | grep -q 'my name is vaheeD'
 echo "== the CLI cannot take a session the API container holds"
 if printf 'hello\n' | docker compose run --rm -T zerolm live --tag api >/dev/null 2>&1; then
   echo "CLI container shared a session with the API container" >&2; exit 1

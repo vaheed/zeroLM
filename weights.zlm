@@ -41,6 +41,8 @@ FEATURE 0 3.0000 good evening
 FEATURE 0 2.4000 howdy
 FEATURE 0 3.0000 hello there
 FEATURE 0 2.8000 good day
+FEATURE 0 2.0000 yo
+FEATURE 0 2.0000 morning
 FEATURE 1 3.2000 who are you
 FEATURE 1 3.2000 what are you
 FEATURE 1 2.8000 your name
@@ -78,6 +80,7 @@ FEATURE 2 3.0000 skill set
 FEATURE 2 3.0000 your skills
 FEATURE 2 2.8000 what services
 FEATURE 2 3.0000 what you can do
+FEATURE 2 2.6000 able to do
 FEATURE 3 3.0000 thank you
 FEATURE 3 2.5000 thanks
 FEATURE 3 3.0000 many thanks
@@ -113,7 +116,6 @@ FEATURE 5 3.0000 how can i use
 FEATURE 5 2.8000 how to start
 FEATURE 5 2.4000 run it
 FEATURE 5 3.0000 get started
-FEATURE 5 3.0000 getting started
 FEATURE 5 3.0000 i need help
 FEATURE 5 3.0000 need some help
 FEATURE 5 3.2000 show me how to use
@@ -142,6 +144,8 @@ FEATURE 6 3.0000 what layers
 FEATURE 6 2.8000 your design
 FEATURE 6 3.0000 model design
 FEATURE 6 2.8000 how is the network
+FEATURE 6 2.2000 layers
+FEATURE 6 2.4000 components
 FEATURE 7 3.2000 weight file
 FEATURE 7 3.2000 weight matrix
 FEATURE 7 3.4000 manual weights
@@ -155,17 +159,14 @@ FEATURE 7 2.6000 parameters
 FEATURE 7 3.0000 your parameters
 FEATURE 7 3.2000 weights zlm
 FEATURE 7 3.0000 numbers in your model
-FEATURE 7 3.2000 weights file
 FEATURE 7 3.0000 hand written parameters
 FEATURE 7 2.8000 the weights
 FEATURE 7 3.0000 your weights
 FEATURE 8 2.8000 training
-FEATURE 8 2.2000 train
 FEATURE 8 3.0000 fine tune
 FEATURE 8 3.0000 fine-tune
 FEATURE 8 3.2000 gradient descent
 FEATURE 8 3.0000 pretraining
-FEATURE 8 3.0000 pretrained
 FEATURE 8 3.0000 pre-trained
 FEATURE 8 3.4000 without training
 FEATURE 8 3.4000 zero training
@@ -195,7 +196,6 @@ FEATURE 9 3.2000 what cant you do
 FEATURE 9 3.2000 what can t you do
 FEATURE 9 3.0000 how reliable
 FEATURE 9 3.0000 weaknesses
-FEATURE 9 3.0000 weakness
 FEATURE 9 3.0000 not good at
 FEATURE 9 2.8000 make mistakes
 FEATURE 9 3.0000 shortcomings
@@ -232,6 +232,7 @@ FEATURE 11 2.8000 todo list
 FEATURE 11 3.0000 plan for me
 FEATURE 11 3.2000 help me plan
 FEATURE 11 3.0000 prepare a plan
+FEATURE 11 2.0000 organize
 FEATURE 12 3.0000 write code
 FEATURE 12 2.6000 programming
 FEATURE 12 2.6000 debug
@@ -280,7 +281,7 @@ FEATURE 14 2.6000 explain this
 FEATURE 14 2.8000 explain a term
 FEATURE 14 2.8000 explain the meaning
 FEATURE 14 2.8000 give me an explanation
-FEATURE 15 2.4000 test
+FEATURE 15 2.6000 tests
 FEATURE 15 3.0000 benchmark
 FEATURE 15 2.8000 evaluation
 FEATURE 15 2.8000 accuracy
@@ -291,9 +292,6 @@ FEATURE 15 3.0000 measure performance
 FEATURE 15 3.0000 check for regressions
 FEATURE 15 3.0000 run the tests
 FEATURE 15 3.0000 run tests
-FEATURE 15 2.6000 tests
-FEATURE 15 2.6000 testing
-FEATURE 15 2.8000 regressions
 FEATURE 15 3.0000 regression tests
 FEATURE 15 3.0000 verify the model
 FEATURE 15 3.0000 how do you verify
@@ -301,12 +299,11 @@ FEATURE 15 3.2000 make pipeline
 FEATURE 15 3.0000 run the pipeline
 FEATURE 16 3.6000 weight space programming
 FEATURE 16 3.6000 weight-space
-FEATURE 16 3.0000 zero shot weights
+FEATURE 16 3.2000 zero shot weight
 FEATURE 16 2.8000 program weights
 FEATURE 16 3.2000 write neural weights
 FEATURE 16 2.4000 rikiyat
 FEATURE 16 2.4000 takehi
-FEATURE 16 3.2000 zero shot weight
 FEATURE 16 3.0000 inspired
 FEATURE 16 3.0000 inspiration
 FEATURE 16 2.8000 influenced
@@ -340,7 +337,6 @@ FEATURE 17 3.2000 get zerolm running
 FEATURE 17 3.0000 get it running
 FEATURE 17 2.8000 running locally
 FEATURE 17 3.0000 to compile it
-FEATURE 17 3.2000 installing zerolm
 FEATURE 18 3.2000 what license
 FEATURE 18 3.2000 which license
 FEATURE 18 3.2000 what licence
@@ -350,7 +346,6 @@ FEATURE 18 3.0000 your license
 FEATURE 18 3.4000 zerolm license
 FEATURE 18 3.4000 license of zerolm
 FEATURE 18 3.4000 mit license
-FEATURE 18 3.4000 mit licensed
 FEATURE 18 3.0000 is it licensed
 FEATURE 18 3.0000 licensed under
 FEATURE 18 2.8000 open source
@@ -394,6 +389,7 @@ FEATURE 19 3.0000 does it run on
 FEATURE 19 3.0000 can it run on
 FEATURE 19 2.8000 small laptop
 FEATURE 19 2.6000 run on a laptop
+FEATURE 19 2.0000 cpu
 FEATURE 20 3.4000 what languages
 FEATURE 20 3.4000 which languages
 FEATURE 20 3.4000 supported languages
@@ -403,7 +399,6 @@ FEATURE 20 3.2000 english only
 FEATURE 20 3.0000 non english
 FEATURE 20 2.8000 do you speak
 FEATURE 20 2.6000 unicode
-FEATURE 20 3.0000 other language
 FEATURE 20 2.8000 understand french
 FEATURE 20 2.8000 understand spanish
 FEATURE 20 2.8000 understand german
@@ -465,7 +460,6 @@ FEATURE 23 3.0000 use the internet
 FEATURE 23 3.2000 network access
 FEATURE 23 3.2000 network calls
 FEATURE 23 3.0000 send data
-FEATURE 23 3.0000 sends data
 FEATURE 23 3.2000 telemetry
 FEATURE 23 3.2000 data collection
 FEATURE 23 3.0000 work offline

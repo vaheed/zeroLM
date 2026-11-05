@@ -320,6 +320,21 @@ impl Model {
             state_vocab.push(id);
         }
 
+        // Phrases of one intent that share a stemmed key are the same evidence: only the heaviest
+        // keeps a key (ties: the first); the others stay in the file but never match.
+        for i in 0..features.len() {
+            for j in 0..i {
+                if features[j].intent == features[i].intent && !features[j].key.is_empty() && features[j].key == features[i].key {
+                    if features[i].weight > features[j].weight {
+                        features[j].key.clear();
+                    } else {
+                        features[i].key.clear();
+                    }
+                    break;
+                }
+            }
+        }
+
         let mut snap_words: Vec<Vec<u8>> = Vec::new();
         for f in &features {
             for w in f.key.split(|&c| c == b' ') {
@@ -669,6 +684,17 @@ NODE 0 1 hi\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
         assert_eq!(String::from_utf8(stem_text(b"do tests pass")).unwrap(), "do test pass");
         // Known limit: a final "e" is only removed from words longer than four letters.
         assert_ne!(st("tuned"), st("tune"));
+    }
+
+    #[test]
+    fn phrases_that_share_a_stem_count_once_with_the_heaviest_weight() {
+        let text = "ZEROLM 1\nMETA 2 4\nINTENT 0 testing\nINTENT 1 unknown\n\
+FEATURE 0 2.0 test\nFEATURE 0 2.5 tests\nFEATURE 0 1.0 testing\nFEATURE 0 3.0 benchmark\nSTART 0 0\nSTART 1 2\n\
+NODE 0 1 hi\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
+        let m = Model::parse(text).unwrap();
+        let r = m.rank("do the tests and the benchmark pass", &[], 1);
+        assert_eq!(r.score, 5.5, "2.5 (heaviest of test/tests/testing) + 3.0, not 8.5");
+        assert_eq!(m.rank("testing", &[], 1).score, 2.5);
     }
 
     #[test]

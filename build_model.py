@@ -52,6 +52,44 @@ def load_spec(path: Path = SPEC_PATH) -> dict:
     return spec
 
 
+def stem_word(w: str) -> str:
+    """Python port of the runtimes' stemmer (main.c / rust/src/lib.rs); used only to lint the spec."""
+    if not w or not all("a" <= c <= "z" for c in w):
+        return w
+    s = w
+    if len(s) > 4 and s.endswith("ies"):
+        s = s[:-3] + "y"
+    elif len(s) > 3 and s.endswith("es") and (s[-3] in "sxz" or s.endswith(("ches", "shes"))):
+        s = s[:-2]
+    elif len(s) > 3 and s.endswith("s") and not s.endswith(("ss", "us", "is")):
+        s = s[:-1]
+    undouble = lambda t: t[:-1] if len(t) >= 2 and t[-1] == t[-2] and t[-1] not in "lsz" else t
+    if len(s) > 5 and s.endswith("ing"):
+        s = undouble(s[:-3])
+    elif len(s) > 4 and s.endswith("ed"):
+        s = undouble(s[:-2])
+    if len(s) > 4 and s.endswith("e"):
+        s = s[:-1]
+    return s
+
+
+def stem_key(phrase: str) -> str:
+    return " ".join(stem_word(w) for w in phrase.split(" "))
+
+
+def duplicate_stems(spec: dict) -> list[str]:
+    """Phrases of one intent that are identical after stemming (the runtime counts only the heaviest)."""
+    out = []
+    for item in spec["intents"]:
+        seen: dict[str, str] = {}
+        for phrase, _ in item.get("features", []):
+            key = stem_key(phrase)
+            if key in seen:
+                out.append(f"{item['name']}: {seen[key]!r} and {phrase!r} are the same after stemming ({key!r})")
+            seen.setdefault(key, phrase)
+    return out
+
+
 def compile_spec(spec: dict) -> str:
     intents = spec["intents"]
     intent_ids = {item["name"]: idx for idx, item in enumerate(intents)}
@@ -102,6 +140,8 @@ def main() -> int:
     args = parser.parse_args()
     weights_path = args.out
     spec = load_spec(args.spec)
+    for line in duplicate_stems(spec):
+        print(f"warning: {line}", file=__import__("sys").stderr)
     content = compile_spec(spec)
     states = sum(len(item["response"].split()) + 1 for item in spec["intents"])
     features = sum(len(item.get("features", [])) for item in spec["intents"])
