@@ -7,3 +7,6 @@ __pycache__/
 /reports/*.tmp
 /reports/clinc150_small.json
 /rust/target/
+backups/
+/tests/next/final.jsonl
+/tests/next/heldout.jsonl

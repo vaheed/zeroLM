@@ -54,3 +54,9 @@ on the published port, persists a session across a restart, and holds that sessi
 
 Open a run's **Summary** tab for the Markdown report. Download `zerolm-ci-reports-Linux` or
 `zerolm-ci-reports-macOS` from **Artifacts** for the JSON reports and logs.
+
+## ZeroLM Next job (`next`)
+
+A separate job in `.github/workflows/ci.yml` runs the research track on ubuntu-latest. It records the commit, toolchain versions and the benchmark seed, then: validates `model/next/spec.json` and every patch; **reproduces** `model/next/weights.zln` from the specification and patches (`research/build_next.py --check`); builds the C reference and the Rust runtime; runs `cargo test` (including the shortcut-detection and causal-dependence tests in `rust/tests/next.rs`) and clippy; checks that the legacy v0.2 regression suite is still 100 % and that C and Rust agree; checks that every weight patch validates and has recorded results; runs the development, adversarial, primitive and per-defect suites (each must pass in full); regenerates the compositional holdout from its seed and verifies its sha256 against `tests/next/heldout_manifest.json`; then runs `research/benchmark/run_suite.py`, which evaluates ZeroLM Next, the symbolic, keyword, phrase-lookup and legacy baselines, random and shuffled weights, 28 ablations and a length-scaling sweep. The job fails if an acceptance floor is missed or if an ablation of a designed mechanism has no measurable effect (a sign the network is being bypassed). Machine-readable reports and execution traces are uploaded as the `zerolm-next-reports` artifact and a readable summary is written to the GitHub Actions job summary.
+
+Nothing is marked as passed when skipped: every step either runs to completion or the job fails.

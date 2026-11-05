@@ -8,6 +8,8 @@ ZeroLM is an open-source research experiment in building a small neural text-gen
 
 **Ways to run it:** the original C runtime (stateless), a Rust port with **ZeroLM Live** (a session with memory that survives restarts) and an **OpenAI-compatible HTTP API**, and a Docker image of the Rust build. See [INSTALL.md](INSTALL.md).
 
+> **Research track:** `research/` contains ZeroLM Next, an experiment in *compositional* zero-training weight programming (a small network that parses a bounded instruction language into operations for a grid-world executor). It is separate from the v0.2 model described below, which is unchanged. Start with [research/README.md](research/README.md); honest results and limits are in [research/RESULTS.md](research/RESULTS.md) and [research/LIMITATIONS.md](research/LIMITATIONS.md).
+
 ## Get started
 
 The quickest way to build, test, and run ZeroLM is on Linux or macOS.

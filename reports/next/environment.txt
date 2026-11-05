@@ -1,0 +1,7 @@
+commit: local
+benchmark seed: 20260701
+runner: Linux x86_64
+rustc 1.75.0 (82e1608df 2023-12-21) (built from a source tarball)
+cargo 1.75.0
+cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0
+Python 3.12.3

@@ -1,0 +1,55 @@
+{
+ "cases": 150,
+ "supported": 0,
+ "unsupported": 150,
+ "exact_match": null,
+ "per_operation_accuracy": null,
+ "semantic_accuracy": null,
+ "false_rejection": null,
+ "false_acceptance": 0.0,
+ "correct_rejection": 1.0,
+ "abstention_rate": 1.0,
+ "by_category": {
+  "defect-003": {
+   "n": 150,
+   "false_acceptance": 0.0
+  }
+ },
+ "compositional_all": {
+  "n": 0,
+  "exact_match": null
+ },
+ "longer_than_dev": {
+  "n": 0,
+  "exact_match": null
+ },
+ "multi_operation_execution": {
+  "n": 0,
+  "semantic_accuracy": null
+ },
+ "primitive_interpretation": {
+  "n": 0,
+  "exact_match": null
+ },
+ "counterfactual_pairs": {
+  "n": 0,
+  "consistency": null
+ },
+ "order_groups": {
+  "n": 0,
+  "all_variants_correct": null
+ },
+ "executor_agreement": null,
+ "system": "next",
+ "ablations": [],
+ "wall_s": 0.12,
+ "runtime": {
+  "cases": 150,
+  "wall_s": 0.104,
+  "parse_us_mean": 674.1,
+  "parse_us_p50": 671.6,
+  "parse_us_p99": 1027.4,
+  "peak_rss_kb": 3272,
+  "weights_bytes": 56444
+ }
+}

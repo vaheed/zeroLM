@@ -3,7 +3,7 @@ PYTHON ?= python3
 CFLAGS ?= -O2 -std=c11 -Wall -Wextra -Wpedantic
 LDFLAGS ?=
 
-.PHONY: all clean build-model check-generated test benchmark pipeline
+.PHONY: all clean build-model check-generated test benchmark pipeline next next-check
 
 all: zerolm
 
@@ -33,3 +33,13 @@ pipeline: build-model
 
 clean:
 	rm -f zerolm zerolm.exe *.o
+
+# ZeroLM Next (research track): see research/README.md
+next-check:
+	$(PYTHON) research/build_next.py --check
+
+next: next-check
+	cargo build --release --manifest-path rust/Cargo.toml
+	cargo test --manifest-path rust/Cargo.toml --test next
+	$(PYTHON) research/benchmark/evaluate.py --cases tests/next/dev.jsonl --system next --min exact_match=1.0
+	$(PYTHON) research/benchmark/evaluate.py --cases tests/next/adversarial.jsonl --system next --min exact_match=1.0 --min correct_rejection=1.0

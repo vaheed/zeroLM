@@ -1,0 +1,643 @@
+{
+ "environment": {
+  "date": "2026-11-05T08:47:42Z",
+  "platform": "Linux-6.8.0-147-generic-x86_64-with-glibc2.39",
+  "python": "3.12.3",
+  "rustc": "rustc 1.75.0 (82e1608df 2023-12-21) (built from a source tarball)",
+  "cc": "cc (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "git_commit": "b2cf897a40344de156e8c3bac2c23fc0f5fa6fff",
+  "git_dirty": true,
+  "benchmark_seed": 20260701,
+  "cases_file": "final.jsonl",
+  "cases_sha256": "56918267751c6208fb98dfe00177ca4e22f277628eefbc0a14c382893e4aa50b",
+  "weights_sha256": "853115ad260a2b8b7b07527d397e5f620fd45deb1cafc12b875d4682d2f53e64",
+  "generator_sha256": "f3b6dac70987f2cf058ee3756a80e2be41bee8729718d6e27f979535502d8a56",
+  "grammar_sha256": "bf9370cf299f72d13a26f688adcfac2c69c271dd2fcdc0abef0f9f616ee66b91"
+ },
+ "systems": {
+  "zerolm_next": {
+   "cases": 21585,
+   "supported": 19785,
+   "unsupported": 1800,
+   "exact_match": 1.0,
+   "per_operation_accuracy": 1.0,
+   "semantic_accuracy": 1.0,
+   "false_rejection": 0.0,
+   "false_acceptance": 0.0,
+   "abstention_rate": 0.08339,
+   "primitive_interpretation": {
+    "n": 85,
+    "exact_match": 1.0
+   },
+   "compositional_all": {
+    "n": 13500,
+    "exact_match": 1.0
+   },
+   "seen_sequence": {
+    "n": 206,
+    "exact_match": 1.0
+   },
+   "unseen_sequence": {
+    "n": 13294,
+    "exact_match": 1.0
+   },
+   "unseen_primitive_combination": {
+    "n": 13021,
+    "exact_match": 1.0
+   },
+   "longer_than_dev": {
+    "n": 4136,
+    "exact_match": 1.0
+   },
+   "multi_operation_execution": {
+    "n": 14512,
+    "semantic_accuracy": 1.0
+   },
+   "counterfactual_pairs": {
+    "n": 1600,
+    "consistency": 1.0
+   },
+   "order_groups": {
+    "n": 600,
+    "all_variants_correct": 1.0
+   },
+   "executor_agreement": {
+    "n": 19785,
+    "rate": 1.0
+   },
+   "by_category": {
+    "ambiguous": {
+     "n": 300,
+     "false_acceptance": 0.0
+    },
+    "binding": {
+     "n": 1000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "comp2": {
+     "n": 3000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "comp3": {
+     "n": 3000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "counterfactual": {
+     "n": 3200,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "long": {
+     "n": 1500,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "multi": {
+     "n": 2000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "order": {
+     "n": 3000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "primitive": {
+     "n": 85,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "single": {
+     "n": 2000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "tracking": {
+     "n": 1000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "unsupported": {
+     "n": 1500,
+     "false_acceptance": 0.0
+    }
+   }
+  },
+  "symbolic": {
+   "cases": 21585,
+   "supported": 19785,
+   "unsupported": 1800,
+   "exact_match": 1.0,
+   "per_operation_accuracy": 1.0,
+   "semantic_accuracy": 1.0,
+   "false_rejection": 0.0,
+   "false_acceptance": 0.0,
+   "abstention_rate": 0.08339,
+   "primitive_interpretation": {
+    "n": 85,
+    "exact_match": 1.0
+   },
+   "compositional_all": {
+    "n": 13500,
+    "exact_match": 1.0
+   },
+   "seen_sequence": {
+    "n": 206,
+    "exact_match": 1.0
+   },
+   "unseen_sequence": {
+    "n": 13294,
+    "exact_match": 1.0
+   },
+   "unseen_primitive_combination": {
+    "n": 13021,
+    "exact_match": 1.0
+   },
+   "longer_than_dev": {
+    "n": 4136,
+    "exact_match": 1.0
+   },
+   "multi_operation_execution": {
+    "n": 14512,
+    "semantic_accuracy": 1.0
+   },
+   "counterfactual_pairs": {
+    "n": 1600,
+    "consistency": 1.0
+   },
+   "order_groups": {
+    "n": 600,
+    "all_variants_correct": 1.0
+   },
+   "executor_agreement": null,
+   "by_category": {
+    "ambiguous": {
+     "n": 300,
+     "false_acceptance": 0.0
+    },
+    "binding": {
+     "n": 1000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "comp2": {
+     "n": 3000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "comp3": {
+     "n": 3000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "counterfactual": {
+     "n": 3200,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "long": {
+     "n": 1500,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "multi": {
+     "n": 2000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "order": {
+     "n": 3000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "primitive": {
+     "n": 85,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "single": {
+     "n": 2000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "tracking": {
+     "n": 1000,
+     "exact_match": 1.0,
+     "semantic_accuracy": 1.0
+    },
+    "unsupported": {
+     "n": 1500,
+     "false_acceptance": 0.0
+    }
+   }
+  },
+  "keyword": {
+   "cases": 21585,
+   "supported": 19785,
+   "unsupported": 1800,
+   "exact_match": 0.23073,
+   "per_operation_accuracy": 0.19705,
+   "semantic_accuracy": 0.26288,
+   "false_rejection": 0.005,
+   "false_acceptance": 0.56444,
+   "abstention_rate": 0.04091,
+   "primitive_interpretation": {
+    "n": 85,
+    "exact_match": 0.83529
+   },
+   "compositional_all": {
+    "n": 13500,
+    "exact_match": 0.12874
+   },
+   "seen_sequence": {
+    "n": 206,
+    "exact_match": 0.98058
+   },
+   "unseen_sequence": {
+    "n": 13294,
+    "exact_match": 0.11554
+   },
+   "unseen_primitive_combination": {
+    "n": 13021,
+    "exact_match": 0.11151
+   },
+   "longer_than_dev": {
+    "n": 4136,
+    "exact_match": 0.0
+   },
+   "multi_operation_execution": {
+    "n": 14512,
+    "semantic_accuracy": 0.02302
+   },
+   "counterfactual_pairs": {
+    "n": 1600,
+    "consistency": 0.85938
+   },
+   "order_groups": {
+    "n": 600,
+    "all_variants_correct": 0.0
+   },
+   "executor_agreement": null,
+   "by_category": {
+    "ambiguous": {
+     "n": 300,
+     "false_acceptance": 1.0
+    },
+    "binding": {
+     "n": 1000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.017
+    },
+    "comp2": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.05833
+    },
+    "comp3": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.009
+    },
+    "counterfactual": {
+     "n": 3200,
+     "exact_match": 0.86125,
+     "semantic_accuracy": 0.92312
+    },
+    "long": {
+     "n": 1500,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "multi": {
+     "n": 2000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.002
+    },
+    "order": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.02867
+    },
+    "primitive": {
+     "n": 85,
+     "exact_match": 0.83529,
+     "semantic_accuracy": 0.83529
+    },
+    "single": {
+     "n": 2000,
+     "exact_match": 0.869,
+     "semantic_accuracy": 0.921
+    },
+    "tracking": {
+     "n": 1000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.025
+    },
+    "unsupported": {
+     "n": 1500,
+     "false_acceptance": 0.47733
+    }
+   }
+  },
+  "lookup": {
+   "cases": 21585,
+   "supported": 19785,
+   "unsupported": 1800,
+   "exact_match": 0.00116,
+   "per_operation_accuracy": 0.00042,
+   "semantic_accuracy": 0.00116,
+   "false_rejection": 0.99884,
+   "false_acceptance": 0.0,
+   "abstention_rate": 0.99893,
+   "primitive_interpretation": {
+    "n": 85,
+    "exact_match": 0.09412
+   },
+   "compositional_all": {
+    "n": 13500,
+    "exact_match": 0.00037
+   },
+   "seen_sequence": {
+    "n": 206,
+    "exact_match": 0.02427
+   },
+   "unseen_sequence": {
+    "n": 13294,
+    "exact_match": 0.0
+   },
+   "unseen_primitive_combination": {
+    "n": 13021,
+    "exact_match": 0.0
+   },
+   "longer_than_dev": {
+    "n": 4136,
+    "exact_match": 0.0
+   },
+   "multi_operation_execution": {
+    "n": 14512,
+    "semantic_accuracy": 0.0
+   },
+   "counterfactual_pairs": {
+    "n": 1600,
+    "consistency": 0.00063
+   },
+   "order_groups": {
+    "n": 600,
+    "all_variants_correct": 0.0
+   },
+   "executor_agreement": null,
+   "by_category": {
+    "ambiguous": {
+     "n": 300,
+     "false_acceptance": 0.0
+    },
+    "binding": {
+     "n": 1000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "comp2": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "comp3": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "counterfactual": {
+     "n": 3200,
+     "exact_match": 0.00313,
+     "semantic_accuracy": 0.00313
+    },
+    "long": {
+     "n": 1500,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "multi": {
+     "n": 2000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "order": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "primitive": {
+     "n": 85,
+     "exact_match": 0.09412,
+     "semantic_accuracy": 0.09412
+    },
+    "single": {
+     "n": 2000,
+     "exact_match": 0.0025,
+     "semantic_accuracy": 0.0025
+    },
+    "tracking": {
+     "n": 1000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "unsupported": {
+     "n": 1500,
+     "false_acceptance": 0.0
+    }
+   }
+  },
+  "legacy_v0.2_c": {
+   "cases": 21585,
+   "supported": 19785,
+   "unsupported": 1800,
+   "exact_match": 0.0,
+   "per_operation_accuracy": 0.0,
+   "semantic_accuracy": 0.0,
+   "false_rejection": 1.0,
+   "false_acceptance": 0.00667,
+   "abstention_rate": 0.99944,
+   "primitive_interpretation": {
+    "n": 85,
+    "exact_match": 0.0
+   },
+   "compositional_all": {
+    "n": 13500,
+    "exact_match": 0.0
+   },
+   "seen_sequence": {
+    "n": 206,
+    "exact_match": 0.0
+   },
+   "unseen_sequence": {
+    "n": 13294,
+    "exact_match": 0.0
+   },
+   "unseen_primitive_combination": {
+    "n": 13021,
+    "exact_match": 0.0
+   },
+   "longer_than_dev": {
+    "n": 4136,
+    "exact_match": 0.0
+   },
+   "multi_operation_execution": {
+    "n": 14512,
+    "semantic_accuracy": 0.0
+   },
+   "counterfactual_pairs": {
+    "n": 1600,
+    "consistency": 0.0
+   },
+   "order_groups": {
+    "n": 600,
+    "all_variants_correct": 0.0
+   },
+   "executor_agreement": null,
+   "by_category": {
+    "ambiguous": {
+     "n": 300,
+     "false_acceptance": 0.0
+    },
+    "binding": {
+     "n": 1000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "comp2": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "comp3": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "counterfactual": {
+     "n": 3200,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "long": {
+     "n": 1500,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "multi": {
+     "n": 2000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "order": {
+     "n": 3000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "primitive": {
+     "n": 85,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "single": {
+     "n": 2000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "tracking": {
+     "n": 1000,
+     "exact_match": 0.0,
+     "semantic_accuracy": 0.0
+    },
+    "unsupported": {
+     "n": 1500,
+     "false_acceptance": 0.008
+    }
+   },
+   "note": "v0.2 is an intent classifier: it cannot emit operations, so exact match is 0 by construction; rejection behaviour is the only comparable signal."
+  }
+ },
+ "random_weights_same_architecture": {
+  "runs": [
+   {
+    "seed": 1,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0744,
+    "false_acceptance": 0.98833,
+    "abstention_rate": 0.00097
+   },
+   {
+    "seed": 2,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.04778,
+    "abstention_rate": 0.99588
+   },
+   {
+    "seed": 3,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.0,
+    "abstention_rate": 1.0
+   },
+   {
+    "seed": 4,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.07435,
+    "false_acceptance": 0.88389,
+    "abstention_rate": 0.01075
+   },
+   {
+    "seed": 5,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0744,
+    "false_acceptance": 0.95889,
+    "abstention_rate": 0.00343
+   }
+  ],
+  "max_exact_match": 0
+ },
+ "shuffled_weights_same_values": {
+  "runs": [
+   {
+    "seed": 1,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.0,
+    "abstention_rate": 1.0
+   },
+   {
+    "seed": 2,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.0,
+    "abstention_rate": 1.0
+   },
+   {
+    "seed": 3,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.0,
+    "abstention_rate": 1.0
+   },
+   {
+    "seed": 4,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.0,
+    "abstention_rate": 1.0
+   },
+   {
+    "seed": 5,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.0,
+    "false_acceptance": 0.0,
+    "abstention_rate": 1.0
+   }
+  ],
+  "max_exact_match": 0
+ }
+}

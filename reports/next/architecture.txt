@@ -1,0 +1,110 @@
+dims {'D': 35, 'K': 51, 'N': 24, 'OFF': 100.0}; features 35; fields 51
+layer A: 11 units
+  bnd_SEQ                            bias=-1 inputs=5 adv=1 rev=0
+  bnd_SEQ_pb                         bias=-2 inputs=5 adv=1 rev=1
+  bnd_BEFORE                         bias=-1 inputs=5 adv=1 rev=0
+  bnd_BEFORE_pb                      bias=-2 inputs=5 adv=1 rev=1
+  bnd_ACT                            bias=-1 inputs=7 adv=1 rev=0
+  bnd_ACT_pb                         bias=-2 inputs=7 adv=1 rev=1
+  bnd_NEG                            bias=-1 inputs=5 adv=1 rev=0
+  bnd_NEG_pb                         bias=-2 inputs=5 adv=1 rev=1
+  bnd_AFTER                          bias=-1 inputs=4 adv=1 rev=1
+  bnd_STOP                           bias=-1 inputs=5 adv=1 rev=0
+  bnd_STOP_pb                        bias=-2 inputs=5 adv=1 rev=1
+layer B: 68 units
+  w_ACT.move                         bias=+0 inputs=1 out={'ACT.move': 1.0}
+  w_ACT.paint                        bias=+0 inputs=1 out={'ACT.paint': 1.0}
+  w_ACT.remove                       bias=+0 inputs=1 out={'ACT.remove': 1.0}
+  w_TYP.block                        bias=+0 inputs=3 out={'TYP.block': 1.0}
+  w_CTYP.block                       bias=-1 inputs=3 out={'CTYP.block': 1.0}
+  w_TYP.circle                       bias=+0 inputs=3 out={'TYP.circle': 1.0}
+  w_CTYP.circle                      bias=-1 inputs=3 out={'CTYP.circle': 1.0}
+  w_TYP.triangle                     bias=+0 inputs=3 out={'TYP.triangle': 1.0}
+  w_CTYP.triangle                    bias=-1 inputs=3 out={'CTYP.triangle': 1.0}
+  w_TYP.star                         bias=+0 inputs=3 out={'TYP.star': 1.0}
+  w_CTYP.star                        bias=-1 inputs=3 out={'CTYP.star': 1.0}
+  w_COL.red                          bias=+0 inputs=7 out={'COL.red': 1.0}
+  w_NCOL.red                         bias=-1 inputs=7 out={'NCOL.red': 1.0}
+  w_CCOL.red                         bias=-1 inputs=3 out={'CCOL.red': 1.0}
+  w_COL.blue                         bias=+0 inputs=7 out={'COL.blue': 1.0}
+  w_NCOL.blue                        bias=-1 inputs=7 out={'NCOL.blue': 1.0}
+  w_CCOL.blue                        bias=-1 inputs=3 out={'CCOL.blue': 1.0}
+  w_COL.green                        bias=+0 inputs=7 out={'COL.green': 1.0}
+  w_NCOL.green                       bias=-1 inputs=7 out={'NCOL.green': 1.0}
+  w_CCOL.green                       bias=-1 inputs=3 out={'CCOL.green': 1.0}
+  w_COL.yellow                       bias=+0 inputs=7 out={'COL.yellow': 1.0}
+  w_NCOL.yellow                      bias=-1 inputs=7 out={'NCOL.yellow': 1.0}
+  w_CCOL.yellow                      bias=-1 inputs=3 out={'CCOL.yellow': 1.0}
+  w_COL.purple                       bias=+0 inputs=7 out={'COL.purple': 1.0}
+  w_NCOL.purple                      bias=-1 inputs=7 out={'NCOL.purple': 1.0}
+  w_CCOL.purple                      bias=-1 inputs=3 out={'CCOL.purple': 1.0}
+  w_COL.orange                       bias=+0 inputs=7 out={'COL.orange': 1.0}
+  w_NCOL.orange                      bias=-1 inputs=7 out={'NCOL.orange': 1.0}
+  w_CCOL.orange                      bias=-1 inputs=3 out={'CCOL.orange': 1.0}
+  w_DIR.left                         bias=+0 inputs=1 out={'DIR.left': 1.0}
+  w_DIR.right                        bias=+0 inputs=1 out={'DIR.right': 1.0}
+  w_DIR.up                           bias=+0 inputs=1 out={'DIR.up': 1.0}
+  w_DIR.down                         bias=+0 inputs=1 out={'DIR.down': 1.0}
+  w_CNT.1                            bias=+0 inputs=1 out={'CNT.1': 1.0}
+  w_CNT.2                            bias=+0 inputs=1 out={'CNT.2': 1.0}
+  w_CNT.3                            bias=+0 inputs=1 out={'CNT.3': 1.0}
+  w_CNT.4                            bias=+0 inputs=1 out={'CNT.4': 1.0}
+  w_CNT.5                            bias=+0 inputs=1 out={'CNT.5': 1.0}
+  w_CNT.6                            bias=+0 inputs=1 out={'CNT.6': 1.0}
+  w_CNT.7                            bias=+0 inputs=1 out={'CNT.7': 1.0}
+  w_CNT.8                            bias=+0 inputs=1 out={'CNT.8': 1.0}
+  w_CNT.9                            bias=+0 inputs=1 out={'CNT.9': 1.0}
+  w_NEG                              bias=+0 inputs=1 out={'NEG': 1.0}
+  w_CFLAG                            bias=+0 inputs=3 out={'CFLAG': 1.0}
+  w_CNEG                             bias=+0 inputs=2 out={'CNEG': 1.0}
+  w_CCL_close                        bias=-1 inputs=3 out={'CCL': 1.0}
+  w_CCL_seq                          bias=-1 inputs=3 out={'CCL': 1.0}
+  w_CCL_act                          bias=-1 inputs=5 out={'CCL': 1.0}
+  w_PB                               bias=+0 inputs=4 out={'PB': 1.0}
+  time_rev                           bias=-1000.5 inputs=2 out={'TIME': 1.0}
+  time_fwd                           bias=-999 inputs=3 out={'TIME': 1.0}
+  err_unknown_token                  bias=+0 inputs=1 [error]
+  err_direction_without_object       bias=+0 inputs=8 [error]
+  err_direction_in_condition         bias=-1 inputs=6 [error]
+  err_count_without_direction        bias=+0 inputs=13 [error]
+  err_count_in_condition             bias=-1 inputs=11 [error]
+  err_action_after_object            bias=-1 inputs=7 [error]
+  err_action_after_color             bias=-1 inputs=9 [error]
+  err_second_condition               bias=-1 inputs=3 [error]
+  w_OPEN                             bias=+0 inputs=2 out={'OPEN': 1}
+  w_CCL_stop                         bias=-1 inputs=3 out={'CCL': 1}
+  w_GRP_after                        bias=-1 inputs=2 out={'GRP': 1}
+  w_GRP_before                       bias=-1 inputs=2 out={'GRP': 1}
+  err_chained_after                  bias=-2 inputs=5 [error]
+  err_chained_before                 bias=-2 inputs=5 [error]
+  w_PEND_SEQ                         bias=+0 inputs=2 out={'PEND': 1}
+  w_PEND_AFTER                       bias=+0 inputs=2 out={'PEND': 1}
+  w_PEND_BEFORE                      bias=+0 inputs=2 out={'PEND': 1}
+layer V: 26 units
+  overfull_ACT                       bias=-1 inputs=3
+  overfull_TYP                       bias=-1 inputs=4
+  overfull_COL                       bias=-1 inputs=6
+  overfull_NCOL                      bias=-1 inputs=6
+  overfull_DIR                       bias=-1 inputs=4
+  overfull_CNT                       bias=-1 inputs=9
+  overfull_CTYP                      bias=-1 inputs=4
+  overfull_CCOL                      bias=-1 inputs=6
+  overfull_NEG                       bias=-1 inputs=1
+  overfull_CNEG                      bias=-1 inputs=1
+  row_without_action                 bias=+0 inputs=4
+  move_needs_object                  bias=+0 inputs=5
+  move_needs_direction               bias=+0 inputs=5
+  move_forbids_new_color             bias=-1 inputs=7
+  paint_needs_object                 bias=+0 inputs=5
+  paint_needs_new_color              bias=+0 inputs=7
+  paint_forbids_direction            bias=-1 inputs=5
+  paint_forbids_count                bias=-1 inputs=10
+  remove_needs_object                bias=+0 inputs=5
+  remove_forbids_direction           bias=-1 inputs=5
+  remove_forbids_count               bias=-1 inputs=10
+  remove_forbids_new_color           bias=-1 inputs=7
+  count_needs_direction              bias=+0 inputs=13
+  condition_needs_object             bias=+0 inputs=5
+  dangling_connector                 bias=+0 inputs=2
+  dangling_pending                   bias=+0 inputs=4
+tensors: 47; non-zero weights: 1469

@@ -1,0 +1,107 @@
+{
+ "id": "003",
+ "title": "Remove 'that' from the neutral words",
+ "defect": "'move A left, after that move B up' was accepted with the order REVERSED (B first): a comma does not close the row, so 'after' acted as the infix connector 'A after B'. The word 'that' was a neutral (zero-vector) token, so the network could not tell 'after that' from 'after'. Found by the hand-written adversarial suite (tests/next/adversarial.jsonl), not by the generated benchmark.",
+ "hypothesis": "'after that' is not part of the documented grammar. If 'that' is not a lexicon word it embeds as the unknown-token vector, err_unknown_token fires, and every construction containing 'that' is rejected instead of being silently mis-ordered.",
+ "affected": "lexicon (neutral word 'that' removed): embedding row E['that'] is no longer a zero row; the token falls back to the <unk> row.",
+ "mathematical_effect": "x_UNK = 1 for the token, so the error detector unit err_unknown_token = relu(x_UNK) adds 1 to the sticky error mass, which exceeds the reject threshold 0.5.",
+ "expected": "tests/next/defects-003.jsonl: all 150 rejected (was: all accepted). No change on the dev set and earlier defect suites.",
+ "targets": [
+  "tests/next/defects-003.jsonl"
+ ],
+ "regression": [
+  "tests/next/dev.jsonl",
+  "tests/next/defects-001.jsonl",
+  "tests/next/defects-002.jsonl"
+ ],
+ "edits": [
+  {
+   "op": "remove_neutral",
+   "word": "that"
+  }
+ ],
+ "observed": {
+  "before": {
+   "tests/next/defects-003.jsonl": {
+    "cases": 150,
+    "supported": 0,
+    "unsupported": 150,
+    "exact_match": null,
+    "semantic_accuracy": null,
+    "false_rejection": null,
+    "false_acceptance": 1.0
+   }
+  },
+  "after": {
+   "tests/next/defects-003.jsonl": {
+    "cases": 150,
+    "supported": 0,
+    "unsupported": 150,
+    "exact_match": null,
+    "semantic_accuracy": null,
+    "false_rejection": null,
+    "false_acceptance": 0.0
+   }
+  }
+ },
+ "regression_result": {
+  "before": {
+   "tests/next/dev.jsonl": {
+    "cases": 527,
+    "supported": 480,
+    "unsupported": 47,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": 0.0
+   },
+   "tests/next/defects-001.jsonl": {
+    "cases": 759,
+    "supported": 759,
+    "unsupported": 0,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": null
+   },
+   "tests/next/defects-002.jsonl": {
+    "cases": 300,
+    "supported": 0,
+    "unsupported": 300,
+    "exact_match": null,
+    "semantic_accuracy": null,
+    "false_rejection": null,
+    "false_acceptance": 0.0
+   }
+  },
+  "after": {
+   "tests/next/dev.jsonl": {
+    "cases": 527,
+    "supported": 480,
+    "unsupported": 47,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": 0.0
+   },
+   "tests/next/defects-001.jsonl": {
+    "cases": 759,
+    "supported": 759,
+    "unsupported": 0,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": null
+   },
+   "tests/next/defects-002.jsonl": {
+    "cases": 300,
+    "supported": 0,
+    "unsupported": 300,
+    "exact_match": null,
+    "semantic_accuracy": null,
+    "false_rejection": null,
+    "false_acceptance": 0.0
+   }
+  }
+ }
+}

@@ -1,0 +1,34 @@
+{
+ "purpose": "Frozen description of the generated compositional holdouts. The case files are not committed (28 MB each); they are regenerated from the seed and verified by sha256 in CI.",
+ "protocol": [
+  "Development examples: tests/next/dev.jsonl (seed 1001, restricted lexical subset, at most 3 clauses). Only these were used while the base construction was designed.",
+  "seed 20260601 ('discovery'): evaluated once on the base construction. It exposed defects 001 and 002; its failing cases were saved as tests/next/defects-001/002.jsonl and the seed is thereafter treated as development data.",
+  "seed 20260615 ('gate'): fresh holdout used as a regression gate by patch 004 and for the intermediate check after patches 001-002. Also development data afterwards.",
+  "seed 20260701 ('reported'): never inspected before the final patch set (001-004) was frozen. All headline numbers are from this file."
+ ],
+ "files": [
+  {
+   "role": "discovery",
+   "profile": "final",
+   "seed": 20260601,
+   "cases": 21585,
+   "sha256": "a0f42f2fecd204b624eca3fb9e0f51c962ce619b5c79ab101900798a42eaae0e"
+  },
+  {
+   "role": "gate",
+   "profile": "final",
+   "seed": 20260615,
+   "cases": 21585,
+   "sha256": "a0c4cd0020a4cc36d41df4d07bb1bb19d5f2f1eeca8bde2d394f86462f9fd5be"
+  },
+  {
+   "role": "reported",
+   "profile": "final",
+   "seed": 20260701,
+   "cases": 21585,
+   "sha256": "56918267751c6208fb98dfe00177ca4e22f277628eefbc0a14c382893e4aa50b"
+  }
+ ],
+ "dev_sha256": "93b5fce9279841deb8fd5ff304e31d3e012b293fff46c78e7b068d28122d37e0",
+ "generator_sha256": "f3b6dac70987f2cf058ee3756a80e2be41bee8729718d6e27f979535502d8a56"
+}

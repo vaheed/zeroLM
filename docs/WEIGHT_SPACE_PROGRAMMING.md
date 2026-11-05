@@ -129,3 +129,7 @@ The research direction worth testing is whether an external reasoner can program
 ## Reference
 
 Takehi, Rikiya, Jayden Teoh, Alex Zhang, and Omar Khattab. “Sparks of Weight-Space Programming: LLMs can natively read & write neural network weights.” November 2026. [Article](https://rikiyat.github.io/blog/weight-space-programming/).
+
+## ZeroLM Next: a controlled patch workflow
+
+The research track (`research/`) has a stricter version of this workflow in `research/tools/wsp.py`: `diagnose` explains a failing parse from the forward-pass trace (which boundary unit fired, which unit wrote which field into which row), `validate` checks a patch's format, names and tensor shapes, `apply` backs up the current weights, applies the patch, evaluates before/after on target and regression suites, records the observed numbers in the patch file and reverts automatically on a regression, `revert` restores the last backup. Patches are human-written JSON (`experiments/next-patches/`); no optimizer is involved. The four patches made so far are described in `research/RESULTS.md`.

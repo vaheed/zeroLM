@@ -1,0 +1,96 @@
+{
+ "cases": 759,
+ "supported": 759,
+ "unsupported": 0,
+ "exact_match": 1.0,
+ "per_operation_accuracy": 1.0,
+ "semantic_accuracy": 1.0,
+ "false_rejection": 0.0,
+ "false_acceptance": null,
+ "correct_rejection": null,
+ "abstention_rate": 0.0,
+ "by_category": {
+  "binding": {
+   "n": 50,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  },
+  "comp2": {
+   "n": 19,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  },
+  "comp3": {
+   "n": 126,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  },
+  "long": {
+   "n": 333,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  },
+  "multi": {
+   "n": 190,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  },
+  "tracking": {
+   "n": 41,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  }
+ },
+ "seen_sequence": {
+  "n": 0,
+  "exact_match": null
+ },
+ "unseen_sequence": {
+  "n": 759,
+  "exact_match": 1.0
+ },
+ "unseen_primitive_combination": {
+  "n": 759,
+  "exact_match": 1.0
+ },
+ "compositional_all": {
+  "n": 759,
+  "exact_match": 1.0
+ },
+ "longer_than_dev": {
+  "n": 574,
+  "exact_match": 1.0
+ },
+ "multi_operation_execution": {
+  "n": 759,
+  "semantic_accuracy": 1.0
+ },
+ "primitive_interpretation": {
+  "n": 0,
+  "exact_match": null
+ },
+ "counterfactual_pairs": {
+  "n": 0,
+  "consistency": null
+ },
+ "order_groups": {
+  "n": 0,
+  "all_variants_correct": null
+ },
+ "executor_agreement": {
+  "n": 759,
+  "rate": 1.0
+ },
+ "system": "next",
+ "ablations": [],
+ "wall_s": 1.21,
+ "runtime": {
+  "cases": 759,
+  "wall_s": 0.949,
+  "parse_us_mean": 1163.0,
+  "parse_us_p50": 1057.0,
+  "parse_us_p99": 2308.7,
+  "peak_rss_kb": 3476,
+  "weights_bytes": 56444
+ }
+}

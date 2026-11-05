@@ -1,0 +1,8 @@
+Move the red block left twice, then move the blue circle up once.
+move the red block up after moving the blue circle left
+before painting the star blue, remove the triangle
+do not move the red block left, then remove the star
+if there is a blue circle, paint the red block green
+paint the red block blue, then move the blue block down 2 times
+move the red block left then
+fly the red block left

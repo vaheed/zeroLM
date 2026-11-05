@@ -1,0 +1,71 @@
+{
+ "cases": 85,
+ "supported": 85,
+ "unsupported": 0,
+ "exact_match": 1.0,
+ "per_operation_accuracy": 1.0,
+ "semantic_accuracy": 1.0,
+ "false_rejection": 0.0,
+ "false_acceptance": null,
+ "correct_rejection": null,
+ "abstention_rate": 0.0,
+ "by_category": {
+  "primitive": {
+   "n": 85,
+   "exact_match": 1.0,
+   "semantic_accuracy": 1.0
+  }
+ },
+ "seen_sequence": {
+  "n": 0,
+  "exact_match": null
+ },
+ "unseen_sequence": {
+  "n": 0,
+  "exact_match": null
+ },
+ "unseen_primitive_combination": {
+  "n": 0,
+  "exact_match": null
+ },
+ "compositional_all": {
+  "n": 0,
+  "exact_match": null
+ },
+ "longer_than_dev": {
+  "n": 0,
+  "exact_match": null
+ },
+ "multi_operation_execution": {
+  "n": 12,
+  "semantic_accuracy": 1.0
+ },
+ "primitive_interpretation": {
+  "n": 85,
+  "exact_match": 1.0
+ },
+ "counterfactual_pairs": {
+  "n": 0,
+  "consistency": null
+ },
+ "order_groups": {
+  "n": 0,
+  "all_variants_correct": null
+ },
+ "executor_agreement": {
+  "n": 85,
+  "rate": 1.0
+ },
+ "system": "next",
+ "ablations": [],
+ "wall_s": 0.07,
+ "runtime": {
+  "cases": 85,
+  "wall_s": 0.039,
+  "parse_us_mean": 389.1,
+  "parse_us_p50": 360.8,
+  "parse_us_p99": 833.4,
+  "peak_rss_kb": 3312,
+  "weights_bytes": 56444
+ }
+}

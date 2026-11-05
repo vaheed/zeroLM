@@ -1,0 +1,160 @@
+{
+ "id": "001",
+ "title": "A full stop or semicolon closes the current row",
+ "defect": "On the first held-out run (seed 20260601) 'X. after Y, Z', 'X; before Y, Z' and 'X. if C, Z' were mis-parsed: '.' and ';' were CLOSE tokens that do not end a row, so a following after/before/if/unless attached to X as an infix connector or suffix condition. Trace: at the token 'after', boundary unit bnd_AFTER fired (row 0 has an action) and set reverse=1; the intended reading needs the row to be closed already.",
+ "hypothesis": "The network lacks a 'sentence ended' transition. If '.' and ';' behave like the sequence connectors (advance the pointer when the row has an action) but a row opened only by a full stop is not counted as a dangling connector, then prefix after/before/if clauses after a full stop are parsed as new clauses and a trailing full stop is still accepted.",
+ "affected": "token feature STOP (new); row field OPEN (new, marker); A units bnd_STOP, bnd_STOP_pb; B units w_OPEN, w_CCL_stop; E rows '.' and ';'; tensor tf_w (TIME -> OPEN).",
+ "mathematical_effect": "bnd_STOP = relu(x_STOP + hasACT - PB - 1) is the same AND gadget as bnd_SEQ, so STOP advances the pointer p <- S p when the row holds an action. OPEN is written by relu(adv - x_STOP): it is 1 on rows opened by a connector other than STOP. The dangling-row detector reads OPEN instead of TIME, so a row opened by '.' and left empty contributes 0 error, while 'then' at the end still contributes 1.",
+ "expected": "Targets (tests/next/defects-001.jsonl) become exact matches; dev set unchanged; 'move X left then' still rejected; trailing '.' still accepted.",
+ "targets": [
+  "tests/next/defects-001.jsonl"
+ ],
+ "regression": [
+  "tests/next/dev.jsonl"
+ ],
+ "edits": [
+  {
+   "op": "add_feature",
+   "name": "STOP"
+  },
+  {
+   "op": "set_lexicon",
+   "word": ".",
+   "features": [
+    "STOP"
+   ]
+  },
+  {
+   "op": "set_lexicon",
+   "word": ";",
+   "features": [
+    "STOP"
+   ]
+  },
+  {
+   "op": "add_field",
+   "name": "OPEN",
+   "marker": true
+  },
+  {
+   "op": "add_unit",
+   "layer": "A",
+   "name": "bnd_STOP",
+   "inputs": {
+    "x.STOP": 1,
+    "r.ACT.move": 1,
+    "r.ACT.paint": 1,
+    "r.ACT.remove": 1,
+    "r.PB": -1
+   },
+   "bias": -1,
+   "adv": 1
+  },
+  {
+   "op": "add_unit",
+   "layer": "A",
+   "name": "bnd_STOP_pb",
+   "inputs": {
+    "x.STOP": 1,
+    "r.ACT.move": 1,
+    "r.ACT.paint": 1,
+    "r.ACT.remove": 1,
+    "r.PB": 1
+   },
+   "bias": -2,
+   "adv": 1,
+   "rev": 1
+  },
+  {
+   "op": "add_unit",
+   "layer": "B",
+   "name": "w_OPEN",
+   "inputs": {
+    "s.adv": 1,
+    "x.STOP": -1
+   },
+   "bias": 0,
+   "out": {
+    "OPEN": 1
+   }
+  },
+  {
+   "op": "add_unit",
+   "layer": "B",
+   "name": "w_CCL_stop",
+   "inputs": {
+    "x.STOP": 1,
+    "rp.CFLAG": 1,
+    "rp.CCL": -1
+   },
+   "bias": -1,
+   "out": {
+    "CCL": 1
+   }
+  },
+  {
+   "op": "set_override",
+   "tensor": "tf_w",
+   "row": "0",
+   "col": "TIME",
+   "old": 1,
+   "new": 0
+  },
+  {
+   "op": "set_override",
+   "tensor": "tf_w",
+   "row": "0",
+   "col": "OPEN",
+   "old": 0,
+   "new": 1
+  }
+ ],
+ "observed": {
+  "before": {
+   "tests/next/defects-001.jsonl": {
+    "cases": 759,
+    "supported": 759,
+    "unsupported": 0,
+    "exact_match": 0.0,
+    "semantic_accuracy": 0.77997,
+    "false_rejection": 0.01976,
+    "false_acceptance": null
+   }
+  },
+  "after": {
+   "tests/next/defects-001.jsonl": {
+    "cases": 759,
+    "supported": 759,
+    "unsupported": 0,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": null
+   }
+  }
+ },
+ "regression_result": {
+  "before": {
+   "tests/next/dev.jsonl": {
+    "cases": 527,
+    "supported": 480,
+    "unsupported": 47,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": 0.02128
+   }
+  },
+  "after": {
+   "tests/next/dev.jsonl": {
+    "cases": 527,
+    "supported": 480,
+    "unsupported": 47,
+    "exact_match": 1.0,
+    "semantic_accuracy": 1.0,
+    "false_rejection": 0.0,
+    "false_acceptance": 0.02128
+   }
+  }
+ }
+}

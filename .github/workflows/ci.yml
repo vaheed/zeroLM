@@ -239,3 +239,115 @@ jobs:
 
       - name: Build the image and run the container smoke test
         run: scripts/docker_smoke.sh
+
+  next:
+    name: ZeroLM Next - compositional network (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_SEED: "20260701"
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Record environment, toolchain, seed and commit
+        run: |
+          set -euo pipefail
+          mkdir -p reports/next
+          {
+            echo "commit: ${GITHUB_SHA}"
+            echo "benchmark seed: ${NEXT_SEED}"
+            echo "runner: ${RUNNER_OS} $(uname -m)"
+            rustc --version; cargo --version; cc --version | head -n 1; python3 --version
+          } | tee reports/next/environment.txt
+
+      - name: Validate the model specification and reproduce the generated weights
+        run: |
+          set -euo pipefail
+          python3 -m json.tool model/next/spec.json > /dev/null
+          for p in model/next/patches/*.json experiments/next-patches/*.json; do python3 -m json.tool "$p" > /dev/null; done
+          python3 research/build_next.py --check
+          python3 research/build_next.py --upto 0 --out "$RUNNER_TEMP/weights.r0.zln"
+          python3 research/benchmark/adversarial.py
+          git diff --exit-code tests/next/adversarial.jsonl
+          sha256sum model/next/weights.zln | tee reports/next/weights.sha256
+
+      - name: Build the legacy C reference and the Rust runtime
+        run: |
+          set -euo pipefail
+          make all
+          cargo build --release --manifest-path rust/Cargo.toml
+
+      - name: Unit, shortcut-detection and inference tests (cargo)
+        run: cargo test --manifest-path rust/Cargo.toml
+
+      - name: Lint (clippy, warnings are errors)
+        run: cargo clippy --manifest-path rust/Cargo.toml --all-targets -- -D warnings
+
+      - name: Legacy v0.2 regression suite must stay at 100 percent
+        run: |
+          set -euo pipefail
+          python3 scripts/evaluate.py | tee reports/next/legacy-regression.log
+          diff <(./zerolm --self-test) <(rust/target/release/zerolm --self-test)
+
+      - name: Weight-patch workflow - every patch validates and records its observed results
+        run: |
+          set -euo pipefail
+          for p in experiments/next-patches/*.json; do
+            python3 research/tools/wsp.py validate "$p"
+            python3 - "$p" <<'PY'
+          import json, sys
+          p = json.load(open(sys.argv[1]))
+          assert p["observed"] and p["regression_result"], f"patch {p['id']} has no recorded results"
+          PY
+          done
+          python3 research/tools/wsp.py inspect > reports/next/architecture.txt
+
+      - name: Development, defect and adversarial suites (all must pass in full)
+        run: |
+          set -euo pipefail
+          E="python3 research/benchmark/evaluate.py --system next"
+          $E --cases tests/next/dev.jsonl --min exact_match=1.0 --min correct_rejection=0.97 --out reports/next/dev.json
+          $E --cases tests/next/adversarial.jsonl --min exact_match=1.0 --min correct_rejection=1.0 --out reports/next/adversarial.json
+          $E --cases tests/next/primitives.jsonl --min exact_match=0.99 --out reports/next/primitives.json
+          for f in tests/next/defects-00*.jsonl; do
+            $E --cases "$f" --min "$(python3 -c "import json,sys; c=[json.loads(l) for l in open('$f')]; print('exact_match=1.0' if c[0]['expect']=='accept' else 'correct_rejection=1.0')")" --out "reports/next/$(basename "$f" .jsonl).json"
+          done
+
+      - name: Regenerate the compositional holdout from its seeds and verify the manifest
+        run: |
+          set -euo pipefail
+          python3 research/benchmark/manifest.py check
+          python3 research/benchmark/generate.py --profile final --seed "$NEXT_SEED" --dev tests/next/dev.jsonl --out tests/next/final.jsonl
+
+      - name: Compositional generalization, baselines, ablations and scaling (fails on a missed floor or a dead ablation)
+        run: python3 research/benchmark/run_suite.py --cases tests/next/final.jsonl --seed "$NEXT_SEED" --out reports/next
+
+      - name: Forward-pass execution traces
+        run: |
+          set -euo pipefail
+          mkdir -p reports/next/traces
+          i=0
+          while IFS= read -r line; do
+            i=$((i+1))
+            rust/target/release/zerolm next trace "$line" > "reports/next/traces/trace-$i.json"
+          done < research/benchmark/trace_examples.txt
+          rust/target/release/zerolm next info | tee reports/next/info.txt
+
+      - name: Upload reports and traces
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: zerolm-next-reports
+          path: |
+            reports/next/
+            model/next/weights.zln
+          if-no-files-found: error
+          retention-days: 30

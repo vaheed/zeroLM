@@ -388,6 +388,7 @@ fn main() -> ExitCode {
         Some("serve") => return run_serve(&args[2..]),
         Some("health") => return run_health(&args[2..]),
         Some("classify") => return run_classify(&args[2..]),
+        Some("next") => return zerolm::next::cli::run(&args[2..]),
         _ => {}
     }
     let (mut model_path, mut info, mut test, mut verbose, mut faithful) =
