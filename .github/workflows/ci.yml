@@ -209,6 +209,9 @@ jobs:
           python3 build_model.py --spec examples/router/spec.json --out examples/router/weights.zlm --check
           python3 scripts/evaluate_router.py --model examples/router/weights.zlm --data examples/router/labelled.tsv --min-accuracy 0.9
           python3 scripts/evaluate_router.py --model weights.zlm --data tests/regression.tsv --min-accuracy 1.0
+          # Held-out floors (measured 85% dev, 83% frozen test): fail on a real drop, not on noise.
+          python3 scripts/evaluate_router.py --model weights.zlm --data tests/heldout.tsv --min-accuracy 0.80
+          python3 scripts/evaluate_router.py --model weights.zlm --data tests/heldout_test.tsv --min-accuracy 0.78
           dir="$(mktemp -d)"
           rust/target/release/zerolm serve --model examples/router/weights.zlm --addr 127.0.0.1:0 --dir "$dir" > "$dir/out.log" &
           pid=$!

@@ -40,6 +40,7 @@ FEATURE 0 3.0000 good afternoon
 FEATURE 0 3.0000 good evening
 FEATURE 0 2.4000 howdy
 FEATURE 0 3.0000 hello there
+FEATURE 0 2.8000 good day
 FEATURE 1 3.2000 who are you
 FEATURE 1 3.2000 what are you
 FEATURE 1 2.8000 your name
@@ -47,6 +48,19 @@ FEATURE 1 3.6000 what is zerolm
 FEATURE 1 3.6000 what does zerolm mean
 FEATURE 1 3.2000 what is zero language model
 FEATURE 1 3.0000 are you an llm
+FEATURE 1 3.4000 who exactly are you
+FEATURE 1 3.2000 introduce yourself
+FEATURE 1 3.2000 about yourself
+FEATURE 1 3.4000 what should i call you
+FEATURE 1 3.0000 who made you
+FEATURE 1 3.0000 who created you
+FEATURE 1 3.0000 are you a person
+FEATURE 1 3.0000 are you a program
+FEATURE 1 3.0000 are you an ai
+FEATURE 1 3.0000 are you a bot
+FEATURE 1 3.0000 are you human
+FEATURE 1 3.0000 are you a robot
+FEATURE 1 3.2000 what is your name
 FEATURE 2 3.4000 what can you do
 FEATURE 2 3.0000 your capabilities
 FEATURE 2 2.8000 what do you do
@@ -55,17 +69,38 @@ FEATURE 2 3.2000 what are you able to do
 FEATURE 2 2.6000 supported tasks
 FEATURE 2 3.2000 what can zerolm
 FEATURE 2 3.1000 what tasks are supported
+FEATURE 2 3.2000 what tasks can you
+FEATURE 2 2.8000 kinds of requests
+FEATURE 2 3.0000 how can you assist
+FEATURE 2 3.0000 how can you help
+FEATURE 2 3.0000 your features
+FEATURE 2 3.0000 skill set
+FEATURE 2 3.0000 your skills
+FEATURE 2 2.8000 what services
+FEATURE 2 3.0000 what you can do
 FEATURE 3 3.0000 thank you
 FEATURE 3 2.5000 thanks
 FEATURE 3 3.0000 many thanks
 FEATURE 3 2.8000 appreciate it
 FEATURE 3 2.8000 much appreciated
+FEATURE 3 2.6000 thx
+FEATURE 3 2.8000 i appreciate
+FEATURE 3 2.6000 appreciated
+FEATURE 3 2.8000 thank u
+FEATURE 3 2.8000 thankyou
+FEATURE 3 2.6000 you were helpful
 FEATURE 4 3.0000 goodbye
 FEATURE 4 2.4000 bye
 FEATURE 4 2.6000 see you
 FEATURE 4 2.6000 talk later
 FEATURE 4 1.8000 exit
 FEATURE 4 1.8000 quit
+FEATURE 4 3.0000 talk to you later
+FEATURE 4 3.0000 good night
+FEATURE 4 3.0000 goodnight
+FEATURE 4 2.8000 until next time
+FEATURE 4 3.0000 farewell
+FEATURE 4 2.8000 gotta go
 FEATURE 5 1.8000 help
 FEATURE 5 3.0000 how do i use
 FEATURE 5 3.0000 how to run
@@ -77,6 +112,14 @@ FEATURE 5 3.2000 how do i run
 FEATURE 5 3.0000 how can i use
 FEATURE 5 2.8000 how to start
 FEATURE 5 2.4000 run it
+FEATURE 5 3.0000 get started
+FEATURE 5 3.0000 getting started
+FEATURE 5 3.0000 i need help
+FEATURE 5 3.0000 need some help
+FEATURE 5 3.2000 show me how to use
+FEATURE 5 2.8000 how to use
+FEATURE 5 3.0000 what commands
+FEATURE 5 2.8000 way to use
 FEATURE 6 3.0000 architecture
 FEATURE 6 2.8000 how does it work
 FEATURE 6 3.0000 network design
@@ -87,6 +130,18 @@ FEATURE 6 2.6000 decoder
 FEATURE 6 3.2000 neural architecture
 FEATURE 6 3.0000 how do you work
 FEATURE 6 2.8000 what happens inside
+FEATURE 6 3.0000 internal design
+FEATURE 6 3.0000 how are you built
+FEATURE 6 3.0000 how is it built
+FEATURE 6 3.0000 structure of your
+FEATURE 6 3.0000 structure of the model
+FEATURE 6 2.8000 your structure
+FEATURE 6 2.8000 network wired
+FEATURE 6 3.0000 your layers
+FEATURE 6 3.0000 what layers
+FEATURE 6 2.8000 your design
+FEATURE 6 3.0000 model design
+FEATURE 6 2.8000 how is the network
 FEATURE 7 2.8000 weights
 FEATURE 7 3.2000 weight file
 FEATURE 7 3.2000 weight matrix
@@ -96,6 +151,13 @@ FEATURE 7 3.0000 weight values
 FEATURE 7 3.2000 how are weights
 FEATURE 7 3.0000 how many weights
 FEATURE 7 3.0000 inspect the weights
+FEATURE 7 3.0000 model file
+FEATURE 7 2.6000 parameters
+FEATURE 7 3.0000 your parameters
+FEATURE 7 3.2000 weights zlm
+FEATURE 7 3.0000 numbers in your model
+FEATURE 7 3.2000 weights file
+FEATURE 7 3.0000 hand written parameters
 FEATURE 8 2.8000 training
 FEATURE 8 2.2000 train
 FEATURE 8 3.0000 fine tune
@@ -111,6 +173,13 @@ FEATURE 8 3.0000 is it trained
 FEATURE 8 2.8000 does it learn
 FEATURE 8 3.0000 fine tuned
 FEATURE 8 3.2000 was it fine tuned
+FEATURE 8 3.2000 were you trained
+FEATURE 8 3.0000 been trained
+FEATURE 8 3.0000 trained on
+FEATURE 8 3.0000 use machine learning
+FEATURE 8 3.0000 training data
+FEATURE 8 2.8000 do you learn
+FEATURE 8 3.0000 learn from examples
 FEATURE 9 3.2000 limitations
 FEATURE 9 3.0000 general llm
 FEATURE 9 3.0000 general language model
@@ -119,6 +188,19 @@ FEATURE 9 2.8000 can you reason
 FEATURE 9 3.0000 world knowledge
 FEATURE 9 3.0000 answer anything
 FEATURE 9 2.8000 understand any
+FEATURE 9 3.2000 what are you bad at
+FEATURE 9 2.8000 fall short
+FEATURE 9 3.2000 what cant you do
+FEATURE 9 3.2000 what can t you do
+FEATURE 9 3.0000 how reliable
+FEATURE 9 3.0000 weaknesses
+FEATURE 9 3.0000 weakness
+FEATURE 9 3.0000 not good at
+FEATURE 9 2.8000 make mistakes
+FEATURE 9 3.0000 shortcomings
+FEATURE 9 2.8000 downsides
+FEATURE 9 2.8000 your flaws
+FEATURE 9 3.2000 how accurate are you
 FEATURE 10 2.8000 remember
 FEATURE 10 2.8000 memory
 FEATURE 10 3.2000 long term memory
@@ -132,6 +214,23 @@ FEATURE 11 2.8000 break down
 FEATURE 11 3.0000 task planning
 FEATURE 11 3.0000 make a checklist
 FEATURE 11 3.0000 organize these tasks
+FEATURE 11 3.0000 plan a trip
+FEATURE 11 3.0000 plan my
+FEATURE 11 3.0000 make me a schedule
+FEATURE 11 3.0000 make a schedule
+FEATURE 11 3.2000 create a plan
+FEATURE 11 2.8000 a plan for
+FEATURE 11 2.8000 organize my
+FEATURE 11 2.8000 organise my
+FEATURE 11 3.0000 roadmap
+FEATURE 11 3.0000 study plan
+FEATURE 11 3.0000 project plan
+FEATURE 11 3.0000 project schedule
+FEATURE 11 2.8000 to do list
+FEATURE 11 2.8000 todo list
+FEATURE 11 3.0000 plan for me
+FEATURE 11 3.2000 help me plan
+FEATURE 11 3.0000 prepare a plan
 FEATURE 12 3.0000 write code
 FEATURE 12 2.6000 programming
 FEATURE 12 2.6000 debug
@@ -140,6 +239,14 @@ FEATURE 12 2.8000 c compiler
 FEATURE 12 2.8000 python script
 FEATURE 12 2.4000 source code
 FEATURE 12 2.8000 software bug
+FEATURE 12 3.0000 python function
+FEATURE 12 3.0000 write a function
+FEATURE 12 3.0000 write me a function
+FEATURE 12 2.8000 my code
+FEATURE 12 2.8000 some code
+FEATURE 12 3.0000 generate code
+FEATURE 12 3.0000 fix this bug
+FEATURE 12 3.0000 can you program
 FEATURE 13 3.0000 calculate
 FEATURE 13 2.8000 math
 FEATURE 13 2.8000 equation
@@ -149,6 +256,17 @@ FEATURE 13 3.0000 arithmetic
 FEATURE 13 2.6000 multiply
 FEATURE 13 2.6000 divide
 FEATURE 13 4.2000 what is 2 2
+FEATURE 13 3.0000 square root
+FEATURE 13 3.0000 calculus
+FEATURE 13 3.0000 algebra
+FEATURE 13 3.0000 geometry
+FEATURE 13 2.8000 compute
+FEATURE 13 3.0000 calculation
+FEATURE 13 3.0000 calculator
+FEATURE 13 2.8000 percentage
+FEATURE 13 2.8000 solve for
+FEATURE 13 2.8000 multiplied by
+FEATURE 13 2.8000 divided by
 FEATURE 14 2.4000 define
 FEATURE 14 2.4000 why does
 FEATURE 14 2.6000 how to understand
@@ -160,6 +278,7 @@ FEATURE 14 2.8000 explain a concept
 FEATURE 14 2.6000 explain this
 FEATURE 14 2.8000 explain a term
 FEATURE 14 2.8000 explain the meaning
+FEATURE 14 2.8000 give me an explanation
 FEATURE 15 2.4000 test
 FEATURE 15 3.0000 benchmark
 FEATURE 15 2.8000 evaluation
@@ -169,6 +288,16 @@ FEATURE 15 2.8000 regression
 FEATURE 15 3.0000 test suite
 FEATURE 15 3.0000 measure performance
 FEATURE 15 3.0000 check for regressions
+FEATURE 15 3.0000 run the tests
+FEATURE 15 3.0000 run tests
+FEATURE 15 2.6000 tests
+FEATURE 15 2.6000 testing
+FEATURE 15 2.8000 regressions
+FEATURE 15 3.0000 regression tests
+FEATURE 15 3.0000 verify the model
+FEATURE 15 3.0000 how do you verify
+FEATURE 15 3.2000 make pipeline
+FEATURE 15 3.0000 run the pipeline
 FEATURE 16 3.6000 weight space programming
 FEATURE 16 3.6000 weight-space
 FEATURE 16 3.0000 zero shot weights
@@ -177,6 +306,17 @@ FEATURE 16 3.2000 write neural weights
 FEATURE 16 2.4000 rikiyat
 FEATURE 16 2.4000 takehi
 FEATURE 16 3.2000 zero shot weight
+FEATURE 16 3.0000 inspired
+FEATURE 16 3.0000 inspiration
+FEATURE 16 2.8000 influenced
+FEATURE 16 3.0000 idea come from
+FEATURE 16 3.0000 came up with this idea
+FEATURE 16 3.0000 where did the idea
+FEATURE 16 2.8000 motivation
+FEATURE 16 3.0000 why did you build
+FEATURE 16 3.0000 why was this built
+FEATURE 16 3.0000 is this based on
+FEATURE 16 2.8000 which paper
 FEATURE 17 3.4000 install zerolm
 FEATURE 17 3.0000 install it
 FEATURE 17 3.0000 install this
@@ -189,6 +329,17 @@ FEATURE 17 3.0000 compile it
 FEATURE 17 3.0000 compile this
 FEATURE 17 3.2000 cargo build
 FEATURE 17 3.2000 how do i install you
+FEATURE 17 3.0000 set this up
+FEATURE 17 3.0000 set it up
+FEATURE 17 3.2000 set up zerolm
+FEATURE 17 3.0000 installation
+FEATURE 17 2.8000 installing
+FEATURE 17 2.8000 dependencies
+FEATURE 17 3.0000 need a compiler
+FEATURE 17 3.2000 get zerolm running
+FEATURE 17 3.0000 get it running
+FEATURE 17 2.8000 running locally
+FEATURE 17 3.0000 to compile it
 FEATURE 18 3.2000 what license
 FEATURE 18 3.2000 which license
 FEATURE 18 3.2000 what licence
@@ -203,6 +354,16 @@ FEATURE 18 3.0000 is it licensed
 FEATURE 18 3.0000 licensed under
 FEATURE 18 2.8000 open source
 FEATURE 18 2.8000 open-source
+FEATURE 18 2.8000 commercially
+FEATURE 18 3.0000 commercial use
+FEATURE 18 2.8000 is it free
+FEATURE 18 3.0000 free to use
+FEATURE 18 3.0000 redistribute
+FEATURE 18 3.0000 under what terms
+FEATURE 18 3.0000 modify and share
+FEATURE 18 3.0000 allowed to modify
+FEATURE 18 2.8000 licensed
+FEATURE 18 2.8000 the license
 FEATURE 19 3.2000 how fast is it
 FEATURE 19 3.4000 how fast is zerolm
 FEATURE 19 3.2000 how fast are you
@@ -222,6 +383,16 @@ FEATURE 19 2.6000 its performance
 FEATURE 19 2.6000 your performance
 FEATURE 19 2.8000 how big is the model
 FEATURE 19 2.8000 model size
+FEATURE 19 2.8000 raspberry pi
+FEATURE 19 3.0000 how much ram
+FEATURE 19 3.0000 how much cpu
+FEATURE 19 3.0000 is it quick
+FEATURE 19 3.0000 is it fast
+FEATURE 19 2.8000 how quick
+FEATURE 19 3.0000 does it run on
+FEATURE 19 3.0000 can it run on
+FEATURE 19 2.8000 small laptop
+FEATURE 19 2.6000 run on a laptop
 FEATURE 20 3.4000 what languages
 FEATURE 20 3.4000 which languages
 FEATURE 20 3.4000 supported languages
@@ -231,6 +402,17 @@ FEATURE 20 3.2000 english only
 FEATURE 20 3.0000 non english
 FEATURE 20 2.8000 do you speak
 FEATURE 20 2.6000 unicode
+FEATURE 20 3.0000 other language
+FEATURE 20 2.8000 understand french
+FEATURE 20 2.8000 understand spanish
+FEATURE 20 2.8000 understand german
+FEATURE 20 2.8000 understand chinese
+FEATURE 20 2.8000 handle chinese
+FEATURE 20 3.0000 support for arabic
+FEATURE 20 3.0000 language support
+FEATURE 20 3.0000 non ascii
+FEATURE 20 3.0000 languages work
+FEATURE 20 3.2000 languages do you
 FEATURE 21 3.4000 version of zerolm
 FEATURE 21 3.4000 zerolm version
 FEATURE 21 3.4000 which version is this
@@ -244,6 +426,14 @@ FEATURE 21 3.0000 changelog
 FEATURE 21 2.8000 what changed
 FEATURE 21 3.0000 release notes
 FEATURE 21 2.8000 latest release
+FEATURE 21 3.0000 version number
+FEATURE 21 3.0000 which release
+FEATURE 21 3.0000 what release
+FEATURE 21 3.0000 current version
+FEATURE 21 3.0000 newer release
+FEATURE 21 3.0000 newer version
+FEATURE 21 2.8000 latest update
+FEATURE 21 3.0000 changed recently
 FEATURE 22 3.6000 zerolm live
 FEATURE 22 7.2000 what is zerolm live
 FEATURE 22 7.2000 about zerolm live
@@ -259,6 +449,11 @@ FEATURE 22 2.8000 use tags
 FEATURE 22 3.2000 how do tags work
 FEATURE 22 3.0000 good and bad feedback
 FEATURE 22 2.8000 learn from me
+FEATURE 22 3.2000 live session
+FEATURE 22 3.0000 keep facts
+FEATURE 22 3.4000 remember facts
+FEATURE 22 3.0000 between sessions
+FEATURE 22 3.0000 teach new
 FEATURE 23 3.0000 privacy policy
 FEATURE 23 3.4000 is my privacy protected
 FEATURE 23 3.0000 is it private
@@ -277,6 +472,14 @@ FEATURE 23 3.0000 run offline
 FEATURE 23 3.2000 phone home
 FEATURE 23 3.0000 is it safe to run
 FEATURE 23 3.0000 is it safe to use
+FEATURE 23 3.0000 data private
+FEATURE 23 3.0000 track me
+FEATURE 23 2.6000 tracking
+FEATURE 23 2.6000 collecting
+FEATURE 23 3.0000 collect data
+FEATURE 23 3.0000 connect to the internet
+FEATURE 23 3.0000 connect to the network
+FEATURE 23 3.0000 safe with you
 FEATURE 24 3.4000 contribute to zerolm
 FEATURE 24 3.2000 contribute to this
 FEATURE 24 3.4000 how can i contribute
@@ -289,6 +492,14 @@ FEATURE 24 3.0000 open an issue
 FEATURE 24 3.0000 report a bug
 FEATURE 24 3.0000 bug report
 FEATURE 24 2.8000 get involved
+FEATURE 24 3.0000 help improve
+FEATURE 24 3.0000 help develop
+FEATURE 24 3.0000 report an issue
+FEATURE 24 2.8000 add features
+FEATURE 24 2.8000 add a feature
+FEATURE 24 3.0000 help with development
+FEATURE 24 2.8000 contribution
+FEATURE 24 2.8000 i want to help
 FEATURE 25 3.6000 what topics can you
 FEATURE 25 3.6000 which topics can you
 FEATURE 25 3.6000 what topics do you
@@ -300,6 +511,15 @@ FEATURE 25 3.4000 what intents
 FEATURE 25 3.4000 your intents
 FEATURE 25 3.4000 what can i ask
 FEATURE 25 3.6000 what questions can i ask
+FEATURE 25 3.4000 what subjects
+FEATURE 25 3.4000 which subjects
+FEATURE 25 3.4000 what can we talk about
+FEATURE 25 3.4000 what can we discuss
+FEATURE 25 3.4000 topics do you cover
+FEATURE 25 3.4000 topics you cover
+FEATURE 25 3.0000 things you know
+FEATURE 25 3.0000 list of things
+FEATURE 25 3.0000 which topics
 FEATURE 26 3.4000 chatgpt
 FEATURE 26 3.0000 gpt
 FEATURE 26 3.0000 transformer
@@ -313,6 +533,15 @@ FEATURE 26 3.2000 how is it different
 FEATURE 26 3.4000 different from chatgpt
 FEATURE 26 3.2000 better than gpt
 FEATURE 26 3.2000 better than chatgpt
+FEATURE 26 3.4000 like chatgpt
+FEATURE 26 3.2000 like gpt
+FEATURE 26 3.4000 difference between you and
+FEATURE 26 3.0000 differ from
+FEATURE 26 3.2000 different from other
+FEATURE 26 3.0000 other chatbots
+FEATURE 26 3.2000 do you have attention
+FEATURE 26 3.0000 have attention
+FEATURE 26 3.2000 how do you compare
 START 0 0
 START 1 28
 START 2 59

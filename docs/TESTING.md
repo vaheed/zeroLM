@@ -113,6 +113,15 @@ killed. It also starts the `zerolm-api` service: it must refuse to start without
 healthy, reject requests without a key, answer chat completions through the published port, keep a
 session across a restart, and hold that session against a CLI container. It uses its own compose project and removes it afterwards.
 
+## Held-out accuracy
+
+`tests/heldout.tsv` (dev, 130 prompts) and `tests/heldout_test.tsv` (frozen test, 123 prompts) hold
+paraphrases the phrase list was not written from. Run
+`python3 scripts/evaluate_router.py --data tests/heldout_test.tsv`. Current: dev 85.4%, test 82.9%
+(before the phrase widening: 40.8% and 43.9%). Use the dev set to find gaps; score the test set only to
+report, and never copy its phrases into the spec. CI fails below 80% (dev) and 78% (test). The model's
+author wrote both sets, so treat the numbers as optimistic.
+
 ## Full pipeline
 
 ```sh

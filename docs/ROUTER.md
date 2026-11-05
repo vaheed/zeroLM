@@ -5,9 +5,12 @@ deterministic, well under a millisecond per message (see `reports/benchmarks.md`
 the intents and their trigger phrases by hand; nothing is trained. It does not understand
 language: it only recognises the phrases you gave it, so it fits where inputs are predictable
 (support desks, command palettes, chatbot front doors) and does badly on free-form text.
-On the public CLINC150 benchmark the shipped weights get about 30% in-scope accuracy, because
-they were not written for that data. Expect your own numbers to depend on how well your phrases
-cover your users' wording. Measure that, as below.
+The numbers so far, honestly: the shipped 28-intent model scored 41-44% on two sets of 120-130
+paraphrased prompts I wrote before widening its phrases, and 83-85% after (`tests/heldout.tsv`,
+`tests/heldout_test.tsv`; the test set was frozen and scored once, and I wrote both sets, so real users
+would likely score lower). On the public CLINC150 benchmark, which these weights were not written for,
+in-scope accuracy is about 30%. Your accuracy depends on how well your phrases cover your users'
+wording. Measure it, as below.
 
 ## 1. Write a spec
 
@@ -70,3 +73,13 @@ the change is reviewed and covered by tests.
   from them to the spec.
 - One session tag is held by one process at a time; scale out by sharding tags, or use the
   stateless `/v1/classify` (no session) behind any number of replicas.
+
+## How the shipped model was widened without training
+
+Method, so you can repeat it for your own spec: write held-out prompts first and commit them;
+score the baseline; add phrase families to the spec by hand (several wordings per intent, not
+copies of the misses); rebuild; check the existing regression and refusal tests still pass; then
+score a frozen test set once. Phrases that would turn a refusal test into an answer were left out
+(for example a bare "explain" or "what version"), which is why open-ended "explain X" requests
+remain unanswered by design. Measured side effects: one added phrase ("how do i build") broke the
+refusal test "how do I build a house" and was removed.
