@@ -142,7 +142,6 @@ FEATURE 6 3.0000 what layers
 FEATURE 6 2.8000 your design
 FEATURE 6 3.0000 model design
 FEATURE 6 2.8000 how is the network
-FEATURE 7 2.8000 weights
 FEATURE 7 3.2000 weight file
 FEATURE 7 3.2000 weight matrix
 FEATURE 7 3.4000 manual weights
@@ -158,6 +157,8 @@ FEATURE 7 3.2000 weights zlm
 FEATURE 7 3.0000 numbers in your model
 FEATURE 7 3.2000 weights file
 FEATURE 7 3.0000 hand written parameters
+FEATURE 7 2.8000 the weights
+FEATURE 7 3.0000 your weights
 FEATURE 8 2.8000 training
 FEATURE 8 2.2000 train
 FEATURE 8 3.0000 fine tune
@@ -333,13 +334,13 @@ FEATURE 17 3.0000 set this up
 FEATURE 17 3.0000 set it up
 FEATURE 17 3.2000 set up zerolm
 FEATURE 17 3.0000 installation
-FEATURE 17 2.8000 installing
 FEATURE 17 2.8000 dependencies
 FEATURE 17 3.0000 need a compiler
 FEATURE 17 3.2000 get zerolm running
 FEATURE 17 3.0000 get it running
 FEATURE 17 2.8000 running locally
 FEATURE 17 3.0000 to compile it
+FEATURE 17 3.2000 installing zerolm
 FEATURE 18 3.2000 what license
 FEATURE 18 3.2000 which license
 FEATURE 18 3.2000 what licence
@@ -362,8 +363,8 @@ FEATURE 18 3.0000 redistribute
 FEATURE 18 3.0000 under what terms
 FEATURE 18 3.0000 modify and share
 FEATURE 18 3.0000 allowed to modify
-FEATURE 18 2.8000 licensed
 FEATURE 18 2.8000 the license
+FEATURE 18 3.2000 zerolm is licensed
 FEATURE 19 3.2000 how fast is it
 FEATURE 19 3.4000 how fast is zerolm
 FEATURE 19 3.2000 how fast are you
@@ -485,7 +486,6 @@ FEATURE 24 3.2000 contribute to this
 FEATURE 24 3.4000 how can i contribute
 FEATURE 24 3.4000 how do i contribute
 FEATURE 24 3.2000 want to contribute
-FEATURE 24 3.2000 contributing
 FEATURE 24 3.2000 contribution guidelines
 FEATURE 24 3.2000 pull request
 FEATURE 24 3.0000 open an issue
@@ -500,6 +500,8 @@ FEATURE 24 2.8000 add a feature
 FEATURE 24 3.0000 help with development
 FEATURE 24 2.8000 contribution
 FEATURE 24 2.8000 i want to help
+FEATURE 24 3.2000 contributing guide
+FEATURE 24 3.2000 contributing guidelines
 FEATURE 25 3.6000 what topics can you
 FEATURE 25 3.6000 which topics can you
 FEATURE 25 3.6000 what topics do you

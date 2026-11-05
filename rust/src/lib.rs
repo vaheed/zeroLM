@@ -24,7 +24,7 @@ pub const MAX_STEPS: usize = 256;
 pub const MAX_VOCAB: usize = 1024;
 pub const ABSTAIN_THRESHOLD: f64 = 0.75;
 /// `sizeof(Model)` of the C reference build, reported by `--info` for parity.
-pub const C_MODEL_STRUCT_BYTES: usize = 526_232;
+pub const C_MODEL_STRUCT_BYTES: usize = 690_072;
 
 #[derive(Debug)]
 pub struct ModelError(pub String);
@@ -45,8 +45,99 @@ fn err<T>(msg: String) -> Result<T, ModelError> {
 pub struct Feature {
     pub intent: usize,
     pub weight: f64,
-    /// Normalized phrase bytes.
+    /// Normalized phrase bytes (as written; used for display).
     pub phrase: Vec<u8>,
+    /// The phrase after `stem_text`; this is what is matched against the prepared input.
+    pub key: Vec<u8>,
+}
+
+impl Feature {
+    pub fn new(intent: usize, weight: f64, phrase: Vec<u8>) -> Feature {
+        let key = stem_text(&phrase);
+        Feature { intent, weight, phrase, key }
+    }
+}
+
+/// Longest word kept in the spell-snap word list, and the list's capacity (same in the C runtime).
+pub const MAX_SNAP_WORD: usize = 31;
+pub const MAX_SNAP_WORDS: usize = 2048;
+/// Words shorter than this are never spell-snapped (short words are too ambiguous).
+pub const MIN_SNAP_LEN: usize = 6;
+
+fn is_lower_alpha(w: &[u8]) -> bool {
+    !w.is_empty() && w.iter().all(|c| c.is_ascii_lowercase())
+}
+
+fn undouble(s: &mut Vec<u8>) {
+    let n = s.len();
+    if n >= 2 && s[n - 1] == s[n - 2] && !matches!(s[n - 1], b'l' | b's' | b'z') {
+        s.pop();
+    }
+}
+
+/// Light suffix stemmer for one lowercase ASCII word (anything else is returned unchanged).
+/// Plurals (`ies`, `es`, `s`), `ing`, `ed` and a final `e` are removed, so that
+/// "tests"/"test", "recalls"/"recall" and "licensed"/"license" share a key. The same function
+/// is applied to phrases and to input, so exact phrases keep matching.
+pub fn stem_word(w: &[u8]) -> Vec<u8> {
+    let mut s = w.to_vec();
+    if !is_lower_alpha(w) {
+        return s;
+    }
+    let ends = |s: &Vec<u8>, suf: &[u8]| s.ends_with(suf);
+    if s.len() > 4 && ends(&s, b"ies") {
+        s.truncate(s.len() - 3);
+        s.push(b'y');
+    } else if s.len() > 3
+        && ends(&s, b"es")
+        && (matches!(s[s.len() - 3], b's' | b'x' | b'z') || ends(&s, b"ches") || ends(&s, b"shes"))
+    {
+        s.truncate(s.len() - 2);
+    } else if s.len() > 3 && ends(&s, b"s") && !ends(&s, b"ss") && !ends(&s, b"us") && !ends(&s, b"is") {
+        s.pop();
+    }
+    if s.len() > 5 && ends(&s, b"ing") {
+        s.truncate(s.len() - 3);
+        undouble(&mut s);
+    } else if s.len() > 4 && ends(&s, b"ed") {
+        s.truncate(s.len() - 2);
+        undouble(&mut s);
+    }
+    if s.len() > 4 && ends(&s, b"e") {
+        s.pop();
+    }
+    s
+}
+
+/// Apply `stem_word` to every space-separated word of an already normalized text.
+pub fn stem_text(text: &[u8]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(text.len());
+    for (i, w) in text.split(|&c| c == b' ').enumerate() {
+        if i > 0 {
+            out.push(b' ');
+        }
+        out.extend_from_slice(&stem_word(w));
+    }
+    out
+}
+
+/// True if `a` and `b` differ by at most one substitution, insertion, deletion or swap of two
+/// adjacent letters (identical words count).
+pub fn within_one_edit(a: &[u8], b: &[u8]) -> bool {
+    let (la, lb) = (a.len(), b.len());
+    if la == lb {
+        let i = a.iter().zip(b).take_while(|(x, y)| x == y).count();
+        if i == la {
+            return true;
+        }
+        return a[i + 1..] == b[i + 1..] || (i + 1 < la && a[i] == b[i + 1] && a[i + 1] == b[i] && a[i + 2..] == b[i + 2..]);
+    }
+    let (long, short) = if la > lb { (a, b) } else { (b, a) };
+    if long.len() != short.len() + 1 {
+        return false;
+    }
+    let i = long.iter().zip(short).take_while(|(x, y)| x == y).count();
+    long[i + 1..] == short[i..]
 }
 
 #[derive(Debug, Clone)]
@@ -65,6 +156,8 @@ pub struct Model {
     pub intent_name: Vec<String>,
     pub vocab: Vec<String>,
     pub state_vocab: Vec<usize>,
+    /// Stemmed words of the base phrases (at most `MAX_SNAP_WORDS`), used for spell-snapping.
+    pub snap_words: Vec<Vec<u8>>,
 }
 
 fn truncate_bytes(s: &str, max: usize) -> String {
@@ -141,11 +234,11 @@ impl Model {
                 let ok = features.len() < MAX_FEATURES && !phrase.is_empty();
                 match (a.parse::<i64>(), b.parse::<f64>()) {
                     (Ok(id), Ok(w)) if ok && (0..MAX_INTENTS as i64).contains(&id) => {
-                        features.push(Feature {
-                            intent: id as usize,
-                            weight: w,
-                            phrase: truncate_bytes(phrase, 191).into_bytes(),
-                        });
+                        features.push(Feature::new(
+                            id as usize,
+                            w,
+                            truncate_bytes(phrase, 191).into_bytes(),
+                        ));
                     }
                     _ => return err(format!("invalid FEATURE at line {n}")),
                 }
@@ -227,7 +320,21 @@ impl Model {
             state_vocab.push(id);
         }
 
+        let mut snap_words: Vec<Vec<u8>> = Vec::new();
+        for f in &features {
+            for w in f.key.split(|&c| c == b' ') {
+                if is_lower_alpha(w)
+                    && w.len() <= MAX_SNAP_WORD
+                    && snap_words.len() < MAX_SNAP_WORDS
+                    && !snap_words.iter().any(|x| x == w)
+                {
+                    snap_words.push(w.to_vec());
+                }
+            }
+        }
+
         Ok(Model {
+            snap_words,
             intents,
             features,
             states: state_v,
@@ -242,6 +349,35 @@ impl Model {
         self.states.len()
     }
 
+    /// Normalized input made ready for matching: every word is stemmed, and a word of at least
+    /// `MIN_SNAP_LEN` letters that no phrase uses is replaced by the one phrase word that is a
+    /// single edit away and starts with the same letter (if there is exactly one).
+    pub fn prepare(&self, normalized: &[u8]) -> Vec<u8> {
+        let mut out = Vec::with_capacity(normalized.len() + 8);
+        for (i, w) in normalized.split(|&c| c == b' ').enumerate() {
+            if i > 0 {
+                out.push(b' ');
+            }
+            let s = stem_word(w);
+            if s.len() >= MIN_SNAP_LEN && is_lower_alpha(&s) && !self.snap_words.iter().any(|x| *x == s) {
+                let mut hit: Option<&Vec<u8>> = None;
+                let mut count = 0;
+                for cand in &self.snap_words {
+                    if cand[0] == s[0] && within_one_edit(&s, cand) {
+                        count += 1;
+                        hit = Some(cand);
+                    }
+                }
+                if let (1, Some(c)) = (count, hit) {
+                    out.extend_from_slice(c);
+                    continue;
+                }
+            }
+            out.extend_from_slice(&s);
+        }
+        out
+    }
+
     /// Result of `classify`: (selected intent, raw logit score). Abstention
     /// (score below threshold) is applied by the caller via `decide`.
     pub fn classify(&self, normalized: &[u8]) -> (usize, f64) {
@@ -251,9 +387,10 @@ impl Model {
     /// Like `classify`, with extra (learned) features added on top of the base
     /// weights. Extra features must reference valid intent ids.
     pub fn classify_with(&self, normalized: &[u8], extra: &[Feature]) -> (usize, f64) {
+        let text = self.prepare(normalized);
         let mut logits = vec![0.0f64; self.intents];
         for f in self.features.iter().chain(extra.iter()) {
-            if contains_phrase(normalized, &f.phrase) {
+            if contains_phrase(&text, &f.key) {
                 logits[f.intent] += f.weight;
             }
         }
@@ -263,9 +400,10 @@ impl Model {
 
     /// Distinct phrases (base + extra) that fired for `intent` on this input.
     pub fn matched_phrases(&self, normalized: &[u8], intent: usize, extra: &[Feature]) -> Vec<String> {
+        let text = self.prepare(normalized);
         let mut out: Vec<String> = Vec::new();
         for f in self.features.iter().chain(extra.iter()) {
-            if f.intent == intent && contains_phrase(normalized, &f.phrase) {
+            if f.intent == intent && contains_phrase(&text, &f.key) {
                 let p = String::from_utf8_lossy(&f.phrase).into_owned();
                 if !out.contains(&p) {
                     out.push(p);
@@ -298,9 +436,10 @@ impl Model {
     /// intent, and the `top` highest-scoring intents with the phrases that fired.
     pub fn rank(&self, raw: &str, extra: &[Feature], top: usize) -> Ranking {
         let norm = normalize_text(raw.as_bytes(), MAX_TEXT);
+        let text = self.prepare(&norm);
         let mut logits = vec![0.0f64; self.intents];
         for f in self.features.iter().chain(extra.iter()) {
-            if contains_phrase(&norm, &f.phrase) {
+            if contains_phrase(&text, &f.key) {
                 logits[f.intent] += f.weight;
             }
         }
@@ -516,6 +655,45 @@ mod tests {
     const TINY: &str = "ZEROLM 1\nMETA 2 4\nINTENT 0 greeting\nINTENT 1 unknown\n\
 FEATURE 0 8.0 hello\nSTART 0 0\nSTART 1 2\n\
 NODE 0 1 hi\nNODE 1 -1 <eos>\nNODE 2 3 sorry\nNODE 3 -1 <eos>\n";
+
+    #[test]
+    fn stemming_unifies_word_forms_and_leaves_other_text_alone() {
+        let st = |w: &str| String::from_utf8(stem_word(w.as_bytes())).unwrap();
+        for (a, b) in [("tests", "test"), ("queries", "query"), ("boxes", "box"), ("licensed", "license"),
+                       ("running", "run"), ("trained", "train"), ("recalling", "recall"), ("recalls", "recall")] {
+            assert_eq!(st(a), st(b), "{a} vs {b}");
+        }
+        for same in ["class", "bus", "this", "gas", "fine-tune", "42", "café", "it"] {
+            assert_eq!(st(same), same, "{same} must not change");
+        }
+        assert_eq!(String::from_utf8(stem_text(b"do tests pass")).unwrap(), "do test pass");
+        // Known limit: a final "e" is only removed from words longer than four letters.
+        assert_ne!(st("tuned"), st("tune"));
+    }
+
+    #[test]
+    fn edit_distance_one_covers_swap_drop_insert_substitute() {
+        assert!(within_one_edit(b"licence", b"licnece")); // swap
+        assert!(within_one_edit(b"license", b"licens")); // drop
+        assert!(within_one_edit(b"licens", b"license")); // insert
+        assert!(within_one_edit(b"license", b"licenxe")); // substitute
+        assert!(!within_one_edit(b"license", b"licenxx"));
+        assert!(!within_one_edit(b"license", b"lisence plate"));
+        assert!(!within_one_edit(b"abc", b"abcde"));
+    }
+
+    #[test]
+    fn spell_snap_fixes_one_typo_but_not_short_or_ambiguous_words() {
+        let mut m = Model::parse(TINY).unwrap();
+        m.snap_words = vec![b"hello".to_vec(), b"licens".to_vec(), b"licenc".to_vec(), b"benchmark".to_vec()];
+        let p = |t: &str| String::from_utf8(m.prepare(t.as_bytes())).unwrap();
+        assert_eq!(p("benchmrk results"), "benchmark result");
+        assert_eq!(p("benhcmark"), "benchmark"); // swap
+        assert_eq!(p("hellp"), "hellp", "words under {MIN_SNAP_LEN} letters are never snapped");
+        assert_eq!(p("licenxe"), "licenx", "two candidates one edit away: ambiguous, only stemmed");
+        assert_eq!(p("xenchmark"), "xenchmark", "the first letter must match");
+        assert_eq!(p("license"), "licens", "known words are only stemmed");
+    }
 
     #[test]
     fn rank_orders_candidates_and_abstains() {

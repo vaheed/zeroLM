@@ -497,10 +497,6 @@
       "name": "weights",
       "features": [
         [
-          "weights",
-          2.8
-        ],
-        [
           "weight file",
           3.2
         ],
@@ -558,6 +554,14 @@
         ],
         [
           "hand written parameters",
+          3.0
+        ],
+        [
+          "the weights",
+          2.8
+        ],
+        [
+          "your weights",
           3.0
         ]
       ],
@@ -1321,10 +1325,6 @@
           3.0
         ],
         [
-          "installing",
-          2.8
-        ],
-        [
           "dependencies",
           2.8
         ],
@@ -1347,6 +1347,10 @@
         [
           "to compile it",
           3.0
+        ],
+        [
+          "installing zerolm",
+          3.2
         ]
       ],
       "response": "To build ZeroLM, run make in the repository root. It needs a C11 compiler and produces the zerolm program. The optional Rust port builds with cargo build --release inside the rust directory. See the README for the full steps."
@@ -1443,12 +1447,12 @@
           3.0
         ],
         [
-          "licensed",
+          "the license",
           2.8
         ],
         [
-          "the license",
-          2.8
+          "zerolm is licensed",
+          3.2
         ]
       ],
       "response": "ZeroLM is open source under the MIT license. You can use, copy, modify, and share it under the terms in the LICENSE file."
@@ -1971,10 +1975,6 @@
           3.2
         ],
         [
-          "contributing",
-          3.2
-        ],
-        [
           "contribution guidelines",
           3.2
         ],
@@ -2029,6 +2029,14 @@
         [
           "i want to help",
           2.8
+        ],
+        [
+          "contributing guide",
+          3.2
+        ],
+        [
+          "contributing guidelines",
+          3.2
         ]
       ],
       "response": "Contributions are welcome. Open an issue or a pull request, keep changes small and measurable, add regression tests, and keep the zero-training rule. See CONTRIBUTING.md for the checklist."

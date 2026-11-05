@@ -212,6 +212,7 @@ jobs:
           # Held-out floors (measured 85% dev, 83% frozen test): fail on a real drop, not on noise.
           python3 scripts/evaluate_router.py --model weights.zlm --data tests/heldout.tsv --min-accuracy 0.80
           python3 scripts/evaluate_router.py --model weights.zlm --data tests/heldout_test.tsv --min-accuracy 0.78
+          python3 scripts/robustness.py --binary rust/target/release/zerolm --min-survival 0.80
           dir="$(mktemp -d)"
           rust/target/release/zerolm serve --model examples/router/weights.zlm --addr 127.0.0.1:0 --dir "$dir" > "$dir/out.log" &
           pid=$!

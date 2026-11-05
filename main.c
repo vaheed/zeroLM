@@ -29,10 +29,15 @@
 #define W_INACTIVE (-8.0)
 
 
+#define MAX_SNAP_WORD 31
+#define MAX_SNAP_WORDS 2048
+#define MIN_SNAP_LEN 6
+
 typedef struct {
     int intent;
     double weight;
     char phrase[192];
+    char key[192]; /* phrase after stem_text; this is what is matched */
 } Feature;
 
 typedef struct {
@@ -45,6 +50,8 @@ typedef struct {
     int state_count;
     int feature_count;
     Feature features[MAX_FEATURES];
+    int snap_count;
+    char snap_words[MAX_SNAP_WORDS][MAX_SNAP_WORD + 1];
     State states[MAX_STATES];
     int start[MAX_INTENTS];
     char intent_name[MAX_INTENTS][48];
@@ -55,6 +62,9 @@ typedef struct {
     char vocab[MAX_VOCAB][MAX_TOKEN];
     int state_vocab[MAX_STATES];
 } Model;
+
+static void stem_text(const char *src, char *dst, size_t cap);
+static void add_snap_words(Model *m, const char *key);
 
 static void trim_newline(char *s) {
     size_t n = strlen(s);
@@ -175,6 +185,7 @@ static int load_model(const char *path, Model *m, char *err, size_t errcap) {
             f->intent = intent;
             f->weight = weight;
             snprintf(f->phrase, sizeof(f->phrase), "%s", phrase);
+            stem_text(f->phrase, f->key, sizeof(f->key));
         } else if (strncmp(line, "START ", 6) == 0) {
             int intent = -1, state = -1;
             if (sscanf(line + 6, "%d %d", &intent, &state) != 2 ||
@@ -222,6 +233,8 @@ static int load_model(const char *path, Model *m, char *err, size_t errcap) {
         }
     }
 
+    for (int f = 0; f < m->feature_count; ++f) add_snap_words(m, m->features[f].key);
+
     /* Build the output vocabulary once at load time. */
     for (int state = 0; state < m->state_count; ++state) {
         int vocab_id = -1;
@@ -244,6 +257,149 @@ static int load_model(const char *path, Model *m, char *err, size_t errcap) {
     return 1;
 }
 
+
+/* ---- word-form tolerance: light stemming and spell-snapping (mirrors the Rust port) ---- */
+
+static int is_lower_alpha(const char *w, size_t n) {
+    if (n == 0) return 0;
+    for (size_t i = 0; i < n; ++i)
+        if (w[i] < 'a' || w[i] > 'z') return 0;
+    return 1;
+}
+
+static int ends_with(const char *s, size_t n, const char *suf) {
+    size_t k = strlen(suf);
+    return n >= k && memcmp(s + n - k, suf, k) == 0;
+}
+
+static size_t undouble(char *s, size_t n) {
+    if (n >= 2 && s[n - 1] == s[n - 2] && s[n - 1] != 'l' && s[n - 1] != 's' && s[n - 1] != 'z') return n - 1;
+    return n;
+}
+
+/* Stems one word into out (capacity n + 1) and returns its length. */
+static size_t stem_word(const char *w, size_t n, char *out) {
+    memcpy(out, w, n);
+    if (!is_lower_alpha(w, n)) return n;
+    size_t len = n;
+    if (len > 4 && ends_with(out, len, "ies")) {
+        len -= 3;
+        out[len++] = 'y';
+    } else if (len > 3 && ends_with(out, len, "es") &&
+               (out[len - 3] == 's' || out[len - 3] == 'x' || out[len - 3] == 'z' ||
+                ends_with(out, len, "ches") || ends_with(out, len, "shes"))) {
+        len -= 2;
+    } else if (len > 3 && ends_with(out, len, "s") && !ends_with(out, len, "ss") &&
+               !ends_with(out, len, "us") && !ends_with(out, len, "is")) {
+        len -= 1;
+    }
+    if (len > 5 && ends_with(out, len, "ing")) {
+        len -= 3;
+        len = undouble(out, len);
+    } else if (len > 4 && ends_with(out, len, "ed")) {
+        len -= 2;
+        len = undouble(out, len);
+    }
+    if (len > 4 && out[len - 1] == 'e') len -= 1;
+    return len;
+}
+
+/* Stems every space-separated word of src into dst (capacity cap). */
+static void stem_text(const char *src, char *dst, size_t cap) {
+    size_t o = 0, i = 0, n = strlen(src);
+    for (;;) {
+        size_t j = i;
+        while (j < n && src[j] != ' ') ++j;
+        char tmp[MAX_TEXT + 1];
+        size_t wl = j - i;
+        if (wl > MAX_TEXT) wl = MAX_TEXT;
+        size_t sl = stem_word(src + i, wl, tmp);
+        if (o + sl + 2 >= cap) break;
+        memcpy(dst + o, tmp, sl);
+        o += sl;
+        if (j >= n) break;
+        dst[o++] = ' ';
+        i = j + 1;
+    }
+    dst[o] = '\0';
+}
+
+static int within_one_edit(const char *a, size_t la, const char *b, size_t lb) {
+    if (la == lb) {
+        size_t i = 0;
+        while (i < la && a[i] == b[i]) ++i;
+        if (i == la) return 1;
+        if (memcmp(a + i + 1, b + i + 1, la - i - 1) == 0) return 1;
+        return i + 1 < la && a[i] == b[i + 1] && a[i + 1] == b[i] && memcmp(a + i + 2, b + i + 2, la - i - 2) == 0;
+    }
+    if (la == lb + 1) {
+        size_t i = 0;
+        while (i < lb && a[i] == b[i]) ++i;
+        return memcmp(a + i + 1, b + i, la - i - 1) == 0;
+    }
+    if (lb == la + 1) return within_one_edit(b, lb, a, la);
+    return 0;
+}
+
+static void add_snap_words(Model *m, const char *key) {
+    size_t n = strlen(key), i = 0;
+    for (;;) {
+        size_t j = i;
+        while (j < n && key[j] != ' ') ++j;
+        size_t wl = j - i;
+        if (is_lower_alpha(key + i, wl) && wl <= MAX_SNAP_WORD && m->snap_count < MAX_SNAP_WORDS) {
+            int seen = 0;
+            for (int k = 0; k < m->snap_count && !seen; ++k)
+                seen = strlen(m->snap_words[k]) == wl && memcmp(m->snap_words[k], key + i, wl) == 0;
+            if (!seen) {
+                memcpy(m->snap_words[m->snap_count], key + i, wl);
+                m->snap_words[m->snap_count][wl] = '\0';
+                ++m->snap_count;
+            }
+        }
+        if (j >= n) break;
+        i = j + 1;
+    }
+}
+
+/* Stem the input, and replace an unknown word of >= MIN_SNAP_LEN letters by the single phrase
+ * word one edit away that starts with the same letter. */
+static void prepare_text(const Model *m, const char *src, char *dst, size_t cap) {
+    size_t o = 0, i = 0, n = strlen(src);
+    for (;;) {
+        size_t j = i;
+        while (j < n && src[j] != ' ') ++j;
+        char tmp[MAX_TEXT + 1];
+        size_t wl = j - i;
+        if (wl > MAX_TEXT) wl = MAX_TEXT;
+        size_t sl = stem_word(src + i, wl, tmp);
+        const char *emit = tmp;
+        size_t el = sl;
+        if (sl >= MIN_SNAP_LEN && is_lower_alpha(tmp, sl)) {
+            int known = 0, count = 0, hit = -1;
+            for (int k = 0; k < m->snap_count; ++k) {
+                size_t cl = strlen(m->snap_words[k]);
+                if (cl == sl && memcmp(m->snap_words[k], tmp, sl) == 0) known = 1;
+                if (m->snap_words[k][0] == tmp[0] && within_one_edit(tmp, sl, m->snap_words[k], cl)) {
+                    ++count;
+                    hit = k;
+                }
+            }
+            if (!known && count == 1) {
+                emit = m->snap_words[hit];
+                el = strlen(emit);
+            }
+        }
+        if (o + el + 2 >= cap) break;
+        memcpy(dst + o, emit, el);
+        o += el;
+        if (j >= n) break;
+        dst[o++] = ' ';
+        i = j + 1;
+    }
+    dst[o] = '\0';
+}
+
 static int is_word_byte(unsigned char c) {
     return (c >= 0x80) || isalnum(c) || c == '_' || c == '-';
 }
@@ -263,8 +419,10 @@ static int contains_phrase(const char *text, const char *phrase) {
 static void classify(const Model *m, const char *input, double *prob, int *selected,
                      double *selected_score) {
     double logits[MAX_INTENTS] = {0};
+    char prepared[MAX_TEXT * 2];
+    prepare_text(m, input, prepared, sizeof(prepared));
     for (int f = 0; f < m->feature_count; ++f) {
-        if (contains_phrase(input, m->features[f].phrase))
+        if (contains_phrase(prepared, m->features[f].key))
             logits[m->features[f].intent] += m->features[f].weight;
     }
     for (int i = 0; i < m->intents; ++i) prob[i] = logits[i];

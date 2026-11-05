@@ -232,11 +232,7 @@ Say \"remember X is Y\", ask \"what is X\", or say \"forget X\".",
             .learned
             .iter()
             .filter_map(|l| {
-                self.model.intent_index(&l.intent).map(|i| Feature {
-                    intent: i,
-                    weight: l.weight,
-                    phrase: l.phrase.clone().into_bytes(),
-                })
+                self.model.intent_index(&l.intent).map(|i| Feature::new(i, l.weight, l.phrase.clone().into_bytes()))
             })
             .collect()
     }

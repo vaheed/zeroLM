@@ -22,6 +22,13 @@ score[i] = sum(weight[f] for each feature f matching the input and assigned to i
 
 The runtime selects the intent with the highest score. If the best score is below `0.75`, it selects the final `unknown` intent. Feature matching uses word boundaries, so a short phrase such as `hi` does not match inside an unrelated word.
 
+**Word-form tolerance (no new weights).** Before matching, the input and every phrase pass through the same fixed rules, implemented identically in the C and Rust runtimes:
+
+1. *Light stemming*: plural endings (`ies`, `es`, `s`), `ing`, `ed` and a final `e` are removed from lowercase ASCII words, so "tests"/"test" and "licensed"/"license" share a key. Words with digits, hyphens or non-ASCII bytes are left alone. A four-letter word keeps its final `e`, so "tune" and "tuned" still differ.
+2. *Spell-snap*: an input word of at least six letters that no phrase uses is replaced by the one phrase word that is a single edit away (swap of adjacent letters, drop, insertion or substitution) and starts with the same letter. If two words qualify, nothing is changed.
+
+Stemming means a bare inflected phrase also matches its base word ("licensed" would match every "license"), so single-word phrases must be chosen with that in mind; the unknown-input tests catch such cases.
+
 This is a hand-authored phrase classifier, not a learned language understanding layer. Its score is not a calibrated probability.
 
 ## 2. Hidden-state initialization

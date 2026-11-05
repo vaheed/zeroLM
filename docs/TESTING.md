@@ -122,6 +122,12 @@ paraphrases the phrase list was not written from. Run
 report, and never copy its phrases into the spec. CI fails below 80% (dev) and 78% (test). The model's
 author wrote both sets, so treat the numbers as optimistic.
 
+## Typo robustness
+
+`python3 scripts/robustness.py --binary rust/target/release/zerolm` damages the longest word of every prompt the
+model already routes correctly (seeded) and reports how many still route the same way. Compare builds by passing
+two binaries. Current: 85.3% survive (133/156); the build without stemming and spell-snap: 23.7%. CI fails below 80%.
+
 ## Full pipeline
 
 ```sh

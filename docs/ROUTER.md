@@ -54,6 +54,16 @@ returned `score`).
 user messages. The bundled `examples/router/labelled.tsv` scores 100% only because the same
 author wrote both sides; it shows the tool works, not that the model is good.
 
+## Typos and word forms
+
+Matching tolerates small damage without any weights: input and phrases are stemmed alike ("tests" =
+"test"), and an unknown word of six or more letters is snapped to the one phrase word a single edit
+away with the same first letter ("benchmrk" -> "benchmark"). On 156 correctly routed prompts, each
+with its longest word swapped, shortened, doubled or mistyped (seeded; `scripts/robustness.py`), the answer survives
+in 85% of cases, against 24% for the same weights without this step. It does not help with
+different wording ("yo", "what's the deal"), only with spelling and word forms. Rules and limits:
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## 4. Adapting after deployment (opt-in, no training)
 
 The base weights file is never modified. Per deployment, a session can learn reflexes in a small

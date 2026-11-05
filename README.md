@@ -266,6 +266,10 @@ An important inspiration is [Sparks of Weight-Space Programming: LLMs can native
 
 Read [the Weight-Space Programming research notes](docs/WEIGHT_SPACE_PROGRAMMING.md) for the relationship, distinctions, and possible experiments.
 
+## Does ZeroLM need GGUF?
+
+No. GGUF is the file container that llama.cpp, Ollama and similar tools use for the tensors of Transformer-family models, and those runtimes can only execute the architectures they implement. `weights.zlm` is not a tensor file: it is a plain-text file with 512 phrase-to-intent entries and a table of successor words, read by the 680-line C runtime or the Rust port. A GGUF export would run nowhere, because no GGUF runtime has this architecture, and quantization has nothing to shrink (the weights are hand-chosen numbers; the whole file is about 38 KB). To plug ZeroLM into tools that expect an LLM server, use the [OpenAI-compatible API](docs/API.md) instead.
+
 ## Research directions
 
 Areas we want to explore include:
