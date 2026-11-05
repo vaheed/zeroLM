@@ -1133,7 +1133,7 @@
           3.0
         ]
       ],
-      "response": "ZeroLM makes no network calls and sends nothing anywhere. It runs locally on the CPU and reads only its weight file. In live mode it also writes a life file on your own disk."
+      "response": "ZeroLM makes no outgoing network calls and sends nothing anywhere. It runs locally on the CPU and reads only its weight file. In live mode it also writes a life file on your own disk, and the optional API server only answers requests that are sent to it."
     },
     {
       "name": "contribute",
