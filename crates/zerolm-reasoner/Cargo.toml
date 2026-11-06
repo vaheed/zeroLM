@@ -1,0 +1,13 @@
+[package]
+name = "zerolm-reasoner"
+description = "Vector-symbolic relational memory and controlled inference operators over bound role-filler structures"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+zerolm-tensor = { path = "../zerolm-tensor" }
+zerolm-engine = { path = "../zerolm-engine" }
+zerolm-memory = { path = "../zerolm-memory" }
+serde.workspace = true
+serde_json.workspace = true

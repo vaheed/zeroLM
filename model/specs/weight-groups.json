@@ -50,6 +50,18 @@
       "update_path": "memory_write"
     },
     {
+      "id": "binding_roles",
+      "description": "Frozen vector-symbolic constants (core.reasoner.*): role phasors (subj, rel, obj, quant, scope), relation atoms, and the fractional-power number base. Seeded; verified bit-identical on load.",
+      "init_source": "phasor-binding-init",
+      "update_path": "none"
+    },
+    {
+      "id": "relation_memory",
+      "description": "Phase 6 relational memory (memory.relations.*): one bound role-filler bundle per stated fact or rule, its polarity/confidence/provenance metadata, and the codebook of symbol vectors seen. Written only from user statements; derived answers are never written back.",
+      "init_source": "zeros",
+      "update_path": "memory_write"
+    },
+    {
       "id": "readout_head",
       "description": "Next-byte readout (readout.weight, readout.bias) over [GRU hidden ; last-byte embedding]. Starts at zero (uniform prediction); updated online by the delta or Hebbian rule with constants from model/specs/online-learning.json.",
       "init_source": "zeros",
