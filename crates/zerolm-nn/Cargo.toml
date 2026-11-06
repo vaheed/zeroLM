@@ -1,0 +1,9 @@
+[package]
+name = "zerolm-nn"
+description = "Recurrent cells (GRU, diagonal SSM, fast-weight, local-attention hybrid), trace hooks, state serialization"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+zerolm-tensor = { path = "../zerolm-tensor" }
