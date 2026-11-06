@@ -168,13 +168,29 @@ impl Space {
     }
 
     /// Clean up a noisy number vector to the best integer in `range`.
+    /// Scans the range with a rotating phasor (`number(n+1) = number(n) * number(1)`
+    /// in f64), so no trigonometry runs per candidate.
     pub fn decode_number(&self, v: &Hv, range: std::ops::RangeInclusive<i64>) -> (i64, f32) {
-        let mut best = (*range.start(), f32::NEG_INFINITY);
-        for n in range {
-            let s = sim(v, &self.number(n));
+        let (start, end) = (*range.start(), *range.end());
+        let d = self.d;
+        let mut cur: Vec<(f64, f64)> = self.number_base.iter().map(|t| ((start as f64 * t).cos(), (start as f64 * t).sin())).collect();
+        let step: Vec<(f64, f64)> = self.number_base.iter().map(|t| (t.cos(), t.sin())).collect();
+        let (re, im) = (v.re(), v.im());
+        let mut best = (start, f32::NEG_INFINITY);
+        let mut n = start;
+        while n <= end {
+            let mut s = 0.0f64;
+            for k in 0..d {
+                s += re[k] as f64 * cur[k].0 + im[k] as f64 * cur[k].1;
+            }
+            let s = (s / d as f64) as f32;
             if s > best.1 {
                 best = (n, s);
             }
+            for (c, st) in cur.iter_mut().zip(&step) {
+                *c = (c.0 * st.0 - c.1 * st.1, c.0 * st.1 + c.1 * st.0);
+            }
+            n += 1;
         }
         best
     }
@@ -204,5 +220,8 @@ mod tests {
         assert_eq!(s.decode_number(&five, 0..=100).0, 5);
         assert_eq!(s.decode_number(&unbind(&s.number(3), &s.number(7)), -50..=50).0, -4);
         assert!(sim(&s.number(4), &s.number(5)).abs() < 0.15);
+        for n in [-1000, -3, 0, 7, 999, 1000] {
+            assert_eq!(s.decode_number(&s.number(n), -1000..=1000).0, n);
+        }
     }
 }

@@ -121,7 +121,7 @@ fn normalize(mut t: Vec<String>) -> Vec<String> {
         (&["is", "able", "to"], &["can"]),
         (&["able", "to"], &["can"]),
         (&["is", "located", "in"], &["is", "in"]),
-        (&["is", "inside"], &["is", "in"]),
+        (&["inside"], &["in"]),
         (&["lives", "in"], &["is", "in"]),
         (&["happened", "before"], &["before"]),
         (&["happen", "before"], &["before"]),
@@ -438,6 +438,7 @@ mod tests {
         assert_eq!(q("Is Ann shorter than Tom?"), Query::Holds { subj: n("tom"), pred: Greater { dim: "height".into(), other: "ann".into() } });
         assert_eq!(q("did flood happen after rain?"), Query::Holds { subj: n("rain"), pred: Before("flood".into()) });
         assert_eq!(q("can it fly?"), Query::Holds { subj: Term::Pronoun, pred: Can("fly".into()) });
+        assert_eq!(q("is tom inside kiv?"), Query::Holds { subj: n("tom"), pred: In("kiv".into()) });
         assert_eq!(q("is tom able to fly?"), Query::Holds { subj: n("tom"), pred: Can("fly".into()) });
         assert_eq!(q("How many apples does Tom have?"), Query::Count { subj: n("tom"), thing: "apple".into() });
         assert_eq!(q("who is younger, tom or ann?"), Query::Which { dim: "age".into(), higher: false, a: "tom".into(), b: "ann".into() });
