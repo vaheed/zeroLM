@@ -1,6 +1,8 @@
 //! Minimal CPU tensor kernels. Deliberately simple loops: no SIMD, no BLAS,
 //! no unsafe. Add acceleration only after profiling proves it useful.
 
+pub mod sha256;
+
 /// FNV-1a 64-bit hash (stable, used for tags and checksums).
 pub fn fnv1a(bytes: &[u8]) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
