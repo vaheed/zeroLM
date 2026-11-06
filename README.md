@@ -97,7 +97,7 @@ The full plan, with every gate and kill criterion, is in [docs/roadmap.md](docs/
 
 ## Where to start reading
 
-- **Curious about the idea:** this page, then [what we claim and do not claim](docs/claims-and-limitations.md) and [weight-space programming](docs/weight-space-programming.md).
+- **Curious about the idea:** this page, then [questions newcomers ask](docs/faq.md) (where the model is saved, why it does not grow, how much it can hold), [what we claim and do not claim](docs/claims-and-limitations.md), and [weight-space programming](docs/weight-space-programming.md).
 - **Want to run it:** [getting started](docs/getting-started.md).
 - **Want the details and the math:** [architecture](docs/architecture.md), [online learning](docs/online-learning.md), [memory](docs/memory-format.md), [reasoning](docs/reasoning.md), [neural ISA](docs/neural-isa.md), and [math and glossary](docs/math.md).
 - **Want to contribute:** [AGENTS.md](AGENTS.md) (working rules and the checks every commit must pass), the [roadmap](docs/roadmap.md), and the [research constitution](docs/research-constitution.md).
