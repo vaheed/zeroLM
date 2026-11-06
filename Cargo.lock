@@ -116,6 +116,7 @@ dependencies = [
  "zerolm-policy",
  "zerolm-reasoner",
  "zerolm-tensor",
+ "zerolm-wsp",
 ]
 
 [[package]]

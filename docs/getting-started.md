@@ -142,6 +142,7 @@ The reasoning language is bounded. It accepts sentences such as `x is a y`, `eve
 | Online learning | held-out BPB (bits per byte) clears the frozen floor (about 2.3 BPB vs 8.0 untrained, 3 seeds) | `reports/online-learning/` |
 | Memory | recall, paraphrase, and restart gates (exact recall 1.000) | `reports/memory/` |
 | Reasoning | agreement with the symbolic reference, counterfactuals, ablations | `reports/reasoning/` |
+| Uniform engine | compiled circuits pinned and reproducible, patch round trips, every memory and reasoning circuit run reproduced bit for bit by the reference interpreter, host audit | `reports/uniform-engine/` |
 
 Baseline provenance needs a clean git checkout, so the container reports it as **NOT RUN**. Run it on the host:
 

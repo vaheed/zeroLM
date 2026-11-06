@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "description": "Host audit for constitution invariant 10 (uniform execution). Files on the model path may bind tensors, run programs, and move bytes, but must not process input text. 'pending' lists host code that still makes content-dependent decisions and must move into compiled circuits before the uniform-engine milestone can be complete.",
+  "model_path": [
+    "crates/zerolm-engine/src/isa/mod.rs",
+    "crates/zerolm-engine/src/isa/interp.rs",
+    "crates/zerolm-engine/src/isa/bundle.rs",
+    "crates/zerolm-wsp/src/circuits/attention_read.rs",
+    "crates/zerolm-wsp/src/circuits/relational.rs",
+    "crates/zerolm-memory/src/read_circuit.rs",
+    "crates/zerolm-reasoner/src/circuits.rs"
+  ],
+  "forbidden": [
+    ".split(",
+    ".split_whitespace(",
+    ".to_lowercase(",
+    ".to_ascii_lowercase(",
+    ".chars(",
+    ".as_bytes(",
+    ".starts_with(",
+    ".ends_with(",
+    ".strip_prefix(",
+    ".strip_suffix(",
+    ".trim(",
+    ".find(\"",
+    "parse::<",
+    ".contains(\""
+  ],
+  "pending": [
+    {"file": "crates/zerolm-engine/src/semantic_state.rs", "reason": "the bounded-language parser matches token templates in Rust; it must become a recurrent parser circuit"},
+    {"file": "crates/zerolm-engine/src/binding.rs", "reason": "symbol vectors are generated from names by a seeded random generator on the host, which the ISA cannot compute; symbols need an ISA-computable encoding (for example hash_rows over bytes)"},
+    {"file": "crates/zerolm-reasoner/src/operators.rs", "reason": "each operator's decision logic (combining yes/no proofs, the inheritance level scan, negation edges, conditional chaining, count arithmetic) is Rust control flow; only the graph search runs in circuits"},
+    {"file": "crates/zerolm-reasoner/src/lib.rs", "reason": "one-step probes (matches, edges), symbol interning, and pronoun resolution run on the host"},
+    {"file": "crates/zerolm-memory/src/encoder.rs", "reason": "query and key text is split into words and hashed into vectors on the host; hash_rows exists for it but is not wired yet"},
+    {"file": "crates/zerolm-memory/src/persistent_memory.rs", "reason": "write-time bookkeeping (slot choice, status, supersession) is host code; it is an update rule, but its value comparison uses the host decoder"},
+    {"file": "crates/zerolm-memory/src/retrieval.rs", "reason": "nearest-code decoding for write-time comparison and fast-weight recall runs on the host"}
+  ]
+}

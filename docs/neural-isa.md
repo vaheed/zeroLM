@@ -68,6 +68,20 @@ The header is `{"program": <Program>, "tensors": [{"name", "rows", "cols"}, ...]
 - `crates/zerolm-engine/src/isa/` unit tests: validation, kernel semantics, delta rule, binding inverse, `hash_rows`, `step`.
 - `crates/zerolm-eval/tests/isa_parity.rs`: a program using every operation, with broadcasting, a `step` loop, and a `delta_write` state, runs on both interpreters over 20 seeds; every output and the final state must match bit for bit.
 
+## The uniform-engine gate
+
+`cargo run --release -p zerolm-eval --bin zerolm-uniform` (about 2 minutes; report schema `research/schemas/uniform-engine-report.schema.json`):
+
+| Check | What it shows |
+|---|---|
+| circuits pinned and reproducible | every spec in `model/prog/` compiles twice to the same SHA-256, equal to `model/prog/pinned.json` |
+| patch round trip | for every circuit: a one-value patch applies, a second apply is refused, and revert restores the original hash |
+| memory reference parity | 400 memory queries (taught keys and unknown keys) reproduced bit for bit from the exported bundle |
+| reasoning reference parity | every circuit run behind a generated world's questions, intact and with each operator ablated, replayed on the reference interpreter (970 runs, all bit-exact) |
+| host audit | the model-path files listed in `model/prog/host-audit.json` contain no text processing; host code that still makes content decisions is listed as **pending** |
+
+The gate passes when every check holds. The milestone counts as complete only when the pending list is also empty, which means all model behavior is in weights.
+
 ## Why the zero-skip is exact
 
 The engine's transposed `matvec` computes $o_c = \sum_r w_{rc}\, x_r$ left to right from $o_c = +0$, but it skips every $r$ with $x_r = 0$. For finite $w_{rc}$, a skipped term is $w_{rc} \cdot 0 = \pm 0$. In IEEE-754 round-to-nearest arithmetic, $a + (\pm 0) = a$ for every $a \ne 0$, and $(+0) + (-0) = +0$. The sum $u + v$ is $-0$ only when both $u$ and $v$ are $-0$, so an accumulator that starts at $+0$ can never become $-0$. Skipping zero terms therefore leaves every partial sum bit-identical. The reference interpreter does not skip, and the parity tests confirm the equality on every gate query.
@@ -181,4 +195,7 @@ $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top 
 - The query encoder (word split, `#word#` trigram hashing) still runs on the host; `hash_rows` exists for it.
 - Write-time bookkeeping and fast-weight recall cleanup are host code.
 - Reasoning: the search (reachability and shortest proofs) runs in C6, and slot decoding in C5. Still Rust control flow: each operator's decision logic (combining yes/no proofs, the inheritance level scan, the negation edge scan, conditional rule chaining, count arithmetic), the one-step `edges` probes they use, and the bounded-language parser.
+- Symbol vectors are generated from names by a seeded random generator on the host, which no ISA operation can compute. Moving the parser into a circuit first needs an ISA-computable symbol encoding, for example `hash_rows` over a word's bytes.
 - No circuit has been through the byte-permutation test yet.
+
+The authoritative list is the `pending` section of `model/prog/host-audit.json`; the uniform-engine gate prints it on every run.

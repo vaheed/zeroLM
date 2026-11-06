@@ -55,8 +55,8 @@
       "id": "uniform-engine",
       "name": "Uniform neural engine and WSP compiler",
       "status": "in_progress",
-      "command": null,
-      "report_schema": null
+      "command": "cargo run --release -p zerolm-eval --bin zerolm-uniform",
+      "report_schema": "research/schemas/uniform-engine-report.schema.json"
     },
     {
       "id": "real-text",

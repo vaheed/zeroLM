@@ -13,6 +13,7 @@ zerolm-learning = { path = "../zerolm-learning" }
 zerolm-policy = { path = "../zerolm-policy" }
 zerolm-memory = { path = "../zerolm-memory" }
 zerolm-reasoner = { path = "../zerolm-reasoner" }
+zerolm-wsp = { path = "../zerolm-wsp" }
 serde.workspace = true
 serde_json.workspace = true
 
@@ -31,3 +32,7 @@ path = "src/bin/memory_bench.rs"
 [[bin]]
 name = "zerolm-reasoning"
 path = "src/bin/reasoning_bench.rs"
+
+[[bin]]
+name = "zerolm-uniform"
+path = "src/bin/uniform.rs"

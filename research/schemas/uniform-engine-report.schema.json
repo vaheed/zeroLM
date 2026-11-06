@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM uniform-engine report (reports/uniform-engine/summary.json)",
+  "type": "object",
+  "required": ["report", "passed", "complete", "failures", "checks", "circuits", "memory_parity", "reasoning_parity", "host_audit", "scope_note"],
+  "properties": {
+    "report": {"const": "uniform-engine"},
+    "passed": {"type": "boolean"},
+    "complete": {"type": "boolean", "description": "passed and no host code pending"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "checks": {"type": "array", "items": {"type": "object", "required": ["name", "passed", "detail"]}},
+    "circuits": {"type": "array", "items": {"type": "object", "required": ["id", "sha256", "pinned", "reproducible", "patch_round_trip", "blocks"]}},
+    "memory_parity": {"type": "object", "required": ["runs", "mismatches", "by_program"]},
+    "reasoning_parity": {"type": "object", "required": ["runs", "mismatches", "by_program"]},
+    "host_audit": {"type": "object", "required": ["model_path", "violations", "pending"]},
+    "scope_note": {"type": "string"}
+  }
+}

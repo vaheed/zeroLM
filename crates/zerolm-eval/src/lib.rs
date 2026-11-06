@@ -6,6 +6,7 @@
 pub mod isa_ref;
 pub mod memory;
 pub mod reasoning;
+pub mod uniform;
 pub mod online;
 
 use serde::{Deserialize, Serialize};

@@ -38,6 +38,7 @@ if [[ "$MODE" != quick ]]; then
   gate "Online learning (~15 s)" zerolm-online-lm
   gate "Weight-resident memory (~7 min)" zerolm-memory
   gate "Compositional reasoning (~2 min)" zerolm-reasoning
+  gate "Uniform engine (~2 min)" zerolm-uniform
 fi
 
 printf '\n\033[1m== Summary ==\033[0m\n'
@@ -47,7 +48,7 @@ for i in "${!NAMES[@]}"; do
   [[ "${RESULTS[$i]}" == FAIL* ]] && fail=1
 done
 printf '  %-45s %s\n' "Baseline provenance" "NOT RUN (needs a clean git checkout; run on the host)"
-[[ "$MODE" == quick ]] && printf '  %-45s %s\n' "Bake-off, learning, memory, reasoning gates" "NOT RUN (quick mode)"
+[[ "$MODE" == quick ]] && printf '  %-45s %s\n' "Bake-off, learning, memory, reasoning, uniform-engine gates" "NOT RUN (quick mode)"
 if [[ "$VERBOSE" != 0 ]]; then
   printf '\nReports (also on the host under ./reports):\n'; find reports -type f | sort | sed 's/^/  /'
 fi

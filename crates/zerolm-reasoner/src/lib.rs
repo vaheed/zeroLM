@@ -288,6 +288,8 @@ pub struct Reasoner {
     circuits: circuits::Circuits,
     /// C5 output for the current memory state (session state, recomputed after writes).
     graph_cache: std::cell::RefCell<Option<circuits::Graph>>,
+    /// Evaluation only: recorded circuit runs for reference replay.
+    recorder: std::cell::RefCell<Option<Vec<circuits::Recorded>>>,
 }
 
 pub(crate) const SUBJ: usize = 0;
@@ -325,6 +327,7 @@ impl Reasoner {
             unsaved_from: 0,
             circuits: circuits::Circuits::new(&cfg),
             graph_cache: std::cell::RefCell::new(None),
+            recorder: std::cell::RefCell::new(None),
             space,
             cfg,
         })

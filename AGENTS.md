@@ -22,6 +22,7 @@ cargo run --release -p zerolm-eval --bin zerolm-online-lm   # online-learning ga
 cargo run --release -p zerolm-eval --bin zerolm-memory      # memory gate, incl. reference-interpreter parity (~7 min)
 cargo run --release -p zerolm-eval --bin zerolm-reasoning   # reasoning gate (~2 min)
 cargo run -p zerolm-wsp -- check                            # compiled circuits match model/prog/pinned.json
+cargo run --release -p zerolm-eval --bin zerolm-uniform    # uniform-engine gate: reference replay of every circuit run, host audit (~2 min)
 ```
 All of these must pass before every commit. In Docker: `docker compose run --rm gates` (all but baseline provenance, which needs a clean git checkout); guide in `docs/getting-started.md`.
 

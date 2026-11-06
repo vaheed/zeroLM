@@ -196,11 +196,32 @@ jobs:
           path: reports/reasoning/
           if-no-files-found: warn
           retention-days: 30
+  uniform-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Uniform-engine gate (pinned circuits, patch round trips, reference replay of every circuit run, host audit)
+        run: cargo run --release -p zerolm-eval --bin zerolm-uniform -- --out reports/uniform-engine
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            if [ -s reports/uniform-engine/brief.md ]; then cat reports/uniform-engine/brief.md; else echo "## uniform-engine: report **not produced**"; fi
+            echo; echo "Full report: artifact \`zerolm-uniform-engine-${{ github.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-uniform-engine-${{ github.sha }}
+          path: reports/uniform-engine/
+          if-no-files-found: warn
+          retention-days: 30
   # Last stage: runs only after every test and gate job above has passed.
   # Pull requests build and smoke-test the image; pushes to main and v* tags
   # also publish it to ghcr.io/<owner>/zerolm (latest, sha-<short>, version).
   docker-image:
-    needs: [engine-unit, architecture-bakeoff, policy-and-provenance, bootstrap-cli, online-learning, weight-memory, compositional-reasoning]
+    needs: [engine-unit, architecture-bakeoff, policy-and-provenance, bootstrap-cli, online-learning, weight-memory, compositional-reasoning, uniform-engine]
     permissions:
       contents: read
       packages: write

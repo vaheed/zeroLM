@@ -136,6 +136,7 @@ cargo run --release -p zerolm-eval --bin zerolm-online-lm                       
 cargo run --release -p zerolm-eval --bin zerolm-memory                                 # memory (~7 min)
 cargo run --release -p zerolm-eval --bin zerolm-reasoning                              # reasoning
 cargo run -p zerolm-wsp -- check                                                       # compiled circuits
+cargo run --release -p zerolm-eval --bin zerolm-uniform                                # uniform engine (~2 min)
 ```
 
 ## License

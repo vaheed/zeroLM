@@ -10,7 +10,7 @@
 use crate::{field, Reasoner, ReasonerConfig, ROLES};
 use std::collections::BTreeMap;
 use zerolm_engine::binding::Hv;
-use zerolm_engine::isa::{self, Bindings, Buf, Outputs, View};
+use zerolm_engine::isa::{self, bundle, Bindings, Buf, Outputs, View};
 use zerolm_wsp::circuits::relational::{Params, OPERATORS};
 use zerolm_wsp::{compile, Circuit, Compiled, Spec};
 
@@ -67,9 +67,50 @@ fn view(m: &zerolm_tensor::Matrix, rows: usize) -> View<'_> {
     View::new(rows, m.cols, &m.data[..rows * m.cols])
 }
 
+/// One recorded circuit run (evaluation only): the exported bundle (program
+/// and every weight exactly as bound), the inputs, and the engine's outputs.
+#[derive(Debug, Clone)]
+pub struct Recorded {
+    pub program: String,
+    pub bundle: Vec<u8>,
+    pub inputs: Vec<(String, Buf)>,
+    pub outputs: Outputs,
+}
+
 impl Reasoner {
     fn roles_tensor(&self) -> Vec<f32> {
         (0..ROLES.len()).flat_map(|r| self.role(r).data).collect()
+    }
+
+    /// Start (or stop) recording every circuit run for reference replay.
+    pub fn record_circuits(&self, on: bool) {
+        *self.recorder.borrow_mut() = if on { Some(Vec::new()) } else { None };
+    }
+
+    /// Take the runs recorded so far.
+    pub fn take_recorded(&self) -> Vec<Recorded> {
+        self.recorder.borrow_mut().as_mut().map(std::mem::take).unwrap_or_default()
+    }
+
+    /// Bind, run, and (when recording) export one program run.
+    fn exec(&self, c: &Compiled, inputs: Vec<(&str, Buf)>, weights: &[(&str, View<'_>)]) -> Outputs {
+        let mut b = Bindings::new();
+        for (n, t) in &inputs {
+            b = b.input(n, t.clone());
+        }
+        for (n, v) in weights {
+            b = b.weight(n, *v);
+        }
+        let out = isa::run(&c.program, b).unwrap_or_else(|e| panic!("{} runs on its own memory: {e}", c.id));
+        if let Some(rec) = self.recorder.borrow_mut().as_mut() {
+            rec.push(Recorded {
+                program: c.id.clone(),
+                bundle: bundle::encode(&c.program, weights),
+                inputs: inputs.into_iter().map(|(n, t)| (n.to_string(), t)).collect(),
+                outputs: out.clone(),
+            });
+        }
+        out
     }
 
     /// The decoded relation graph for the current memory state (cached).
@@ -80,38 +121,28 @@ impl Reasoner {
             let roles = self.roles_tensor();
             let zero_meta = vec![0.0f32; self.n_slots * field::COUNT];
             let meta = if self.retrieval_ablated { View::new(self.n_slots, field::COUNT, &zero_meta) } else { view(&self.meta, self.n_slots) };
-            let mut b = Bindings::new()
-                .weight("slots", view(&self.slots, self.n_slots))
-                .weight("meta", meta)
-                .weight("codebook", view(&self.codebook, self.n_sym))
-                .weight("roles", View::new(ROLES.len(), 2 * self.cfg.dim, &roles));
-            for t in &self.circuits.graph.tensors {
-                b = b.weight(&t.name, t.view());
-            }
-            let o = isa::run(&self.circuits.graph.program, b).expect("relation-graph runs on its own memory");
+            let mut w: Vec<(&str, View<'_>)> = vec![
+                ("slots", view(&self.slots, self.n_slots)),
+                ("meta", meta),
+                ("codebook", view(&self.codebook, self.n_sym)),
+                ("roles", View::new(ROLES.len(), 2 * self.cfg.dim, &roles)),
+            ];
+            w.extend(self.circuits.graph.tensors.iter().map(|t| (t.name.as_str(), t.view())));
+            let o = self.exec(&self.circuits.graph, Vec::new(), &w);
             let take = |n: &str| o.values.get(n).cloned().expect("graph output");
             *self.graph_cache.borrow_mut() = Some(Graph { key, subj_sim: take("subj_sim"), obj_t: take("obj_t"), pos: take("pos"), neg: take("neg") });
         }
         std::cell::Ref::map(self.graph_cache.borrow(), |g| g.as_ref().expect("graph computed"))
     }
 
-    fn op_enabled(&self, op: &str) -> bool {
+    /// Operator flags in `OPERATORS` order (evaluation ablations).
+    fn op_flags(&self) -> [bool; 8] {
         let o = self.ops;
-        match op {
-            "class_inclusion" => o.class_inclusion,
-            "transitivity" => o.transitivity,
-            "attribute_inheritance" => o.attribute_inheritance,
-            "comparison" => o.comparison,
-            "arithmetic" => o.arithmetic,
-            "temporal_ordering" => o.temporal_ordering,
-            "negation" => o.negation,
-            "conditionals" => o.conditionals,
-            other => panic!("unknown operator {other}"),
-        }
+        [o.class_inclusion, o.transitivity, o.attribute_inheritance, o.comparison, o.arithmetic, o.temporal_ordering, o.negation, o.conditionals]
     }
 
     /// Run C6 from symbol `from` over positive `rel` edges for operator `op`
-    /// (a disabled operator's block is bound as zero: direct edges only).
+    /// (a disabled operator's enable block is bound as zero: direct edges only).
     pub(crate) fn run_reach(&self, from: usize, to: Option<usize>, rel: &Hv, op: &str) -> Option<Outputs> {
         if self.n_slots == 0 || self.n_sym == 0 {
             return None;
@@ -123,23 +154,23 @@ impl Reasoner {
         sel[opi] = 1.0;
         let x = self.code(from);
         let y = to.map(|t| self.code(t)).unwrap_or_else(|| x.clone());
-        let mut b = Bindings::new()
-            .input("x", Buf::row(x.data))
-            .input("y", Buf::row(y.data))
-            .input("rel", Buf::row(rel.data.clone()))
-            .input("operator", Buf::row(sel))
-            .weight("slots", view(&self.slots, self.n_slots))
-            .weight("codebook", view(&self.codebook, self.n_sym))
-            .weight("roles", View::new(ROLES.len(), 2 * self.cfg.dim, &roles))
-            .weight("subj_sim", g.subj_sim.view())
-            .weight("obj_t", g.obj_t.view())
-            .weight("pol", g.pos.view());
+        let inputs = vec![("x", Buf::row(x.data)), ("y", Buf::row(y.data)), ("rel", Buf::row(rel.data.clone())), ("operator", Buf::row(sel))];
+        let mut w: Vec<(&str, View<'_>)> = vec![
+            ("slots", view(&self.slots, self.n_slots)),
+            ("codebook", view(&self.codebook, self.n_sym)),
+            ("roles", View::new(ROLES.len(), 2 * self.cfg.dim, &roles)),
+            ("subj_sim", g.subj_sim.view()),
+            ("obj_t", g.obj_t.view()),
+            ("pol", g.pos.view()),
+        ];
         let zero = [0.0f32];
+        let disabled: Vec<String> =
+            OPERATORS.iter().zip(self.op_flags()).filter(|(_, on)| !on).map(|(op, _)| format!("enable_{op}")).collect();
         for t in &self.circuits.reach.tensors {
-            let disabled = t.name.strip_prefix("enable_").map(|op| !self.op_enabled(op)).unwrap_or(false);
-            b = b.weight(&t.name, if disabled { View::new(1, 1, &zero) } else { t.view() });
+            let off = disabled.iter().any(|d| *d == t.name);
+            w.push((t.name.as_str(), if off { View::new(1, 1, &zero) } else { t.view() }));
         }
-        Some(isa::run(&self.circuits.reach.program, b).expect("relation-reach runs on its own memory"))
+        Some(self.exec(&self.circuits.reach, inputs, &w))
     }
 
     /// Every symbol reachable from `from` with its proof premises.
