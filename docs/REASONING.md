@@ -71,18 +71,18 @@ Abbreviations: FHRR = Fourier holographic reduced representations, a vector-symb
 
 ### The vector algebra (`binding.rs`)
 
-A vector is $a \in \mathbb{C}^d$, $d = 512$, stored as $[\operatorname{Re} a; \operatorname{Im} a]$ (1024 floats). An atom (symbol, role, or relation) is a unit phasor with seeded angles, $a_k = e^{i\theta_k}$, $\theta_k \sim \mathcal{U}[0, 2\pi)$, drawn from the stream tagged `binding.<namespace>:<name>`.
+A vector is $a \in \mathbb{C}^d$, $d = 512$, stored as $[\mathrm{Re} a; \mathrm{Im} a]$ (1024 floats). An atom (symbol, role, or relation) is a unit phasor with seeded angles, $a_k = e^{i\theta_k}$, $\theta_k \sim \mathcal{U}[0, 2\pi)$, drawn from the stream tagged `binding.<namespace>:<name>`.
 
 | Operation | Definition | Property |
 |---|---|---|
 | bind | $(a \circledast b)_k = a_k b_k$ | commutative, associative; a bound pair resembles neither part |
 | unbind | $(a \oslash b)_k = a_k \overline{b_k}$ | $(a \circledast b) \oslash b = a$ exactly, since $\lvert b_k\rvert = 1$ |
 | bundle | $a + b$ | the sum stays similar to each term |
-| similarity | $\operatorname{sim}(a, b) = \frac{1}{d}\operatorname{Re}\sum_k a_k \overline{b_k} = \frac{1}{d}\sum_k \cos(\theta^a_k - \theta^b_k)$ | $\operatorname{sim}(a, a) = 1$ for an atom |
+| similarity | $\mathrm{sim}(a, b) = \frac{1}{d}\mathrm{Re}\sum_k a_k \overline{b_k} = \frac{1}{d}\sum_k \cos(\theta^a_k - \theta^b_k)$ | $\mathrm{sim}(a, a) = 1$ for an atom |
 
 **Random atoms are quasi-orthogonal.** For independent atoms, each term $\cos(\theta^a_k - \theta^b_k)$ has mean 0 and variance $\tfrac12$, so
 
-$$\mathbb{E}\,\operatorname{sim}(a,b) = 0, \qquad \operatorname{sd}\,\operatorname{sim}(a,b) = \frac{1}{\sqrt{2d}} = 0.031.$$
+$$\mathbb{E}\,\mathrm{sim}(a,b) = 0, \qquad \mathrm{sd}\,\mathrm{sim}(a,b) = \frac{1}{\sqrt{2d}} = 0.031.$$
 
 Binding an atom with anything gives another such random-looking unit phasor, so distinct role-filler pairs are quasi-orthogonal too.
 
@@ -98,9 +98,9 @@ A comparative's relation filler is itself bound, $\textit{gt} \circledast \texti
 
 A probe $p = \sum_{i=1}^{k} \rho_i \circledast f_i$ (for example "subject is rex, relation is isa") is compared with every slot. If the slot contains $m$ of the probe's pairs:
 
-$$\operatorname{sim}(p, m_\text{slot}) = m + \sum_{\text{non-matching pairs}} \operatorname{sim}(\cdot,\cdot) \approx m \pm \frac{\sqrt{kn - m}}{\sqrt{2d}}$$
+$$\mathrm{sim}(p, m_\text{slot}) = m + \sum_{\text{non-matching pairs}} \mathrm{sim}(\cdot,\cdot) \approx m \pm \frac{\sqrt{kn - m}}{\sqrt{2d}}$$
 
-The match rule is $\operatorname{sim} \ge k - \tfrac12$: all $k$ pairs present. For a 2-pair probe against 3-pair slots, the noise standard deviation is about $\sqrt{4}/32 \approx 0.06$. A full match (about 2) and a one-pair partial match (about 1) are each roughly 8 standard deviations from the threshold 1.5.
+The match rule is $\mathrm{sim} \ge k - \tfrac12$: all $k$ pairs present. For a 2-pair probe against 3-pair slots, the noise standard deviation is about $\sqrt{4}/32 \approx 0.06$. A full match (about 2) and a one-pair partial match (about 1) are each roughly 8 standard deviations from the threshold 1.5.
 
 ### Unbinding and cleanup
 
@@ -114,9 +114,9 @@ The noise terms are $n - 1$ quasi-orthogonal unit phasors, so $\cos(m \oslash \r
 
 With a seeded base $\phi_k \sim \mathcal{U}(-\pi, \pi)$:
 
-$$\operatorname{num}(n)_k = e^{i n \phi_k}, \qquad \operatorname{num}(a) \circledast \operatorname{num}(b) = \operatorname{num}(a + b), \qquad \operatorname{num}(a) \oslash \operatorname{num}(b) = \operatorname{num}(a - b)$$
+$$\mathrm{num}(n)_k = e^{i n \phi_k}, \qquad \mathrm{num}(a) \circledast \mathrm{num}(b) = \mathrm{num}(a + b), \qquad \mathrm{num}(a) \oslash \mathrm{num}(b) = \mathrm{num}(a - b)$$
 
-So addition **is** binding. For integers $a \ne b$, $\mathbb{E}\cos((a-b)\phi_k) = 0$ over the uniform base, so distinct integers are quasi-orthogonal (sd 0.031). Decoding picks $\hat n = \arg\max_{|n| \le 1000} \operatorname{sim}(v, \operatorname{num}(n))$. The scan never calls trigonometric functions per candidate: it steps a phasor, $\operatorname{num}(n+1) = \operatorname{num}(n) \circledast \operatorname{num}(1)$, in `f64`. Among 2,001 candidates the largest spurious similarity is about 0.12 against 1 for the true value.
+So addition **is** binding. For integers $a \ne b$, $\mathbb{E}\cos((a-b)\phi_k) = 0$ over the uniform base, so distinct integers are quasi-orthogonal (sd 0.031). Decoding picks $\hat n = \arg\max_{|n| \le 1000} \mathrm{sim}(v, \mathrm{num}(n))$. The scan never calls trigonometric functions per candidate: it steps a phasor, $\mathrm{num}(n+1) = \mathrm{num}(n) \circledast \mathrm{num}(1)$, in `f64`. Among 2,001 candidates the largest spurious similarity is about 0.12 against 1 for the true value.
 
 ### Discourse state ("it")
 
@@ -126,16 +126,16 @@ $s_t$ is the subject vector of statement $t$. With distinct subjects, $\lVert c\
 
 ### Operator semantics
 
-Let $E^{\pm}_R$ be the positive and negative edges of relation $R$ recovered by probe, unbind, and cleanup. Let $\operatorname{reach}^D_R(x)$ be the nodes reachable from $x$ over at most $D = 8$ positive $R$ edges.
+Let $E^{\pm}_R$ be the positive and negative edges of relation $R$ recovered by probe, unbind, and cleanup. Let $\mathrm{reach}^D_R(x)$ be the nodes reachable from $x$ over at most $D = 8$ positive $R$ edges.
 
 | Operator | Answers "yes" when | Answers "no" when |
 |---|---|---|
-| class inclusion | $y \in \operatorname{reach}^8_{isa}(x)$ | $\exists\, a \in \{x\} \cup \operatorname{reach}_{isa}(x),\ z \in \{y\} \cup \operatorname{reach}_{isa}(y)$ with $(a, z) \in E^-_{isa}$ (if $x \subseteq a$, $a \cap z = \emptyset$, and $y \subseteq z$, then $x \notin y$) |
-| transitivity (in) | $y \in \operatorname{reach}^8_{in}(x)$ | $(x, y) \in E^-_{in}$ |
+| class inclusion | $y \in \mathrm{reach}^8_{isa}(x)$ | $\exists\, a \in \{x\} \cup \mathrm{reach}_{isa}(x),\ z \in \{y\} \cup \mathrm{reach}_{isa}(y)$ with $(a, z) \in E^-_{isa}$ (if $x \subseteq a$, $a \cap z = \emptyset$, and $y \subseteq z$, then $x \notin y$) |
+| transitivity (in) | $y \in \mathrm{reach}^8_{in}(x)$ | $(x, y) \in E^-_{in}$ |
 | attribute inheritance | at the nearest isa level $\ell$ (breadth-first from $x$) where some node has a can or cannot edge to $v$: a can edge exists | at that level a cannot edge exists |
-| comparison, temporal order | $b \in \operatorname{reach}^8_{R}(a)$ | $a \in \operatorname{reach}^8_{R}(b)$ (strict order is antisymmetric) |
-| conditionals | $\operatorname{prop}(x, p)$ is stated, or a rule $q \Rightarrow p$ with scope "something" or $x$ exists and $\operatorname{prop}(x, q)$ holds recursively (depth at most 8, no cycles) | $\neg\operatorname{prop}(x, p)$ is stated |
-| arithmetic | $\operatorname{counts}(x) = \{n : \text{has}(x, n)\} \cup \{c + \delta : \text{more}(x, \delta, o),\ c \in \operatorname{counts}(o)\}$ has exactly one value | (more than one value is a contradiction) |
+| comparison, temporal order | $b \in \mathrm{reach}^8_{R}(a)$ | $a \in \mathrm{reach}^8_{R}(b)$ (strict order is antisymmetric) |
+| conditionals | $\mathrm{prop}(x, p)$ is stated, or a rule $q \Rightarrow p$ with scope "something" or $x$ exists and $\mathrm{prop}(x, q)$ holds recursively (depth at most 8, no cycles) | $\neg\mathrm{prop}(x, p)$ is stated |
+| arithmetic | $\mathrm{counts}(x) = \{n : \text{has}(x, n)\} \cup \{c + \delta : \text{more}(x, \delta, o),\ c \in \mathrm{counts}(o)\}$ has exactly one value | (more than one value is a contradiction) |
 
 Yes and no together give **contradiction**; neither gives **unknown**. The premises are the slots on the shortest proof path, and
 

@@ -69,7 +69,7 @@ Semantic and episodic memory are kept separate. The semantic bank holds what is 
 
 Text is split into words $\omega_1, \dots, \omega_n$: ASCII letters are lower-cased, and any ASCII non-alphanumeric character separates words. Each word is padded to `#word#`, and its byte trigrams $g$ select rows of the frozen table $T \in \mathbb{R}^{4096 \times 128}$, $T_{ij} \sim \mathcal{U}(-1, 1)$:
 
-$$\tilde w(\omega) = \sum_{g \in \text{trigrams}(\#\omega\#)} T\big[\operatorname{FNV1a}(g) \bmod 4096\big], \qquad w(\omega) = \frac{\tilde w}{\lVert \tilde w\rVert}, \qquad k = \frac{\sum_{j=1}^n w(\omega_j)}{\big\lVert \sum_{j} w(\omega_j)\big\rVert}$$
+$$\tilde w(\omega) = \sum_{g \in \text{trigrams}(\#\omega\#)} T\big[\mathrm{FNV1a}(g) \bmod 4096\big], \qquad w(\omega) = \frac{\tilde w}{\lVert \tilde w\rVert}, \qquad k = \frac{\sum_{j=1}^n w(\omega_j)}{\big\lVert \sum_{j} w(\omega_j)\big\rVert}$$
 
 **Why this separates keys.** Rows of $T$ are independent random vectors in 128 dimensions, so the word vectors of two words with no trigram in common have cosine of mean 0 and standard deviation about $1/\sqrt{128} \approx 0.09$. Treat word vectors as orthonormal. A key of $n$ words and a query of $n'$ words that share $m$ of them then have
 
@@ -113,9 +113,9 @@ In the circuit this is the product of four $\{0, 1\}$ gates, multiplied into the
 
 The pooled key $k$ is expanded and sparsified by a frozen projection $P \in \mathbb{R}^{1024 \times 128}$, $P_{ij} \sim \mathcal{U}(-1,1)$:
 
-$$\sigma(k)_i = \frac{1}{\sqrt{a}}\, [\![\, i \in \operatorname{top}_a(P k) \,]\!], \qquad a = 32, \qquad \lVert \sigma(k) \rVert = 1$$
+$$\sigma(k)_i = \frac{1}{\sqrt{a}}\, [\![\, i \in \mathrm{top}_a(P k) \,]\!], \qquad a = 32, \qquad \lVert \sigma(k) \rVert = 1$$
 
-Two codes overlap by $\langle \sigma(k), \sigma(k')\rangle = |\operatorname{top}_a(Pk) \cap \operatorname{top}_a(Pk')| / a$. This is much smaller than $\cos(k, k')$ for correlated keys, which is the point of pattern separation. Each write with value $v$ (768 = 48 x 16 code values) applies
+Two codes overlap by $\langle \sigma(k), \sigma(k')\rangle = |\mathrm{top}_a(Pk) \cap \mathrm{top}_a(Pk')| / a$. This is much smaller than $\cos(k, k')$ for correlated keys, which is the point of pattern separation. Each write with value $v$ (768 = 48 x 16 code values) applies
 
 $$M \leftarrow \gamma M, \qquad M \leftarrow M + \eta\, \frac{(v - M\sigma)\,\sigma^\top}{\sigma^\top\sigma + \epsilon}, \qquad \gamma = 0.99,\ \eta = 1,\ \epsilon = 10^{-6}$$
 

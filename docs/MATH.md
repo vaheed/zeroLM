@@ -49,7 +49,7 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 | $W, U, M$ | matrices (row-major in code); $W_i$ is row $i$ |
 | $\odot$ | elementwise (Hadamard) product |
 | $\sigma(x) = 1/(1+e^{-x})$ | logistic sigmoid |
-| $\operatorname{softmax}(z)_i = e^{z_i - m} / \sum_j e^{z_j - m}$, $m = \max_j z_j$ | softmax, computed with the max subtracted for stability |
+| $\mathrm{softmax}(z)_i = e^{z_i - m} / \sum_j e^{z_j - m}$, $m = \max_j z_j$ | softmax, computed with the max subtracted for stability |
 | $\langle a, b\rangle = a^\top b$; $\cos(a,b) = \langle a,b\rangle / (\lVert a\rVert\lVert b\rVert)$ | dot product and cosine |
 | $e_y$ | one-hot vector for index $y$ |
 | $\mathcal{U}(a, b)$ | uniform distribution |

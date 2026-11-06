@@ -96,15 +96,15 @@ Status values are the exact integers 0 to 3, so $\mu_i = 1$ exactly for active s
 
 **attend** (constants: $\beta = 32$, $w_\min = 10^{-7}$):
 
-$$\tilde s = (K q) \odot \mu - (1 - \mu) B, \qquad (i^\star, s^\star) = \operatorname{top}_1(\tilde s), \qquad s^{(2)} = \min \operatorname{top}_2(\tilde s)$$
+$$\tilde s = (K q) \odot \mu - (1 - \mu) B, \qquad (i^\star, s^\star) = \mathrm{top}_1(\tilde s), \qquad s^{(2)} = \min \mathrm{top}_2(\tilde s)$$
 
-$$\alpha = \operatorname{softmax}(\beta \tilde s), \qquad r = V^\top \big(\alpha \odot [\![\alpha \ge w_\min]\!]\big), \qquad \text{score} = s^\star h_1 + (h_1 - 1), \qquad \text{runner-up} = s^{(2)} h_2 + (h_2 - 1)$$
+$$\alpha = \mathrm{softmax}(\beta \tilde s), \qquad r = V^\top \big(\alpha \odot [\![\alpha \ge w_\min]\!]\big), \qquad \text{score} = s^\star h_1 + (h_1 - 1), \qquad \text{runner-up} = s^{(2)} h_2 + (h_2 - 1)$$
 
 The best slot's one-hot mask $e_{i^\star}$ (from `topk`) gathers its rows by transposed `matvec`: metadata $\Pi^\top e_{i^\star}$ and key words $\mathcal{K}^\top e_{i^\star}$.
 
 **verify** (constants: thresholds 0.3 and 0.5, the key-word-count selector, and the position index $\iota = (0, 1, \dots, 7)$):
 
-$$n_w = (\Pi^\top e_{i^\star})_\text{kw}, \qquad \kappa = \operatorname{reshape}_{8 \times 128}(\mathcal{K}^\top e_{i^\star}), \qquad g_j = \max_i (\kappa U^\top)_{ji}$$
+$$n_w = (\Pi^\top e_{i^\star})_\text{kw}, \qquad \kappa = \mathrm{reshape}_{8 \times 128}(\mathcal{K}^\top e_{i^\star}), \qquad g_j = \max_i (\kappa U^\top)_{ji}$$
 
 $$\text{cov} = h_1 \cdot [\![n_w \ge 1]\!] \cdot \min_j \big(g_j + [\![\iota_j \ge n_w]\!]\, B\big)$$
 
@@ -112,7 +112,7 @@ Unused word positions $j \ge n_w$ get $+B$ and drop out of the minimum.
 
 **decode** (constants: the score scale 2 and the margin selector $(1, -1)$):
 
-$$X = \operatorname{reshape}_{48 \times 16}(r), \qquad S = 2\, X E^\top - \mathbf{1}\,\big(\lVert E_b\rVert^2\big)_b^\top, \qquad \hat b_p = \operatorname{argmax}_b S_{pb}$$
+$$X = \mathrm{reshape}_{48 \times 16}(r), \qquad S = 2\, X E^\top - \mathbf{1}\,\big(\lVert E_b\rVert^2\big)_b^\top, \qquad \hat b_p = \mathrm{argmax}_b S_{pb}$$
 
 $$\nu_p = [\![\hat b_p \ge 1]\!], \qquad \text{keep}_p = \prod_{q \le p} \nu_q, \qquad \text{visited}_p = \prod_{q < p} \nu_q$$
 
@@ -128,11 +128,11 @@ $\max_p \text{keep}_p = \text{keep}_1$, because `keep` never increases, so this 
 
 ## The relational circuits (Phase 6, roadmap C5 and C6)
 
-Phase 6 stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [REASONING.md](REASONING.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\operatorname{sim}(a, b) = \frac1d \operatorname{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
+Phase 6 stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [REASONING.md](REASONING.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\mathrm{sim}(a, b) = \frac1d \mathrm{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
 
 ### C5: `relation-graph` (once per memory state)
 
-$$\Sigma_{s,i} = \operatorname{sim}(\sigma_s,\ \text{subj} \circledast c_i) \qquad (S \times N,\ \text{one } \texttt{matmul})$$
+$$\Sigma_{s,i} = \mathrm{sim}(\sigma_s,\ \text{subj} \circledast c_i) \qquad (S \times N,\ \text{one } \mathtt{matmul})$$
 
 ($\Sigma$ is the circuit output `subj_sim`, $O$ is `obj_t`.)
 
@@ -146,7 +146,7 @@ This is the slow, dense step: about $2 \cdot S \cdot N \cdot 2d$ multiply-adds, 
 
 Given a start vector $x$, a target $y$, and a relation vector $r$ (for example the atom *isa*, or *gt* bound with *height*):
 
-$$E_{s,i} = [\![\, \Sigma_{s,i} + \operatorname{sim}(\sigma_s, \text{rel} \circledast r) \ge 2 - 0.5 \,]\!] \cdot \text{pol}_s$$
+$$E_{s,i} = [\![\, \Sigma_{s,i} + \mathrm{sim}(\sigma_s, \text{rel} \circledast r) \ge 2 - 0.5 \,]\!] \cdot \text{pol}_s$$
 
 So $E_{s,i} = 1$ when slot $s$ is an $r$-edge leaving symbol $i$. It is the Phase 6 two-pair probe evaluated for every symbol at once. $x$ and $y$ are cleaned up to one-hot rows $\hat x, \hat y$ (cosine at least 0.9 with a codebook row).
 
@@ -156,7 +156,7 @@ $$\ell = E^\top f \in \mathbb{R}^S \qquad \text{(slots leaving the frontier)}$$
 
 $$C_{j,s} = O_{s,j}\; \ell_s\; (1 - R_j)\; \gamma_t \qquad \text{(candidate: slot } s \text{ newly reaches } j\text{)}$$
 
-$$Q = \operatorname{top}_1\text{-mask}(C) \odot \max_s C_{\cdot, s}, \qquad P \leftarrow P + Q E P + Q, \qquad n = \max_s Q_{\cdot,s}, \qquad R \leftarrow R + n, \qquad f \leftarrow n$$
+$$Q = \mathrm{top}_1\text{-mask}(C) \odot \max_s C_{\cdot, s}, \qquad P \leftarrow P + Q E P + Q, \qquad n = \max_s Q_{\cdot,s}, \qquad R \leftarrow R + n, \qquad f \leftarrow n$$
 
 $Q$ picks one slot per new target (the lowest slot index, because ties in `topk` go to the lower index). Then $QEP$ copies the picked slot's subject's proof, and $+Q$ adds the slot itself. Because each level runs once, a node is reached for the first time at the step equal to its distance from $x$, so $\sum_s P_{j,s}$ is the length of a **shortest** proof. This is what breadth-first search computed. The answer is
 

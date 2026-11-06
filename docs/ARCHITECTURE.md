@@ -48,7 +48,7 @@ Notation and abbreviations: [MATH.md](MATH.md). GRU = gated recurrent unit, SSM 
 
 $$x_t = E[b_t], \qquad E \in \mathbb{R}^{256 \times 16}, \qquad E_{ij} \sim \mathcal{U}(-1, 1)$$
 
-$$\ell_t = H h_t + c, \qquad H_{ij} \sim \mathcal{U}\!\left(-\tfrac{0.1}{\sqrt d}, \tfrac{0.1}{\sqrt d}\right), \qquad c = 0, \qquad p(b_{t+1} = v \mid b_{\le t}) = \operatorname{softmax}(\ell_t)_v$$
+$$\ell_t = H h_t + c, \qquad H_{ij} \sim \mathcal{U}\!\left(-\tfrac{0.1}{\sqrt d}, \tfrac{0.1}{\sqrt d}\right), \qquad c = 0, \qquad p(b_{t+1} = v \mid b_{\le t}) = \mathrm{softmax}(\ell_t)_v$$
 
 The head scale $0.1/\sqrt d$ keeps untrained logits near 0. Every byte then gets probability about $1/256$, so an untrained model scores about $\log_2 256 = 8$ bits per byte (measured: 8.0).
 
@@ -62,13 +62,13 @@ $$z_t = \sigma(W_z x_t + U_z h_{t-1} + b_z), \qquad r_t = \sigma(W_r x_t + U_r h
 
 $$\tilde h_t = \tanh\!\big(W_h x_t + U_h (r_t \odot h_{t-1}) + b_h\big), \qquad h_t = (1 - z_t) \odot h_{t-1} + z_t \odot \tilde h_t$$
 
-The biases are $b_z = \operatorname{linspace}(-4, 0, d)$ and $b_r = b_h = 0$. Unit $i$ keeps the fraction $1 - z_i$ of its state each step. With small inputs, $z_i \approx \sigma(b_{z,i})$, which lies between $\sigma(-4) = 0.018$ and $\sigma(0) = 0.5$. The units therefore start with memory time constants $\tau_i \approx 1/z_i$ from about 2 to about 55 bytes: a spread of timescales set by initialization, not learned. Since $h_t$ is a convex combination of $h_{t-1}$ and $\tilde h_t \in (-1, 1)$, the state stays in $(-1, 1)$ from $h_0 = 0$. Parameter count: $3de + 3d^2 + 3d$, which is 20,202 for $e = 16$, $d = 74$.
+The biases are $b_z = \mathrm{linspace}(-4, 0, d)$ and $b_r = b_h = 0$. Unit $i$ keeps the fraction $1 - z_i$ of its state each step. With small inputs, $z_i \approx \sigma(b_{z,i})$, which lies between $\sigma(-4) = 0.018$ and $\sigma(0) = 0.5$. The units therefore start with memory time constants $\tau_i \approx 1/z_i$ from about 2 to about 55 bytes: a spread of timescales set by initialization, not learned. Since $h_t$ is a convex combination of $h_{t-1}$ and $\tilde h_t \in (-1, 1)$, the state stays in $(-1, 1)$ from $h_0 = 0$. Parameter count: $3de + 3d^2 + 3d$, which is 20,202 for $e = 16$, $d = 74$.
 
 **Diagonal SSM** (`ssm.rs`). Decay and drive depend only on the input:
 
 $$a_t = \sigma(W_a x_t + b_a), \qquad u_t = (1 - a_t) \odot \tanh(W_v x_t), \qquad h_t = a_t \odot h_{t-1} + u_t$$
 
-with $b_a = \operatorname{linspace}(0, 4, d)$, so the initial decays $\sigma(b_a)$ run from 0.5 to 0.98. Each step is an affine map $h \mapsto A \odot h + U$, and two steps compose as
+with $b_a = \mathrm{linspace}(0, 4, d)$, so the initial decays $\sigma(b_a)$ run from 0.5 to 0.98. Each step is an affine map $h \mapsto A \odot h + U$, and two steps compose as
 
 $$(A_2, U_2) \circ (A_1, U_1) = (A_2 \odot A_1,\; A_2 \odot U_1 + U_2).$$
 
@@ -78,15 +78,15 @@ $$(A_2, U_2) \circ (A_1, U_1) = (A_2 \odot A_1,\; A_2 \odot U_1 + U_2).$$
 
 $$q_t = \tanh(W_q x_t), \qquad \rho_t = M_{t-1}\, q_t \quad \text{(read before this step's write)}$$
 
-$$h_t = (1 - \zeta) \odot h_{t-1} + \zeta \odot \tanh(W_x x_t + U h_{t-1} + R \rho_t + b), \qquad \zeta = \sigma(\operatorname{linspace}(-4, 0, d))$$
+$$h_t = (1 - \zeta) \odot h_{t-1} + \zeta \odot \tanh(W_x x_t + U h_{t-1} + R \rho_t + b), \qquad \zeta = \sigma(\mathrm{linspace}(-4, 0, d))$$
 
-$$k_t = \tanh(W_k x_t), \quad v_t = \tanh(W_v x_t), \quad M_t = \operatorname{clip}_{[-8,\,8]}\!\left(0.995\, M_{t-1} + 0.5\, \frac{(v_t - M_{t-1} k_t)\, k_t^\top}{k_t^\top k_t + 10^{-6}}\right)$$
+$$k_t = \tanh(W_k x_t), \quad v_t = \tanh(W_v x_t), \quad M_t = \mathrm{clip}_{[-8,\,8]}\!\left(0.995\, M_{t-1} + 0.5\, \frac{(v_t - M_{t-1} k_t)\, k_t^\top}{k_t^\top k_t + 10^{-6}}\right)$$
 
 The write is the normalized delta rule (NLMS). Ignoring decay and $\epsilon$, the new readout of the written key is $M_t k_t = M_{t-1}k_t + 0.5\,(v_t - M_{t-1}k_t)$: the error on that key halves. A learning rate of 1 would store $v_t$ exactly, but it would overwrite older associations that share key directions; 0.5 trades exactness for less interference. The clamp keeps the state finite.
 
 **Hybrid** (`hybrid.rs`, comparison arm only). A GRU plus attention over a ring of the last 8 hidden states $m_1, \dots, m_8$:
 
-$$q = W_q h_{t-1}, \qquad \alpha_j = \operatorname{softmax}_j\!\left(\frac{q^\top m_j}{\sqrt d}\right), \qquad h_t = \tanh\!\Big(\mathrm{GRU}(h_{t-1}, x_t) + W_o \textstyle\sum_j \alpha_j m_j\Big)$$
+$$q = W_q h_{t-1}, \qquad \alpha_j = \mathrm{softmax}_j\!\left(\frac{q^\top m_j}{\sqrt d}\right), \qquad h_t = \tanh\!\Big(\mathrm{GRU}(h_{t-1}, x_t) + W_o \textstyle\sum_j \alpha_j m_j\Big)$$
 
 **Budget matching.** `build_with_budget` picks the hidden width $d^\star = \arg\min_{4 \le d \le 4096} \lvert \text{params}(d) - B \rvert$ for budget $B$, which puts all four cells within 5% of 20,000.
 

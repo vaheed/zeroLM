@@ -18,17 +18,17 @@ A string is its UTF-8 bytes $b_1, \dots, b_n$, and token $t$ has id $b_t \in \{0
 
 All randomness is integer arithmetic modulo $2^{64}$, so every platform produces identical streams. One step from state $s$:
 
-$$s \leftarrow s + \texttt{0x9e3779b97f4a7c15}$$
+$$s \leftarrow s + \mathtt{0x9e3779b97f4a7c15}$$
 
-$$z \leftarrow (s \oplus (s \gg 30)) \cdot \texttt{0xbf58476d1ce4e5b9}, \quad z \leftarrow (z \oplus (z \gg 27)) \cdot \texttt{0x94d049bb133111eb}, \quad \text{output } z \oplus (z \gg 31)$$
+$$z \leftarrow (s \oplus (s \gg 30)) \cdot \mathtt{0xbf58476d1ce4e5b9}, \quad z \leftarrow (z \oplus (z \gg 27)) \cdot \mathtt{0x94d049bb133111eb}, \quad \text{output } z \oplus (z \gg 31)$$
 
 Here $\oplus$ is XOR, $\gg$ is a logical right shift, and the products wrap modulo $2^{64}$. The additive constant is $2^{64}/\varphi$ (with $\varphi$ the golden ratio), an odd number, so the state visits all $2^{64}$ values before repeating.
 
 **Tagged streams.** Each tensor draws from its own stream, chosen by a text tag:
 
-$$s_0(\text{seed}, \text{tag}) = \text{seed} \oplus \operatorname{rotl}_{17}\!\big(\operatorname{FNV1a}(\text{tag})\big)$$
+$$s_0(\text{seed}, \text{tag}) = \text{seed} \oplus \mathrm{rotl}_{17}\!\big(\mathrm{FNV1a}(\text{tag})\big)$$
 
-$$\operatorname{FNV1a}(c_1 \dots c_m):\quad h_0 = \texttt{0xcbf29ce484222325}, \quad h_j = (h_{j-1} \oplus c_j) \cdot \texttt{0x100000001b3} \bmod 2^{64}$$
+$$\mathrm{FNV1a}(c_1 \dots c_m):\quad h_0 = \mathtt{0xcbf29ce484222325}, \quad h_j = (h_{j-1} \oplus c_j) \cdot \mathtt{0x100000001b3} \bmod 2^{64}$$
 
 Adding or reordering tensors therefore never shifts another tensor's values. Its numbers depend only on its own tag and the seed.
 

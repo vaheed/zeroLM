@@ -50,7 +50,7 @@ Abbreviations: BPB = bits per byte, ECE = expected calibration error, BPTT = bac
 
 After consuming $b_1 \dots b_t$, the frozen GRU state is $h_t \in \mathbb{R}^{74}$, and the feature vector concatenates it with the last byte's embedding:
 
-$$\varphi_t = [\,h_t\,;\, E[b_t]\,] \in \mathbb{R}^{90}, \qquad z = W \varphi_t + \beta, \qquad p_t = \operatorname{softmax}(z) \in \Delta^{255}$$
+$$\varphi_t = [\,h_t\,;\, E[b_t]\,] \in \mathbb{R}^{90}, \qquad z = W \varphi_t + \beta, \qquad p_t = \mathrm{softmax}(z) \in \Delta^{255}$$
 
 $W \in \mathbb{R}^{256 \times 90}$ and $\beta \in \mathbb{R}^{256}$ start at 0, so $p_0$ is uniform. Before the first byte, $b_0$ is taken to be the newline byte (0x0A).
 
