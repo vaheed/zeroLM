@@ -1,0 +1,6 @@
+[package]
+name = "zerolm-tensor"
+description = "Simple, inspectable f32 CPU tensors, kernels, and deterministic initializers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true

@@ -101,6 +101,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "zerolm-tensor"
+version = "0.3.0-dev"
+
+[[package]]
 name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
