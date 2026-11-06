@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "config": {
+    "seed": 1,
+    "dim": 512,
+    "slots": 4096,
+    "symbols": 2048,
+    "match_margin": 0.5,
+    "cleanup_min": 0.3,
+    "symbol_same": 0.9,
+    "pronoun_min": 0.4,
+    "pronoun_decay": 0.5,
+    "pronoun_confidence": 0.9,
+    "max_depth": 8,
+    "number_range": 1000
+  },
+  "world": {
+    "roots": 3,
+    "children": 3,
+    "grandchildren": 2,
+    "entities": 40,
+    "exclusions": 2,
+    "acts": 12,
+    "regions": 2,
+    "towns_per_region": 3,
+    "sites_per_town": 2,
+    "located_entities": 24,
+    "dims": 3,
+    "order_len": 8,
+    "event_chains": 2,
+    "chain_len": 7,
+    "things": 6,
+    "count_chain": 5,
+    "props": 6,
+    "rule_chain": 4,
+    "contradictions": 6,
+    "pronoun_rate": 0.7
+  },
+  "per_category": 30,
+  "counterfactual_pairs": 40,
+  "provenance_checks": 40,
+  "pilot_seeds": [
+    9201,
+    9202
+  ],
+  "main_seeds": [
+    1,
+    2,
+    3
+  ],
+  "hidden_salt": "zerolm-phase6-hidden-v1",
+  "gates": {
+    "agreement_min": 0.98,
+    "category_agreement_min": 0.9,
+    "derived_agreement_min": 0.98,
+    "lookup_gap_min": 0.8,
+    "paraphrase_consistency_min": 0.98,
+    "counterfactual_min": 0.95,
+    "provenance_min": 0.95,
+    "ablation_drop_min": 0.5,
+    "operator_collateral_max": 0.05
+  },
+  "gate_rationale": "Frozen on 2026-11-06 before any main-seed or hidden-seed run. Pilot seeds 9201-9202 (about 530 questions each over 20 categories) gave reasoner-oracle agreement 1.000 overall and per category, lookup agreement 0.000 on derived categories, paraphrase consistency 1.000, counterfactual and provenance checks 40/40, every operator ablation dropping its target categories by 1.0 with no collateral, and the binding ablation dropping derived categories by 0.91-0.96. Gates leave margin below those values. Pilot runs led to three fixes before freezing: 'inside' in questions was not normalized, positive derived categories also collected inherited 'no' answers, and number cleanup was slow; none changed a threshold."
+}

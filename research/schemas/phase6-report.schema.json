@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM Phase 6 compositional reasoning report (reports/reasoning/summary.json)",
+  "type": "object",
+  "required": ["phase", "mode", "passed", "failures", "spec", "spec_sha256", "hidden_seed_source", "seeds", "summary", "scope_note"],
+  "properties": {
+    "phase": {"const": "phase-6"},
+    "mode": {"enum": ["main", "pilot"]},
+    "passed": {"type": "boolean"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "spec": {"type": "object", "required": ["config", "world", "main_seeds", "pilot_seeds", "hidden_salt", "gates", "gate_rationale"]},
+    "spec_sha256": {"$ref": "#/$defs/sha256"},
+    "hidden_seed_source": {"type": "string"},
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["seed", "hidden", "seed_sha256", "statements", "statements_via_pronoun", "questions", "questions_sha256", "categories", "agreement", "derived_agreement", "lookup_agreement", "lookup_derived_agreement", "derived_flag_agreement", "paraphrase_consistency", "counterfactual_required", "counterfactual_required_followed", "counterfactual_invariant", "counterfactual_invariant_kept", "provenance_checked", "provenance_sufficient", "restart_identical", "ablations", "question_p50_us", "question_p95_us", "slots_used", "symbols_used", "checks"],
+        "properties": {
+          "hidden": {"type": "boolean"},
+          "seed_sha256": {"$ref": "#/$defs/sha256"},
+          "questions_sha256": {"$ref": "#/$defs/sha256"},
+          "categories": {"type": "array", "items": {"type": "object", "required": ["category", "questions", "agreement", "lookup_agreement"], "properties": {"agreement": {"$ref": "#/$defs/unit"}, "lookup_agreement": {"$ref": "#/$defs/unit"}}}},
+          "agreement": {"$ref": "#/$defs/unit"},
+          "derived_agreement": {"$ref": "#/$defs/unit"},
+          "lookup_derived_agreement": {"$ref": "#/$defs/unit"},
+          "paraphrase_consistency": {"$ref": "#/$defs/unit"},
+          "counterfactual_required_followed": {"$ref": "#/$defs/unit"},
+          "provenance_sufficient": {"$ref": "#/$defs/unit"},
+          "ablations": {"type": "array", "items": {"type": "object", "required": ["name", "kind", "target_categories", "target_intact", "target_ablated", "collateral_max_drop", "per_category"], "properties": {"kind": {"enum": ["operator", "pathway"]}}}},
+          "checks": {"type": "array", "items": {"type": "object", "required": ["name", "passed", "detail"]}}
+        }
+      }
+    },
+    "summary": {"type": "object", "required": ["agreement", "derived_agreement", "lookup_derived_agreement", "paraphrase_consistency", "counterfactual_required_followed", "provenance_sufficient"]},
+    "scope_note": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit": {"type": "number", "minimum": 0, "maximum": 1}
+  }
+}

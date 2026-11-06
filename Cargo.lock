@@ -114,6 +114,7 @@ dependencies = [
  "zerolm-memory",
  "zerolm-nn",
  "zerolm-policy",
+ "zerolm-reasoner",
  "zerolm-tensor",
 ]
 

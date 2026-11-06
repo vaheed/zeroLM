@@ -4,6 +4,7 @@
 //! Held-out generalization and chronological acquisition: see [`online`] (Phase 4).
 
 pub mod memory;
+pub mod reasoning;
 pub mod online;
 
 use serde::{Deserialize, Serialize};
