@@ -1,0 +1,65 @@
+# ZeroLM services. Every service uses the same image (see Dockerfile).
+#
+#   docker compose up --build              guided demo (verbose)
+#   docker compose run --rm reason         interactive reasoner, memory persists in the zerolm-data volume
+#   docker compose run --rm memory         interactive teach/ask/correct/forget memory
+#   docker compose run --rm test           cargo test --workspace
+#   docker compose run --rm gates          audit, tests, clippy, Phase 2/4/5/6 gates (~5 min)
+#   docker compose run --rm gates quick    audit, tests, clippy only
+#
+# Second way, without building: docker-compose.ghcr.yml uses the published
+# image ghcr.io/vaheed/zerolm (see docs/GETTING_STARTED.md).
+#
+# Verbose mode is on by default (gates: off, since it adds all test output); turn it off with ZEROLM_VERBOSE=0, for example
+#   ZEROLM_VERBOSE=0 docker compose run --rm reason
+# Benchmark reports are written to ./reports on the host.
+
+x-zerolm: &zerolm
+  build:
+    context: .
+    args:
+      # Commit recorded in the image; set it to match CI's Phase 6 hidden seed:
+      #   ZEROLM_COMMIT=$(git rev-parse HEAD) docker compose build
+      ZEROLM_COMMIT: ${ZEROLM_COMMIT:-unknown}
+  image: zerolm:dev
+  working_dir: /zerolm
+  environment:
+    ZEROLM_VERBOSE: ${ZEROLM_VERBOSE:-1}
+  volumes:
+    - zerolm-data:/data
+    - ./reports:/zerolm/reports
+
+services:
+  demo:
+    <<: *zerolm
+    command: ["scripts/docker/demo.sh"]
+
+  reason:
+    <<: *zerolm
+    profiles: ["interactive"]
+    stdin_open: true
+    tty: true
+    command: ["sh", "-c", "echo 'Type statements and questions (e.g. \"rex is a dog\", \"every dog is an animal\", \"is rex an animal?\"). Ctrl-D to quit.'; mkdir -p /zerolm/reports/traces; exec zerolm reason --dir /data/reason --trace /zerolm/reports/traces/reason.jsonl 2>&1"]
+
+  memory:
+    <<: *zerolm
+    profiles: ["interactive"]
+    stdin_open: true
+    tty: true
+    command: ["sh", "-c", "echo 'Commands: teach K => V | ask K | correct K => V | confirm K | forget K | repeat. Ctrl-D to quit.'; mkdir -p /zerolm/reports/traces; exec zerolm memory --dir /data/memory --trace /zerolm/reports/traces/memory.jsonl 2>&1"]
+
+  test:
+    <<: *zerolm
+    profiles: ["check"]
+    command: ["cargo", "test", "--workspace", "--locked"]
+
+  gates:
+    <<: *zerolm
+    profiles: ["check"]
+    environment:
+      ZEROLM_VERBOSE: ${ZEROLM_VERBOSE:-0}
+    entrypoint: ["scripts/docker/gates.sh"]
+    command: []
+
+volumes:
+  zerolm-data:

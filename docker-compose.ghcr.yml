@@ -1,0 +1,58 @@
+# Second way to run ZeroLM: the prebuilt image from the GitHub Container
+# Registry, published by .github/workflows/docker.yml. Nothing is compiled
+# locally. Same services as docker-compose.yml:
+#
+#   docker compose -f docker-compose.ghcr.yml pull
+#   docker compose -f docker-compose.ghcr.yml up            guided demo (verbose)
+#   docker compose -f docker-compose.ghcr.yml run --rm reason
+#   docker compose -f docker-compose.ghcr.yml run --rm memory
+#   docker compose -f docker-compose.ghcr.yml run --rm test
+#   docker compose -f docker-compose.ghcr.yml run --rm gates
+#
+# Pick a tag with ZEROLM_TAG (latest, sha-<short>, or a release version), e.g.
+#   ZEROLM_TAG=sha-1a2b3c4 docker compose -f docker-compose.ghcr.yml up
+
+x-zerolm: &zerolm
+  image: ghcr.io/vaheed/zerolm:${ZEROLM_TAG:-latest}
+  pull_policy: missing
+  working_dir: /zerolm
+  environment:
+    ZEROLM_VERBOSE: ${ZEROLM_VERBOSE:-1}
+  volumes:
+    - zerolm-data:/data
+    - ./reports:/zerolm/reports
+
+services:
+  demo:
+    <<: *zerolm
+    command: ["scripts/docker/demo.sh"]
+
+  reason:
+    <<: *zerolm
+    profiles: ["interactive"]
+    stdin_open: true
+    tty: true
+    command: ["sh", "-c", "echo 'Type statements and questions (e.g. \"rex is a dog\", \"every dog is an animal\", \"is rex an animal?\"). Ctrl-D to quit.'; mkdir -p /zerolm/reports/traces; exec zerolm reason --dir /data/reason --trace /zerolm/reports/traces/reason.jsonl 2>&1"]
+
+  memory:
+    <<: *zerolm
+    profiles: ["interactive"]
+    stdin_open: true
+    tty: true
+    command: ["sh", "-c", "echo 'Commands: teach K => V | ask K | correct K => V | confirm K | forget K | repeat. Ctrl-D to quit.'; mkdir -p /zerolm/reports/traces; exec zerolm memory --dir /data/memory --trace /zerolm/reports/traces/memory.jsonl 2>&1"]
+
+  test:
+    <<: *zerolm
+    profiles: ["check"]
+    command: ["cargo", "test", "--workspace", "--locked"]
+
+  gates:
+    <<: *zerolm
+    profiles: ["check"]
+    environment:
+      ZEROLM_VERBOSE: ${ZEROLM_VERBOSE:-0}
+    entrypoint: ["scripts/docker/gates.sh"]
+    command: []
+
+volumes:
+  zerolm-data:
