@@ -1,7 +1,7 @@
 cff-version: 1.2.0
 message: "If you use ZeroLM in research or experiments, please cite this repository."
-title: "ZeroLM: A Zero-Training Neural Language Model Experiment"
-version: 0.2.0
+title: "ZeroLM: A CPU-First Online-Learning Neural Language System"
+version: 0.3.0-dev
 type: software
 authors:
   - name: "ZeroLM contributors"

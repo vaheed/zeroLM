@@ -1,6 +1,0 @@
-ZeroLM Next 0.1.0
-Training: none | pretrained weights: none | runtime: CPU only, std only
-Dimensions: token_features=35 row_fields=51 rows=24 vocabulary=106
-Hidden units: boundary=11 write=68 validity=26
-Weights: 24814 slots, 1469 non-zero
-fnv1a64: 7b667dd38442bb01
