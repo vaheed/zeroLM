@@ -130,6 +130,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "zerolm-runtime"
+version = "0.3.0-dev"
+dependencies = [
+ "serde_json",
+ "zerolm-engine",
+]
+
+[[package]]
 name = "zerolm-tensor"
 version = "0.3.0-dev"
 

@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/zerolm-policy", "crates/zerolm-tensor", "crates/zerolm-nn", "crates/zerolm-tokenizer", "crates/zerolm-engine", "crates/zerolm-eval"]
+members = ["crates/zerolm-policy", "crates/zerolm-tensor", "crates/zerolm-nn", "crates/zerolm-tokenizer", "crates/zerolm-engine", "crates/zerolm-eval", "crates/zerolm-runtime"]
 
 [workspace.package]
 version = "0.3.0-dev"

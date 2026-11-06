@@ -85,7 +85,11 @@ impl Sha256 {
         for b in tail.chunks_exact(64) {
             self.compress(b);
         }
-        self.h.iter().map(|x| format!("{x:08x}")).collect()
+        self.h.iter().fold(String::new(), |mut acc, x| {
+            use std::fmt::Write;
+            let _ = write!(acc, "{x:08x}");
+            acc
+        })
     }
 }
 
