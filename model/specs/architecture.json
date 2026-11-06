@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "selected": "gru",
+  "selection_rule": "docs/ARCHITECTURE.md#selection",
+  "embed_dim": 16,
+  "cell_param_budget": 20000,
+  "bootstrap": "utf8-bytes",
+  "session_state": "fixed-size vector; no KV cache"
+}
