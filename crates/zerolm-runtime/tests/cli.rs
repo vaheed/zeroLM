@@ -124,7 +124,8 @@ fn reason_answers_derived_questions_with_provenance_across_processes() {
 }
 
 fn with_env(args: &[&str], env: &[(&str, &str)], input: &[u8]) -> (String, String, bool) {
-    let mut c = Command::new(bin()).args(args).envs(env.iter().copied()).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
+    // Start from a known state: the Docker image sets ZEROLM_VERBOSE=1 by default.
+    let mut c = Command::new(bin()).args(args).env_remove("ZEROLM_VERBOSE").envs(env.iter().copied()).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
     c.stdin.take().unwrap().write_all(input).unwrap();
     let o = c.wait_with_output().unwrap();
     (String::from_utf8_lossy(&o.stdout).into(), String::from_utf8_lossy(&o.stderr).into(), o.status.success())
