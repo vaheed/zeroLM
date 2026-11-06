@@ -8,14 +8,14 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 
 ## Status
 
-**Phases 0-2 are done: research constitution, provenance baseline, and a CPU neural engine with a measured architecture choice (GRU core).** No language model exists yet, and nothing here claims any language ability.
+**Phases 0-3 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), and a byte-level bootstrap with a teaching protocol and CLI.** The model still has no learning rule. No language model exists yet, and nothing here claims any language ability.
 
 | Phase | Topic | Status |
 |---|---|---|
 | 0 | Research constitution and scope freeze | complete |
 | 1 | Freeze and audit the baseline | complete |
 | 2 | Neural compute engine and architecture bake-off | complete |
-| 3 | Byte bootstrap and deterministic initialization | planned |
+| 3 | Byte bootstrap and deterministic initialization | complete |
 | 4 | First true online language model (**stop/go gate**) | planned |
 | 5 | Weight-resident associative memory | planned |
 | 6 | Concepts, relations, composition | planned |
@@ -65,6 +65,8 @@ cargo run -p zerolm-policy --bin zerolm-audit          # Phase 0 gate
 cargo run -p zerolm-policy --bin zerolm-audit -- --json
 cargo run -p zerolm-policy --bin zerolm-baseline -- generate   # then: check
 cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json   # Phase 2 gate
+cargo run -p zerolm-runtime -- info     # Phase 3: pinned init hash
+printf 'teach sky => blue\nask sky\n' | cargo run -p zerolm-runtime -- run
 ```
 
 The audit checks the update policy and seed-knowledge manifests, that every weight group declares an init source and update path, that no phase is marked complete without a command and schema, and that the tree contains no pretrained weight files or model downloads.
@@ -78,6 +80,7 @@ crates/zerolm-nn/         GRU, SSM, fast-weight, hybrid cells
 crates/zerolm-tokenizer/  byte tokenizer
 crates/zerolm-engine/     model forward pass, exact state resume
 crates/zerolm-eval/       architecture bake-off
+crates/zerolm-runtime/    `zerolm` CLI (info, run)
 research/manifest/        seed-knowledge.json, update-policy.json
 research/phases.json      phase status and gates
 model/specs/              weight-group declarations
@@ -92,6 +95,7 @@ AGENTS.md                 rules and workflow for contributors and AI agents
 - [docs/RESEARCH_CONSTITUTION.md](docs/RESEARCH_CONSTITUTION.md): definitions and invariants
 - [docs/CLAIMS_AND_LIMITATIONS.md](docs/CLAIMS_AND_LIMITATIONS.md): what is and is not claimed
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): engine, candidates, bake-off results and caveats
+- [docs/BOOTSTRAP.md](docs/BOOTSTRAP.md): byte interface, teaching protocol, what is not claimed
 - [docs/BASELINE.md](docs/BASELINE.md): baseline and reproduction
 - [AGENTS.md](AGENTS.md): working rules
 

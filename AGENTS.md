@@ -3,7 +3,7 @@
 ZeroLM: a CPU-first, Rust, online-learning neural language system with **zero offline pretraining**. Full plan: `docs/ROADMAP.md`. Rules: `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Layout
-- `crates/` - Rust workspace. Today: `zerolm-policy` (audit + baseline tools), `zerolm-tensor`, `zerolm-nn`, `zerolm-tokenizer`, `zerolm-engine`, `zerolm-eval`. Planned: learning, memory, reasoner, world, wsp, runtime (roadmap sec. 9). Selected core: GRU (`model/specs/architecture.json`); the bake-off check fails on selection drift.
+- `crates/` - Rust workspace. Today: `zerolm-policy` (audit + baseline tools), `zerolm-tensor`, `zerolm-nn`, `zerolm-tokenizer`, `zerolm-engine` (incl. `bootstrap`), `zerolm-eval`, `zerolm-runtime` (CLI `zerolm`). Planned: learning, memory, reasoner, world, wsp (roadmap sec. 9). `model/bootstrap/seed.json` pins the init hash; changing initialization requires deliberately re-pinning it. The protocol ledger is scaffolding, never evidence of memory or learning. Selected core: GRU (`model/specs/architecture.json`); the bake-off check fails on selection drift.
 - `research/manifest/` - `seed-knowledge.json`, `update-policy.json` (the contract).
 - `research/phases.json` - phase status; `complete` requires `command` + `report_schema`.
 - `model/specs/weight-groups.json` - every weight group's `init_source` and `update_path`.

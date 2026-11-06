@@ -76,6 +76,8 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 3 — Bootstrap language interface and deterministic initialization
 
+> **Implemented:** tokenizer hardening, `zerolm-engine/src/bootstrap.rs`, `model/bootstrap/seed.json` (pinned init hash), `zerolm-runtime` CLI, `docs/BOOTSTRAP.md`. The ledger is scaffolding, not memory.
+
 **Goal:** Make the system able to receive arbitrary text before it has learned a vocabulary.
 
 **Deliverables**

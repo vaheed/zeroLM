@@ -1,12 +1,15 @@
 # Claims and Limitations
 
-## What is claimed (Phases 0-2)
+## What is claimed (Phases 0-3)
 - The repository defines, and CI enforces, what is hand-authored, what may be learned online, and what is prohibited.
 - A CPU engine exists: deterministic kernels, four recurrent cells at equal parameter budgets, fixed-size exactly-resumable session state, measured at initialization. The GRU core was selected by a documented, reproducible score.
+- Any byte sequence is accepted from the first run (no OOV, malformed UTF-8 located not rejected). Initialization is deterministic and pinned by SHA-256; no tokenizer or embedding asset exists.
+- The teaching protocol is observable and traced, and a session provably leaves weights unchanged.
 - Baseline reports record commit, clean-tree status, and toolchain; `zerolm-baseline check` rejects dirty or missing provenance.
 
 ## What is not claimed
-- No language model exists yet: the engine has no learning rule, so it predicts at chance (~8 bits/byte). Phases 3-11 are unimplemented.
+- No language model exists yet: the engine has no learning rule, so it predicts at chance (~8 bits/byte). Phases 4-11 are unimplemented.
+- `teach`/`ask`/`forget` are served from a session-local ledger, not from model memory or learning. The model does not understand English at bootstrap.
 - Bake-off metrics are initialization-time capacity measurements, not language ability, memory capacity, or learning evidence.
 - No capability, benchmark score, or "human-level" claim is made.
 - Memory is finite; capacity and interference will be measured, not assumed.
