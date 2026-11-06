@@ -2,139 +2,141 @@
 
 > **Zero offline pretraining. Lifelong online learning. No imported model weights.**
 
-ZeroLM is a research project to build a CPU-first neural language system in Rust that starts with no pretrained weights and develops its parameters and memory only from its own chronological stream of input, prediction, feedback, and interaction.
+ZeroLM is a research project that asks a simple question: **can a neural language system start with no pretrained weights at all, and develop everything it knows from its own stream of experience?** It is written in Rust, runs on an ordinary CPU, and records every change to its weights.
 
-It is **not** a small Transformer with the KV cache removed. The target is a recurrent, online-learning system with fast associative weights, persistent weight-resident memory, and a controlled weight-space programming layer.
+Most language models are trained on huge corpora before anyone uses them. ZeroLM never is. It starts from seeded random weights plus a small number of hand-written *algorithms* (never facts or vocabulary). Everything else must be learned online, one input at a time, with each update logged and checkable.
 
-## Quick start
+## What works today
+
+| Capability | What it does | Evidence | Read more |
+|---|---|---|---|
+| Byte-level interface | Accepts any text, including malformed UTF-8, from the first run; no tokenizer, no vocabulary | deterministic, hash-pinned initialization | [bootstrap](docs/bootstrap.md) |
+| Online learning | Learns to predict the next byte from one chronological pass, with a local update rule (no backpropagation) | unseen text: 8.0 → 2.3 bits per byte; a byte-frequency baseline gets 4.2 (a byte trigram is still better at 1.2) | [online learning](docs/online-learning.md) |
+| Memory in the weights | Stores taught facts as tensors in the model checkpoint and recalls them after a restart | 1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973, 0.6% false answers | [memory](docs/memory-format.md) |
+| Reasoning over stored facts | Answers new questions by combining stored statements: class inclusion, location, comparison, time order, arithmetic, negation, rules | 100% agreement with a symbolic reference on 3 seeds plus a hidden one; a lookup baseline gets 0% of the derived questions | [reasoning](docs/reasoning.md) |
+| One neural engine | Memory retrieval and the reasoning graph search run as compiled programs over a fixed set of tensor operations | every memory query reproduced bit for bit by an independent interpreter from the exported weights | [neural ISA](docs/neural-isa.md), [weight-space programming](docs/weight-space-programming.md) |
+
+These are small, controlled results on generated test languages, and **no claim of English understanding is made**. [What we do not claim](docs/claims-and-limitations.md) matters as much as what we do.
+
+## Try it
+
+With Docker (nothing else to install):
 
 ```bash
-docker compose up --build                      # guided demo: reasoning, memory, online learning, internals shown
-docker compose run --rm reason                 # talk to the reasoner yourself
-docker compose run --rm gates                  # run every gate and get a pass/fail table
-docker compose -f docker-compose.ghcr.yml up   # same demo from the prebuilt image ghcr.io/vaheed/zerolm
+docker compose up --build                      # guided demo: reasoning, memory, online learning, with internals shown
+docker compose run --rm reason                 # type statements and questions yourself
+docker compose run --rm gates                  # run every check and get a pass/fail table
+docker compose -f docker-compose.ghcr.yml up   # the same demo from the prebuilt image ghcr.io/vaheed/zerolm
 ```
 
-Add `--verbose` to `zerolm run`, `memory`, or `reason` (on by default in Docker) to see each step: the parse, the tensors written, the operators and premises behind every answer, and the checkpoint hash. Full guide with examples and how to check each claim: [docs/getting-started.md](docs/getting-started.md).
+With Cargo (Rust 1.75 or newer):
 
-## Status
+```console
+$ printf 'every dog is a mammal\nall mammals are animals\nrex is a dog\nis rex an animal?\n' | cargo run -q -p zerolm-runtime -- reason
+noted
+noted
+noted
+yes (derived: class_inclusion; 3 premises; confidence 1.00)
+```
 
-**Phases 0-6 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, a first online learner, weight-resident memory, and compositional reasoning over bound vectors.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/online-learning.md](docs/online-learning.md). Taught facts now persist across restarts only as checkpoint tensors and are answered by an attention read (1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973). See [docs/memory-format.md](docs/memory-format.md). Statements of a bounded language are stored as role-filler vectors, and eight programmed operators answer new compositional questions from them (100% agreement with a symbolic reference on 3 seeds plus a hidden seed; a lookup baseline gets 0% of derived questions). See [docs/reasoning.md](docs/reasoning.md). No claim of English understanding is made.
+Add `--verbose` to see each step: the parse, the tensors written, the operators and premises behind an answer, and the checkpoint hash. The [getting-started guide](docs/getting-started.md) walks through every command and shows how to check each claim yourself.
 
-| Phase | Topic | Status |
-|---|---|---|
-| 0 | Research constitution and scope freeze | complete |
-| 1 | Freeze and audit the baseline | complete |
-| 2 | Neural compute engine and architecture bake-off | complete |
-| 3 | Byte bootstrap and deterministic initialization | complete |
-| 4 | First true online language model (**stop/go gate**) | complete (go, weak learner) |
-| 5 | Weight-resident associative memory | complete |
-| 6 | Concepts, relations, composition | complete |
-| 7 | Uniform neural engine and WSP (weight-space programming) compiler | next |
-| 8 | Real-text exposure streams and reference baselines | planned |
-| 9 | Scalable core with compiled seed circuits (Gate A) | planned |
-| 10 | Deep representation learning without backpropagation (Gate B) | planned |
-| 11 | Scaling run and forgetting (Gate C) | planned |
-| 12 | Reading into memory and reasoning inside the network | planned |
-| 13 | Generation, instruction following, and dialogue | planned |
-| 14 | Self-proposed WSP patches | planned |
-| 15 | Capability evaluation and level certification | planned |
-| 16 | CPU deployment and 1.0 release (requires Level L3, a small LLM) | planned |
-
-Phases 7-16 follow roadmap revision 2 ([docs/roadmap.md](docs/roadmap.md) sec. 0.3): one neural engine whose behavior lives in weights, weight-space programming as a compiler of algorithms (never language data), and online learning from licensed human-written text toward a small but genuine LLM.
-
-Status is machine-readable in [research/phases.json](research/phases.json). A phase counts as complete only with an executable command, a report schema, a CI job, and uploaded evidence.
-
-## Target architecture
+## How it works
 
 ```text
-UTF-8 bytes / feedback / environment
-        -> byte-level interface (no tokenizer, no vocabulary)
-        -> recurrent core (gated linear recurrence; GRU and local-attention as baselines)
-              |-> next-byte distribution
-              |-> fast plastic weights   (delta-rule updates, online)
-              |-> persistent memory      (key-query tensors in the checkpoint)
-        -> language decoder
-        -> online learning controller
-              |-> local plasticity updates
-              |-> WSP patch proposals -> validator + regression gate -> accept / reject / rollback
+any UTF-8 text
+   │
+   ▼
+byte interface ──► recurrent core (GRU) ──► next-byte prediction  ◄── local learning rule
+                        │
+                        ├──► fast weights        short-lived associations, delta-rule updates
+                        ├──► fact memory         keys and values stored as checkpoint tensors
+                        └──► relation memory     statements as bound phasor vectors
+                                   │
+                                   ▼
+                     compiled circuits (attention read, graph search, ...)
+                     run on one engine with a fixed set of tensor operations
 ```
 
-Weight groups (declared in [model/specs/weight-groups.json](model/specs/weight-groups.json)): core, embeddings, fast weights, memory, skills, meta. Slow groups change only through validated patches; fast groups and memory change through explicit local rules.
+- **Bytes in, bytes out.** Every input is a sequence of bytes 0-255. Nothing is ever out of vocabulary, and no pretrained tokenizer is needed.
+- **A recurrent core.** A small gated recurrent unit (GRU) carries a fixed-size state from byte to byte. It was chosen over three other cells by a reproducible [bake-off](docs/architecture.md).
+- **Learning by local rules.** Weights change only through explicit rules such as the normalized delta rule, where the change is the prediction error times the input. Every update records its input, rule, changed tensors, and the resulting checkpoint hash.
+- **Memory that lives in the weights.** Facts are written into tensors of the model checkpoint and read back by an attention computation. There is no database, no transcript replay, and no hidden side file.
+- **Algorithms compiled into weights.** Small algorithms are compiled into weights (weight-space programming) instead of being decided by hand-written code. They run on one engine whose fixed instruction set (the neural ISA, short for instruction set architecture) contains only tensor operations. A second, independent interpreter must reproduce every output from the weights alone.
 
-## Principles
+Each doc includes the math behind its part: formulas, derivations, and why each constant works. [math.md](docs/math.md) has the notation and a glossary of every abbreviation.
 
-- **Learning is allowed, and reported honestly.** Every update records its input stream, signal, rule, changed tensors, and checkpoint hash.
-- **No online backpropagation in the mainline.** Local plasticity and explicit weight edits come first; a gradient run is allowed only as a labelled control.
-- **The model is never its own teacher.** Updates come from the observed next byte, a user correction, an environment outcome, or an independently validated signal.
-- **Strict data roles.** Exposure, development, and hidden evaluation streams stay separate; hidden labels never reach the update controller.
-- **Every patch is attributable, reversible, and regression-tested.**
-- **Falsifiable steps.** If Phase 4 shows no held-out acquisition from chronological input, the project stops claiming a self-developing language model.
+## Rules we hold ourselves to
 
-## What this does not promise
+- **Learning is reported honestly.** A changed weight file is never evidence of learning; only a behavioral measurement before and after is.
+- **No backpropagation in the mainline.** Local rules and compiled weights come first. A gradient-trained control may be run for comparison, and it is always labeled.
+- **The model is never its own teacher.** Updates come only from the observed next byte, a user's correction, or another independently checked signal.
+- **Strict data roles.** Exposure data, development tests, and hidden evaluation sets never mix.
+- **Only algorithms are hand-written, never knowledge.** Compiled circuits may contain no vocabulary, word lists, facts, or corpus statistics.
+- **Every gate can fail.** Thresholds are frozen before the main run, and a failed gate stops the claim.
 
-No seven-year-old or twenty-year-old cognition, and no age-equivalent claims. Those are aspiration labels; results are reported as concrete capabilities on named benchmarks. See [docs/claims-and-limitations.md](docs/claims-and-limitations.md).
+The full rules are in the [research constitution](docs/research-constitution.md).
 
-## Try it with Cargo
+## Roadmap
 
-```bash
-cargo test --workspace
-cargo run -p zerolm-policy --bin zerolm-audit          # Phase 0 gate
-cargo run -p zerolm-policy --bin zerolm-audit -- --json
-cargo run -p zerolm-policy --bin zerolm-baseline -- generate   # then: check
-cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json   # Phase 2 gate
-cargo run -p zerolm-runtime -- info     # Phase 3: pinned init hash
-printf 'teach sky => blue\nask sky\n' | cargo run -p zerolm-runtime -- run
-cargo run --release -p zerolm-eval --bin zerolm-online-lm   # Phase 4 gate (3 seeds)
-cargo run --release -p zerolm-eval --bin zerolm-memory      # Phase 5 gate (3 seeds x 1,200 facts)
-printf 'teach sky color => blue\n' | cargo run -p zerolm-runtime -- memory --dir /tmp/zlm
-printf 'ask what is the color of the sky?\n' | cargo run -p zerolm-runtime -- memory --dir /tmp/zlm   # new process
-cargo run --release -p zerolm-eval --bin zerolm-reasoning   # Phase 6 gate (3 seeds + hidden seed)
-printf 'every dog is a mammal\nrex is a dog\nis rex a mammal?\n' | cargo run -p zerolm-runtime -- reason
-cargo run -p zerolm-runtime -- reason --verbose < examples/reasoning-more.txt   # see inside each step
-```
+The 1.0 goal is a genuine small language model that has learned English from a single online pass over licensed, human-written text, at roughly the level of the smallest GPT-2 on named benchmarks. Frontier-model ability is explicitly not promised: the compute gap is six or more orders of magnitude.
 
-The audit checks the update policy and seed-knowledge manifests, that every weight group declares an init source and update path, that no phase is marked complete without a command and schema, and that the tree contains no pretrained weight files or model downloads.
+| Milestone | Status |
+|---|---|
+| Research constitution, provenance baseline, engine and architecture bake-off, byte bootstrap | done |
+| Online learning, weight-resident memory, compositional reasoning | done |
+| One neural engine: everything compiled into weights and verified | in progress |
+| Real human-written text streams and reference baselines | planned |
+| Scalable core with compiled circuits (Gate A) | planned |
+| Deep representation learning without backpropagation (Gate B, a pre-registered decision) | planned |
+| Scaling and forgetting (Gate C) | planned |
+| Reading into memory, generation, dialogue, self-proposed weight patches | planned |
+| Capability evaluation and the 1.0 release | planned |
+
+The full plan, with every gate and kill criterion, is in [docs/roadmap.md](docs/roadmap.md). Machine-readable status: [research/milestones.json](research/milestones.json).
+
+## Where to start reading
+
+- **Curious about the idea:** this page, then [what we claim and do not claim](docs/claims-and-limitations.md) and [weight-space programming](docs/weight-space-programming.md).
+- **Want to run it:** [getting started](docs/getting-started.md).
+- **Want the details and the math:** [architecture](docs/architecture.md), [online learning](docs/online-learning.md), [memory](docs/memory-format.md), [reasoning](docs/reasoning.md), [neural ISA](docs/neural-isa.md), and [math and glossary](docs/math.md).
+- **Want to contribute:** [AGENTS.md](AGENTS.md) (working rules and the checks every commit must pass), the [roadmap](docs/roadmap.md), and the [research constitution](docs/research-constitution.md).
 
 ## Repository layout
 
 ```text
-crates/zerolm-policy/     Phase 0-1 auditor and baseline tools
-crates/zerolm-tensor/     f32 kernels, deterministic RNG and init
-crates/zerolm-nn/         GRU, SSM, fast-weight, hybrid cells
+crates/zerolm-tensor/     f32 kernels, deterministic random numbers and initialization
+crates/zerolm-nn/         recurrent cells: GRU, diagonal state-space, fast-weight, hybrid
 crates/zerolm-tokenizer/  byte tokenizer
-crates/zerolm-learning/   online predictor, local rules, streams, n-gram baselines
-crates/zerolm-memory/     weight-resident memory, retrieval, W_FAST, atomic checkpoints
-crates/zerolm-reasoner/   relational vector memory, inference operators, symbolic oracle
-crates/zerolm-engine/     model forward pass, exact state resume, binding, semantic parser
-crates/zerolm-eval/       architecture bake-off, online-LM, memory, and reasoning benchmarks
-crates/zerolm-runtime/    `zerolm` CLI (info, run, memory, reason)
-examples/                 input files for the CLI and the demo
-scripts/docker/           demo and gate scripts used by the Docker image
-Dockerfile, docker-compose*.yml   build-locally and prebuilt-image ways to run
-research/manifest/        seed-knowledge.json, update-policy.json
-research/phases.json      phase status and gates
-model/specs/              weight-group declarations
-docs/                     roadmap, constitution, claims and limitations
-AGENTS.md                 rules and workflow for contributors and AI agents
-.claude/skills/           roadmap skill generated from docs/roadmap.md
+crates/zerolm-engine/     forward pass, the neural ISA interpreter, phasor binding, bounded parser
+crates/zerolm-learning/   online predictor, local rules, generated streams, n-gram baselines
+crates/zerolm-memory/     weight-resident memory, fast weights, atomic checkpoints
+crates/zerolm-reasoner/   relational vector memory, inference operators, symbolic reference
+crates/zerolm-wsp/        circuit compiler and reversible weight patches
+crates/zerolm-eval/       benchmarks and gates; the independent reference interpreter
+crates/zerolm-policy/     policy audit and baseline provenance tools
+crates/zerolm-runtime/    the `zerolm` command-line program (info, run, memory, reason)
+model/specs/              frozen configurations and weight-group declarations
+model/prog/               circuit specifications and pinned compiler-output hashes
+research/                 manifests, milestone status, report schemas, stream specs
+docs/                     documentation
+examples/, scripts/       example inputs, demo and gate scripts for Docker
 ```
 
-## Documents
+## Checks
 
-- [docs/getting-started.md](docs/getting-started.md): run, watch internals, examples, check every claim
-- [docs/roadmap.md](docs/roadmap.md): full research and engineering plan, risks, kill criteria
-- [docs/research-constitution.md](docs/research-constitution.md): definitions and invariants
-- [docs/claims-and-limitations.md](docs/claims-and-limitations.md): what is and is not claimed
-- [docs/architecture.md](docs/architecture.md): engine, candidates, bake-off results and caveats
-- [docs/bootstrap.md](docs/bootstrap.md): byte interface, teaching protocol, what is not claimed
-- [docs/baseline.md](docs/baseline.md): baseline and reproduction
-- [docs/online-learning.md](docs/online-learning.md): Phase 4 online learner, update rules, results
-- [docs/memory-format.md](docs/memory-format.md): Phase 5 weight-resident memory, checkpoint format, retrieval math
-- [docs/reasoning.md](docs/reasoning.md): Phase 6 vector binding (FHRR) and inference operators
-- [docs/neural-isa.md](docs/neural-isa.md): Phase 7 neural ISA (instruction set architecture: the fixed tensor-operation set), compiled circuits
-- [docs/math.md](docs/math.md): notation, glossary of every abbreviation, and an index of all formulas
-- [AGENTS.md](AGENTS.md): working rules
+Every commit must pass the tests, lint, the policy audit, and every gate:
+
+```bash
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo run -p zerolm-policy --bin zerolm-audit                                         # policy audit
+cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json
+cargo run --release -p zerolm-eval --bin zerolm-online-lm                              # online learning
+cargo run --release -p zerolm-eval --bin zerolm-memory                                 # memory (~7 min)
+cargo run --release -p zerolm-eval --bin zerolm-reasoning                              # reasoning
+cargo run -p zerolm-wsp -- check                                                       # compiled circuits
+```
 
 ## License
 
