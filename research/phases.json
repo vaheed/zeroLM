@@ -25,9 +25,9 @@
     {
       "id": 3,
       "name": "Bootstrap language interface and deterministic initialization",
-      "status": "planned",
-      "command": null,
-      "report_schema": null
+      "status": "complete",
+      "command": "cargo test -p zerolm-tokenizer -p zerolm-engine -p zerolm-runtime -p zerolm-policy",
+      "report_schema": "research/schemas/phase3-trace.schema.json"
     },
     {
       "id": 4,

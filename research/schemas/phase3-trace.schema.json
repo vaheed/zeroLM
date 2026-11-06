@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM bootstrap protocol trace event (one JSON object per line)",
+  "type": "object",
+  "required": ["seq", "line_span", "command", "outcome", "response", "source", "weights_sha256"],
+  "properties": {
+    "seq": {"type": "integer", "minimum": 0},
+    "line_span": {"$ref": "#/$defs/span"},
+    "command": {"enum": ["teach", "ask", "correct", "confirm", "forget", "repeat", "observe", "error"]},
+    "key_span": {"oneOf": [{"$ref": "#/$defs/span"}, {"type": "null"}]},
+    "value_span": {"oneOf": [{"$ref": "#/$defs/span"}, {"type": "null"}]},
+    "outcome": {"type": "string"},
+    "response": {"type": "string"},
+    "source": {"enum": ["ledger", "none"]},
+    "weights_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  },
+  "$defs": {
+    "span": {"type": "object", "required": ["start", "end"], "properties": {"start": {"type": "integer"}, "end": {"type": "integer"}}}
+  }
+}

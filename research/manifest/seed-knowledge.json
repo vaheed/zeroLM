@@ -2,9 +2,40 @@
   "version": 1,
   "bootstrap_language": "utf8-bytes",
   "entries": [
-    {"id": "byte-alphabet", "kind": "structural_prior", "description": "Input/output alphabet is the 256 UTF-8 byte values; no tokenizer merges, no vocabulary.", "source": "docs/RESEARCH_CONSTITUTION.md#bootstrap", "derived_from_corpus": false},
-    {"id": "recurrent-state-shape", "kind": "structural_prior", "description": "Bounded recurrent working state; dimensions fixed by the architecture spec.", "source": "model/specs/weight-groups.json", "derived_from_corpus": false},
-    {"id": "orthogonal-key-init", "kind": "init_formula", "description": "Memory keys start from a deterministic seeded orthogonal-ish random projection.", "source": "docs/RESEARCH_CONSTITUTION.md#initialization", "derived_from_corpus": false},
-    {"id": "delta-rule-constants", "kind": "protocol_constant", "description": "Initial learning-rate and decay constants for the normalized delta rule.", "source": "docs/RESEARCH_CONSTITUTION.md#learning-rules", "derived_from_corpus": false}
+    {
+      "id": "byte-alphabet",
+      "kind": "structural_prior",
+      "description": "Input/output alphabet is the 256 UTF-8 byte values; no tokenizer merges, no vocabulary.",
+      "source": "docs/RESEARCH_CONSTITUTION.md#bootstrap",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "recurrent-state-shape",
+      "kind": "structural_prior",
+      "description": "Bounded recurrent working state; dimensions fixed by the architecture spec.",
+      "source": "model/specs/weight-groups.json",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "orthogonal-key-init",
+      "kind": "init_formula",
+      "description": "Memory keys start from a deterministic seeded orthogonal-ish random projection.",
+      "source": "docs/RESEARCH_CONSTITUTION.md#initialization",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "delta-rule-constants",
+      "kind": "protocol_constant",
+      "description": "Initial learning-rate and decay constants for the normalized delta rule.",
+      "source": "docs/RESEARCH_CONSTITUTION.md#learning-rules",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "control-protocol",
+      "kind": "protocol_constant",
+      "description": "Six teaching/control commands (teach, ask, correct, confirm, forget, repeat), the ' => ' delimiter, and control IDs BOS/EOS/PAD. Full list in model/bootstrap/seed.json.",
+      "source": "model/bootstrap/seed.json",
+      "derived_from_corpus": false
+    }
   ]
 }

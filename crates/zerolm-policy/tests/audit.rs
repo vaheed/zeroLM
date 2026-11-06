@@ -84,3 +84,13 @@ fn pretrained_artifact_and_download_fail() {
     let c = checks(&d);
     assert_eq!(c.iter().filter(|x| **x == "forbidden-artifacts").count(), 2);
 }
+
+#[test]
+fn pretrained_tokenizer_assets_fail() {
+    let d = scratch("tok");
+    fs::write(d.join("tokenizer.spm"), b"x").unwrap();
+    fs::create_dir_all(d.join("crates")).unwrap();
+    fs::write(d.join("crates/t.rs"), "let t = tiktoken::get_encoding(\"cl100k\");").unwrap();
+    let c = checks(&d);
+    assert_eq!(c.iter().filter(|x| **x == "forbidden-artifacts").count(), 2);
+}
