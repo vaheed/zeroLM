@@ -1,0 +1,6 @@
+[package]
+name = "zerolm-tokenizer"
+description = "Byte-level tokenizer: UTF-8 bytes to IDs with offsets; no vocabulary or merges"
+version.workspace = true
+edition.workspace = true
+license.workspace = true

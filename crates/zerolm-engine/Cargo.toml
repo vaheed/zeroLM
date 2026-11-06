@@ -1,0 +1,11 @@
+[package]
+name = "zerolm-engine"
+description = "Byte-level model forward pass: embedding, recurrent cell, next-byte head"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+zerolm-tensor = { path = "../zerolm-tensor" }
+zerolm-nn = { path = "../zerolm-nn" }
+zerolm-tokenizer = { path = "../zerolm-tokenizer" }

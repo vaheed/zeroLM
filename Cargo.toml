@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["crates/zerolm-policy", "crates/zerolm-tensor", "crates/zerolm-nn"]
+members = ["crates/zerolm-policy", "crates/zerolm-tensor", "crates/zerolm-nn", "crates/zerolm-tokenizer", "crates/zerolm-engine"]
 
 [workspace.package]
 version = "0.3.0-dev"
@@ -16,3 +16,6 @@ serde_json = "1"
 opt-level = 3
 lto = true
 codegen-units = 1
+
+[profile.test]
+opt-level = 2
