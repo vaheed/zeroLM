@@ -1,7 +1,9 @@
 //! Bake-off metrics. No learning happens here: every candidate is evaluated
 //! at its seeded initialization, so the metrics measure *architectural
 //! capacity* (memory horizon, stability, cost), not language ability.
-//! Held-out generalization and chronological acquisition start in Phase 4.
+//! Held-out generalization and chronological acquisition: see [`online`] (Phase 4).
+
+pub mod online;
 
 use serde::{Deserialize, Serialize};
 use std::time::Instant;

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "stream_spec": "research/streams/compositional-v1.json",
+  "exposure_bytes": 40000,
+  "eval_bytes": 4000,
+  "milestones": [0, 250, 500, 1000, 2000, 5000, 10000, 20000, 40000],
+  "checkpoint_every": 1000,
+  "pilot_seeds": [9001, 9002],
+  "main_seeds": [1, 2, 3],
+  "primary_rule": "delta",
+  "local_rules": ["delta", "hebbian"],
+  "baseline_orders": [1, 3, 5],
+  "improvement_floor_bpb": 0.25,
+  "floor_rationale": "Frozen on 2026-11-06 before any main-seed run. Pilot seeds 9001-9002 (20k and 40k exposure bytes) gave held-out improvements over byte-frequency of ~1.7-1.8 BPB (delta) and ~0.85 BPB (hebbian); the floor is set well below both so it tests acquisition, not tuning luck. Constants were chosen on pilot seeds only.",
+  "constants": {
+    "delta_lr": 1.0,
+    "delta_bias_lr": 0.05,
+    "delta_eps": 0.001,
+    "max_update_norm": 4.0,
+    "hebb_lr": 0.01,
+    "hebb_decay": 0.0005,
+    "hebb_trace": 0.0,
+    "hebb_gain": 4.0
+  },
+  "bptt_control": "not_run"
+}

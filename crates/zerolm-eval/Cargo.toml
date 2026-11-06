@@ -1,6 +1,6 @@
 [package]
 name = "zerolm-eval"
-description = "Phase 2 architecture bake-off: retention, stability, ablations, CPU profile, selection"
+description = "Phase 2 architecture bake-off and Phase 4 online-learning benchmark"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,9 +9,15 @@ license.workspace = true
 zerolm-tensor = { path = "../zerolm-tensor" }
 zerolm-nn = { path = "../zerolm-nn" }
 zerolm-engine = { path = "../zerolm-engine" }
+zerolm-learning = { path = "../zerolm-learning" }
+zerolm-policy = { path = "../zerolm-policy" }
 serde.workspace = true
 serde_json.workspace = true
 
 [[bin]]
 name = "zerolm-bakeoff"
 path = "src/bin/bakeoff.rs"
+
+[[bin]]
+name = "zerolm-online-lm"
+path = "src/bin/online_lm.rs"
