@@ -44,11 +44,10 @@ impl KeyEncoder {
         out
     }
 
-    /// Unit-norm key, or `None` when the text has no word characters.
-    pub fn encode(&self, text: &str) -> Option<Vec<f32>> {
+    /// Unit-norm vector per word (the late-interaction view of the key).
+    pub fn encode_words(&self, text: &str) -> Vec<Vec<f32>> {
         let d = self.key_dim();
-        let mut key = vec![0.0f32; d];
-        let mut any = false;
+        let mut out = Vec::new();
         for w in Self::words(text) {
             let mut padded = Vec::with_capacity(w.len() + 2);
             padded.push(b'#');
@@ -61,17 +60,46 @@ impl KeyEncoder {
             }
             let n = norm(&wv);
             if n > 0.0 {
-                key.iter_mut().zip(&wv).for_each(|(a, b)| *a += b / n);
-                any = true;
+                wv.iter_mut().for_each(|x| *x /= n);
+                out.push(wv);
             }
         }
+        out
+    }
+
+    /// Pooled unit-norm key from word vectors, or `None` if there are none.
+    pub fn pool(&self, words: &[Vec<f32>]) -> Option<Vec<f32>> {
+        let mut key = vec![0.0f32; self.key_dim()];
+        for w in words {
+            key.iter_mut().zip(w).for_each(|(a, b)| *a += b);
+        }
         let n = norm(&key);
-        if !any || n == 0.0 {
+        if words.is_empty() || n == 0.0 {
             return None;
         }
         key.iter_mut().for_each(|x| *x /= n);
         Some(key)
     }
+
+    /// Unit-norm pooled key, or `None` when the text has no word characters.
+    pub fn encode(&self, text: &str) -> Option<Vec<f32>> {
+        self.pool(&self.encode_words(text))
+    }
+}
+
+/// Late-interaction coverage: for every stored key word, the best cosine with
+/// any query word; the minimum over key words. 1.0 means every key word is
+/// present in the query; a missing or different key word pulls it down.
+pub fn coverage(key_words: &[f32], n_words: usize, query_words: &[Vec<f32>]) -> f32 {
+    if n_words == 0 || query_words.is_empty() {
+        return 0.0;
+    }
+    let d = query_words[0].len();
+    key_words
+        .chunks_exact(d)
+        .take(n_words)
+        .map(|kw| query_words.iter().map(|q| zerolm_tensor::dot(kw, q)).fold(f32::NEG_INFINITY, f32::max))
+        .fold(f32::INFINITY, f32::min)
 }
 
 #[cfg(test)]
@@ -89,5 +117,9 @@ mod tests {
         assert!(e.encode("?? !!").is_none());
         let other = e.encode("blixo home").unwrap();
         assert!(dot(&a, &other).abs() < 0.4);
+        let kw: Vec<f32> = e.encode_words("zorvan color").concat();
+        assert!(coverage(&kw, 2, &e.encode_words("what is the color of zorvan?")) > 0.99);
+        assert!(coverage(&kw, 2, &e.encode_words("zorvan size")) < 0.5);
+        assert!(coverage(&kw, 2, &e.encode_words("zorvan")) < 0.5);
     }
 }

@@ -15,13 +15,13 @@
     },
     {
       "id": "fast_weights",
-      "description": "W_FAST (tensor memory.fast): short-lived associative matrix written by a normalized delta rule with per-write decay; not persistent belief, never answers semantic queries.",
+      "description": "W_FAST (tensor memory.fast): short-lived associative matrix over sparse pattern-separated keys, written by a normalized delta rule with per-write decay; not persistent belief, never answers semantic queries.",
       "init_source": "zeros",
       "update_path": "local_plasticity"
     },
     {
       "id": "memory_keys",
-      "description": "W_MEMORY semantic keys (memory.semantic.keys): one unit-norm key per slot, produced by the frozen memory encoder at write time; zero when empty or erased.",
+      "description": "W_MEMORY semantic keys: memory.semantic.keys (one unit-norm pooled key per slot, for the attention read) and memory.semantic.key_words (per-word vectors, for late-interaction verification). Produced by the frozen memory encoder at write time; zero when empty or erased.",
       "init_source": "zeros",
       "update_path": "memory_write"
     },
@@ -33,7 +33,7 @@
     },
     {
       "id": "memory_encoder",
-      "description": "Frozen key encoder table (core.memory_encoder): seeded random-feature embedding bag over hashed byte trigrams. Part of W_CORE; verified byte-identical on every checkpoint load.",
+      "description": "Frozen W_CORE memory encoders: core.memory_encoder (seeded random-feature embedding bag over hashed byte trigrams) and core.fast_separator (seeded projection for the k-winners-take-all W_FAST key). Verified byte-identical on every checkpoint load.",
       "init_source": "orthogonal-key-init",
       "update_path": "none"
     },

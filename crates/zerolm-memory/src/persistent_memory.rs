@@ -1,6 +1,8 @@
 //! `W_MEMORY`: persistent semantic slots and an episodic event ring.
 //!
-//! Semantic bank (what is believed): `memory.semantic.keys` (slots x key_dim),
+//! Semantic bank (what is believed): `memory.semantic.keys` (slots x key_dim,
+//! pooled keys for the attention read), `memory.semantic.key_words` (slots x
+//! max_key_words*key_dim, per-word vectors for late-interaction verification),
 //! `memory.semantic.values` (slots x positions*embed_dim) and
 //! `memory.semantic.meta` (slots x META_FIELDS: status, confidence, creation
 //! and update time, source, provenance, supersession links, contradictions).
@@ -11,7 +13,7 @@
 //! Integers are stored as f32 in 24-bit pieces, which f32 represents exactly.
 
 use crate::checkpoint::{self, CheckpointError, Fault, LoadSource, Tensor};
-use crate::encoder::{self, KeyEncoder};
+use crate::encoder::{self, coverage, KeyEncoder};
 use crate::fast_weights::{self, FastWeights};
 use crate::retrieval::{self, Decoded};
 use serde::{Deserialize, Serialize};
@@ -23,6 +25,7 @@ use zerolm_tensor::sha256::Sha256;
 use zerolm_tensor::{fnv1a, shuffle, Matrix};
 
 pub const KEYS: &str = "memory.semantic.keys";
+pub const KEY_WORDS: &str = "memory.semantic.key_words";
 pub const VALUES: &str = "memory.semantic.values";
 pub const META: &str = "memory.semantic.meta";
 pub const EP_KEYS: &str = "memory.episodic.keys";
@@ -44,7 +47,8 @@ pub mod field {
     pub const SUPERSEDES: usize = 10;
     pub const SUPERSEDED_BY: usize = 11;
     pub const CONTRADICTIONS: usize = 12;
-    pub const COUNT: usize = 13;
+    pub const KEY_WORDS: usize = 13;
+    pub const COUNT: usize = 14;
 }
 
 /// Episodic metadata columns.
@@ -102,13 +106,22 @@ pub struct MemoryConfig {
     pub value_bytes: usize,
     /// Softmax sharpness of the attention read.
     pub beta: f32,
-    /// Minimum best-slot cosine to answer; below it the memory abstains.
+    /// Maximum words in a key (each gets a row in `memory.semantic.key_words`).
+    pub max_key_words: usize,
+    /// Minimum best-slot pooled cosine to answer.
     pub read_threshold: f32,
+    /// Minimum late-interaction coverage of the best slot's key words by the
+    /// query's words to answer; below either threshold the memory abstains.
+    pub coverage_threshold: f32,
     /// Cosine at which a write addresses an existing slot (same fact key).
     pub same_key_threshold: f32,
     pub episodic_capacity: usize,
     pub fast_decay: f32,
     pub fast_lr: f32,
+    /// Width of the frozen pattern-separation layer in front of W_FAST.
+    pub fast_expansion: usize,
+    /// Active units in the k-winners-take-all fast key.
+    pub fast_active: usize,
 }
 
 impl Default for MemoryConfig {
@@ -120,11 +133,15 @@ impl Default for MemoryConfig {
             buckets: 4096,
             value_bytes: 47,
             beta: 32.0,
-            read_threshold: 0.55,
+            max_key_words: 8,
+            read_threshold: 0.3,
+            coverage_threshold: 0.5,
             same_key_threshold: 0.95,
             episodic_capacity: 4096,
             fast_decay: 0.99,
             fast_lr: 1.0,
+            fast_expansion: 1024,
+            fast_active: 32,
         }
     }
 }
@@ -134,7 +151,7 @@ impl MemoryConfig {
         if self.slots == 0 || self.slots >= 1 << 24 {
             return Err("slots must be in 1..2^24".into());
         }
-        if self.key_dim == 0 || self.buckets == 0 || self.value_bytes == 0 || self.episodic_capacity == 0 {
+        if self.key_dim == 0 || self.buckets == 0 || self.value_bytes == 0 || self.episodic_capacity == 0 || self.max_key_words == 0 {
             return Err("dimensions must be positive".into());
         }
         if !(self.beta > 0.0 && self.beta.is_finite()) {
@@ -143,8 +160,14 @@ impl MemoryConfig {
         if !(0.0..=1.0).contains(&self.read_threshold) || !(self.read_threshold..=1.0).contains(&self.same_key_threshold) {
             return Err("need 0 <= read_threshold <= same_key_threshold <= 1".into());
         }
+        if !(0.0..=1.0).contains(&self.coverage_threshold) {
+            return Err("coverage_threshold must be in [0,1]".into());
+        }
         if !(0.0..=1.0).contains(&self.fast_decay) || self.fast_lr <= 0.0 {
             return Err("fast_decay in [0,1], fast_lr > 0".into());
+        }
+        if self.fast_active == 0 || self.fast_active > self.fast_expansion {
+            return Err("need 0 < fast_active <= fast_expansion".into());
         }
         Ok(())
     }
@@ -157,6 +180,7 @@ impl MemoryConfig {
 #[derive(Debug, Clone, PartialEq)]
 pub enum MemoryError {
     EmptyKey,
+    KeyTooLong { max_words: usize },
     EmptyValue,
     NulInValue,
     ValueTooLong { max: usize },
@@ -171,6 +195,7 @@ impl fmt::Display for MemoryError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             MemoryError::EmptyKey => write!(f, "key has no word characters"),
+            MemoryError::KeyTooLong { max_words } => write!(f, "key has more than {max_words} words"),
             MemoryError::EmptyValue => write!(f, "value is empty"),
             MemoryError::NulInValue => write!(f, "value contains a NUL byte"),
             MemoryError::ValueTooLong { max } => write!(f, "value longer than {max} bytes"),
@@ -229,6 +254,8 @@ pub struct Answer {
     pub slot: Option<usize>,
     pub score: f32,
     pub runner_up: f32,
+    /// Late-interaction coverage of the best slot's key words.
+    pub coverage: f32,
     pub weight: f32,
     pub margin: f32,
     pub confidence: f32,
@@ -283,11 +310,13 @@ pub struct MemoryStore {
     core: Model,
     encoder: KeyEncoder,
     keys: Matrix,
+    key_words: Matrix,
     values: Matrix,
     meta: Matrix,
     ep_keys: Matrix,
     ep_meta: Matrix,
     fast: FastWeights,
+    separator: Matrix,
     clock: u64,
     ep_count: u64,
     events: Vec<MemoryEvent>,
@@ -332,11 +361,13 @@ impl MemoryStore {
         Ok(MemoryStore {
             encoder: KeyEncoder::new(cfg.seed, cfg.buckets, cfg.key_dim),
             keys: Matrix::zeros(cfg.slots, cfg.key_dim),
+            key_words: Matrix::zeros(cfg.slots, cfg.max_key_words * cfg.key_dim),
             values: Matrix::zeros(cfg.slots, cfg.positions() * e),
             meta,
             ep_keys: Matrix::zeros(cfg.episodic_capacity, cfg.key_dim),
             ep_meta: Matrix::zeros(cfg.episodic_capacity, ep_field::COUNT),
-            fast: FastWeights::new(cfg.positions() * e, cfg.key_dim, cfg.fast_decay, cfg.fast_lr),
+            fast: FastWeights::new(cfg.positions() * e, cfg.fast_expansion, cfg.fast_decay, cfg.fast_lr),
+            separator: Matrix::uniform(cfg.fast_expansion, cfg.key_dim, cfg.seed, fast_weights::SEPARATOR, 1.0),
             core,
             cfg,
             clock: 0,
@@ -358,7 +389,17 @@ impl MemoryStore {
         &self.encoder
     }
 
-    pub fn key(&self, text: &str) -> Result<Vec<f32>, MemoryError> {
+    /// Pooled key and per-word vectors of a write key.
+    pub fn key(&self, text: &str) -> Result<(Vec<f32>, Vec<Vec<f32>>), MemoryError> {
+        let words = self.encoder.encode_words(text);
+        if words.len() > self.cfg.max_key_words {
+            return Err(MemoryError::KeyTooLong { max_words: self.cfg.max_key_words });
+        }
+        let k = self.encoder.pool(&words).ok_or(MemoryError::EmptyKey)?;
+        Ok((k, words))
+    }
+
+    fn pooled(&self, text: &str) -> Result<Vec<f32>, MemoryError> {
         self.encoder.encode(text).ok_or(MemoryError::EmptyKey)
     }
 
@@ -432,7 +473,7 @@ impl MemoryStore {
     fn rows_sha(&self, slot: Option<usize>, ep_row: Option<usize>) -> String {
         let mut h = Sha256::new();
         if let Some(s) = slot {
-            for m in [&self.keys, &self.values, &self.meta] {
+            for m in [&self.keys, &self.key_words, &self.values, &self.meta] {
                 h.update_f32(m.row(s));
             }
         }
@@ -480,10 +521,16 @@ impl MemoryStore {
         });
     }
 
-    fn write_slot(&mut self, slot: usize, k: &[f32], value: &str, source: Source, stream: &str, seq: u64) {
+    #[allow(clippy::too_many_arguments)]
+    fn write_slot(&mut self, slot: usize, k: &[f32], words: &[Vec<f32>], value: &str, source: Source, stream: &str, seq: u64) {
         let v = self.encode_value(value);
         let kc = self.keys.cols;
         self.keys.data[slot * kc..(slot + 1) * kc].copy_from_slice(k);
+        let wc = self.key_words.cols;
+        let row = &mut self.key_words.data[slot * wc..(slot + 1) * wc];
+        row.iter_mut().for_each(|x| *x = 0.0);
+        row[..words.len() * kc].copy_from_slice(&words.concat());
+        self.set(slot, field::KEY_WORDS, words.len() as f32);
         let vc = self.values.cols;
         self.values.data[slot * vc..(slot + 1) * vc].copy_from_slice(&v);
         let (lo, hi) = split48(seq);
@@ -515,7 +562,7 @@ impl MemoryStore {
 
     /// `teach`: store a new fact; never overwrites a different belief.
     pub fn teach(&mut self, key: &str, value: &str, stream: &str) -> Result<Outcome, MemoryError> {
-        let k = self.key(key)?;
+        let (k, words) = self.key(key)?;
         self.check_value(value)?;
         let src = Source::UserStatement;
         if let Some(s) = self.find_same(&k) {
@@ -533,16 +580,16 @@ impl MemoryStore {
         }
         let slot = self.free_slot().ok_or(MemoryError::CapacityFull)?;
         let seq = self.tick();
-        self.write_slot(slot, &k, value, src, stream, seq);
+        self.write_slot(slot, &k, &words, value, src, stream, seq);
         let r = self.episode("add", seq, Some(&k), Some(slot), Some(src), stream);
-        self.log(seq, "add", stream, src.signal(), "memory_write", vec![KEYS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
+        self.log(seq, "add", stream, src.signal(), "memory_write", vec![KEYS, KEY_WORDS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
         Ok(Outcome::Stored { slot })
     }
 
     /// `correct`: the new value supersedes the current belief (kept, marked
     /// superseded, until compaction); stores it if no belief exists.
     pub fn correct(&mut self, key: &str, value: &str, stream: &str) -> Result<Outcome, MemoryError> {
-        let k = self.key(key)?;
+        let (k, words) = self.key(key)?;
         self.check_value(value)?;
         let src = Source::UserCorrection;
         let old = self.find_same(&k);
@@ -556,7 +603,7 @@ impl MemoryStore {
         }
         let slot = self.free_slot().ok_or(MemoryError::CapacityFull)?;
         let seq = self.tick();
-        self.write_slot(slot, &k, value, src, stream, seq);
+        self.write_slot(slot, &k, &words, value, src, stream, seq);
         match old {
             Some(s) => {
                 self.set(s, field::STATUS, SUPERSEDED);
@@ -564,12 +611,12 @@ impl MemoryStore {
                 self.touch(s, seq);
                 self.set(slot, field::SUPERSEDES, s as f32);
                 let r = self.episode("supersede", seq, Some(&k), Some(slot), Some(src), stream);
-                self.log(seq, "supersede", stream, src.signal(), "memory_write", vec![KEYS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
+                self.log(seq, "supersede", stream, src.signal(), "memory_write", vec![KEYS, KEY_WORDS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
                 Ok(Outcome::Superseded { old: s, new: slot })
             }
             None => {
                 let r = self.episode("add", seq, Some(&k), Some(slot), Some(src), stream);
-                self.log(seq, "add", stream, src.signal(), "memory_write", vec![KEYS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
+                self.log(seq, "add", stream, src.signal(), "memory_write", vec![KEYS, KEY_WORDS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
                 Ok(Outcome::Stored { slot })
             }
         }
@@ -577,7 +624,7 @@ impl MemoryStore {
 
     /// `confirm`: raise the stored belief's confidence to 1.
     pub fn confirm(&mut self, key: &str, stream: &str) -> Result<Outcome, MemoryError> {
-        let k = self.key(key)?;
+        let k = self.pooled(key)?;
         let Some(s) = self.find_same(&k) else { return Ok(Outcome::Unknown) };
         let seq = self.tick();
         self.set(s, field::CONFIDENCE, CONFIRMED);
@@ -592,7 +639,7 @@ impl MemoryStore {
     /// value rows are zeroed (erased, not hidden); the episodic records that
     /// carry this key lose their key vector. Metadata keeps status=deleted.
     pub fn forget(&mut self, key: &str, stream: &str) -> Result<Outcome, MemoryError> {
-        let k = self.key(key)?;
+        let k = self.pooled(key)?;
         let Some(s) = self.find_same(&k) else { return Ok(Outcome::Unknown) };
         let seq = self.tick();
         let mut chain = vec![s];
@@ -605,8 +652,9 @@ impl MemoryStore {
             cur = p;
         }
         for &c in &chain {
-            let (kc, vc) = (self.keys.cols, self.values.cols);
+            let (kc, vc, wc) = (self.keys.cols, self.values.cols, self.key_words.cols);
             self.keys.data[c * kc..(c + 1) * kc].iter_mut().for_each(|x| *x = 0.0);
+            self.key_words.data[c * wc..(c + 1) * wc].iter_mut().for_each(|x| *x = 0.0);
             self.values.data[c * vc..(c + 1) * vc].iter_mut().for_each(|x| *x = 0.0);
             self.set(c, field::STATUS, DELETED);
             self.touch(c, seq);
@@ -624,18 +672,19 @@ impl MemoryStore {
         }
         let src = Source::UserCorrection;
         let r = self.episode("forget", seq, None, Some(s), Some(src), stream);
-        self.log(seq, "forget", stream, src.signal(), "memory_write", vec![KEYS, VALUES, META, EP_KEYS, EP_META], Some(s), Some(r));
+        self.log(seq, "forget", stream, src.signal(), "memory_write", vec![KEYS, KEY_WORDS, VALUES, META, EP_KEYS, EP_META], Some(s), Some(r));
         chain.sort_unstable();
         Ok(Outcome::Forgotten { slots: chain })
     }
 
     /// Retrieval: attention over active slots, soft value read, cleanup.
     pub fn query(&self, text: &str) -> Result<Answer, MemoryError> {
-        let q = self.key(text)?;
-        Ok(self.query_key(&q))
+        let words = self.encoder.encode_words(text);
+        let q = self.encoder.pool(&words).ok_or(MemoryError::EmptyKey)?;
+        Ok(self.query_key(&q, &words))
     }
 
-    pub fn query_key(&self, q: &[f32]) -> Answer {
+    pub fn query_key(&self, q: &[f32], words: &[Vec<f32>]) -> Answer {
         let slots = self.active_slots();
         let a = retrieval::attend(&self.keys, &slots, q, self.cfg.beta);
         let Some(best) = a.best else {
@@ -645,6 +694,7 @@ impl MemoryStore {
                 slot: None,
                 score: -1.0,
                 runner_up: -1.0,
+                coverage: 0.0,
                 weight: 0.0,
                 margin: 0.0,
                 confidence: 0.0,
@@ -655,13 +705,15 @@ impl MemoryStore {
         let r = retrieval::read(&self.values, &a.weights);
         let Decoded { bytes, margin } = retrieval::decode(&r, &self.core.embed);
         let decoded = String::from_utf8_lossy(&bytes).into_owned();
-        let accept = a.score >= self.cfg.read_threshold && !bytes.is_empty();
+        let cov = coverage(self.key_words.row(best), self.m(best, field::KEY_WORDS) as usize, words);
+        let accept = a.score >= self.cfg.read_threshold && cov >= self.cfg.coverage_threshold && !bytes.is_empty();
         Answer {
             value: if accept { Some(decoded.clone()) } else { None },
             decoded,
             slot: Some(best),
             score: a.score,
             runner_up: a.runner_up,
+            coverage: cov,
             weight: a.weight,
             margin,
             confidence: self.m(best, field::CONFIDENCE),
@@ -672,7 +724,7 @@ impl MemoryStore {
 
     /// Episodic records whose key is this fact key, oldest first.
     pub fn history(&self, text: &str) -> Result<Vec<Episode>, MemoryError> {
-        let q = self.key(text)?;
+        let q = self.pooled(text)?;
         let mut out = Vec::new();
         for r in 0..self.cfg.episodic_capacity {
             let m = self.ep_meta.row(r);
@@ -699,8 +751,9 @@ impl MemoryStore {
             map[old] = new as f32;
         }
         let remap = |x: f32| if x < 0.0 { -1.0 } else { map[x as usize] };
-        let (kc, vc, mc) = (self.keys.cols, self.values.cols, field::COUNT);
+        let (kc, vc, mc, wc) = (self.keys.cols, self.values.cols, field::COUNT, self.key_words.cols);
         let mut keys = Matrix::zeros(self.cfg.slots, kc);
+        let mut key_words = Matrix::zeros(self.cfg.slots, wc);
         let mut values = Matrix::zeros(self.cfg.slots, vc);
         let mut meta = Matrix::zeros(self.cfg.slots, mc);
         for r in 0..self.cfg.slots {
@@ -709,6 +762,7 @@ impl MemoryStore {
         }
         for (new, &old) in active.iter().enumerate() {
             keys.data[new * kc..(new + 1) * kc].copy_from_slice(self.keys.row(old));
+            key_words.data[new * wc..(new + 1) * wc].copy_from_slice(self.key_words.row(old));
             values.data[new * vc..(new + 1) * vc].copy_from_slice(self.values.row(old));
             meta.data[new * mc..(new + 1) * mc].copy_from_slice(self.meta.row(old));
             meta.data[new * mc + field::SUPERSEDES] = remap(self.m(old, field::SUPERSEDES));
@@ -719,20 +773,22 @@ impl MemoryStore {
             self.ep_meta.data[i] = remap(self.ep_meta.data[i]);
         }
         self.keys = keys;
+        self.key_words = key_words;
         self.values = values;
         self.meta = meta;
         let seq = self.tick();
         let r = self.episode("compact", seq, None, None, None, stream);
-        self.log(seq, "compact", stream, "memory_maintenance", "compaction", vec![KEYS, VALUES, META, EP_META], None, Some(r));
+        self.log(seq, "compact", stream, "memory_maintenance", "compaction", vec![KEYS, KEY_WORDS, VALUES, META, EP_META], None, Some(r));
         freed
     }
 
     /// `W_FAST` write: a short-lived association (not a semantic belief).
     pub fn associate_fast(&mut self, key: &str, value: &str, stream: &str) -> Result<f32, MemoryError> {
-        let k = self.key(key)?;
+        let k = self.pooled(key)?;
         self.check_value(value)?;
         let v = self.encode_value(value);
-        let n = self.fast.write(&k, &v);
+        let sk = fast_weights::separate(&self.separator, &k, self.cfg.fast_active);
+        let n = self.fast.write(&sk, &v);
         let seq = self.tick();
         let mut h = Sha256::new();
         h.update_f32(&self.fast.m.data);
@@ -751,23 +807,32 @@ impl MemoryStore {
     }
 
     pub fn recall_fast(&self, key: &str) -> Result<Decoded, MemoryError> {
-        let k = self.key(key)?;
-        Ok(retrieval::decode(&self.fast.read(&k), &self.core.embed))
+        let k = self.pooled(key)?;
+        let sk = fast_weights::separate(&self.separator, &k, self.cfg.fast_active);
+        Ok(retrieval::decode(&self.fast.read(&sk), &self.core.embed))
     }
 
     /// Damage memory tensors for a causal ablation (evaluation only).
     pub fn ablate(&mut self, a: Ablation) {
         match a {
             Ablation::ZeroValues => self.values.data.iter_mut().for_each(|x| *x = 0.0),
-            Ablation::ZeroKeys => self.keys.data.iter_mut().for_each(|x| *x = 0.0),
+            Ablation::ZeroKeys => {
+                self.keys.data.iter_mut().for_each(|x| *x = 0.0);
+                self.key_words.data.iter_mut().for_each(|x| *x = 0.0);
+            }
             Ablation::ShuffleKeys(seed) => {
                 let active = self.active_slots();
                 let mut perm = active.clone();
                 shuffle(&mut perm, seed);
-                let rows: Vec<Vec<f32>> = perm.iter().map(|&s| self.keys.row(s).to_vec()).collect();
-                let kc = self.keys.cols;
-                for (&dst, row) in active.iter().zip(rows) {
-                    self.keys.data[dst * kc..(dst + 1) * kc].copy_from_slice(&row);
+                let rows: Vec<(Vec<f32>, Vec<f32>, f32)> = perm
+                    .iter()
+                    .map(|&s| (self.keys.row(s).to_vec(), self.key_words.row(s).to_vec(), self.m(s, field::KEY_WORDS)))
+                    .collect();
+                let (kc, wc) = (self.keys.cols, self.key_words.cols);
+                for (&dst, (k, w, n)) in active.iter().zip(rows) {
+                    self.keys.data[dst * kc..(dst + 1) * kc].copy_from_slice(&k);
+                    self.key_words.data[dst * wc..(dst + 1) * wc].copy_from_slice(&w);
+                    self.set(dst, field::KEY_WORDS, n);
                 }
             }
         }
@@ -775,21 +840,23 @@ impl MemoryStore {
 
     // ---- Checkpoint ----
 
-    fn core_tensors(core: &Model, encoder: &KeyEncoder) -> Vec<Tensor> {
+    fn core_tensors(core: &Model, encoder: &KeyEncoder, separator: &Matrix) -> Vec<Tensor> {
         let mut t = vec![Tensor::new(EMBED, "byte_embed", core.embed.rows, core.embed.cols, core.embed.data.clone())];
         for (name, data) in core.cell.groups() {
             t.push(Tensor::new(&format!("{CELL_PREFIX}{name}"), "recurrent_core", 1, data.len(), data.to_vec()));
         }
         let e = &encoder.table;
         t.push(Tensor::new(encoder::TENSOR, "memory_encoder", e.rows, e.cols, e.data.clone()));
+        t.push(Tensor::new(fast_weights::SEPARATOR, "memory_encoder", separator.rows, separator.cols, separator.data.clone()));
         t
     }
 
     /// Every tensor of the checkpoint, with its weight group.
     pub fn tensors(&self) -> Vec<Tensor> {
-        let mut t = Self::core_tensors(&self.core, &self.encoder);
+        let mut t = Self::core_tensors(&self.core, &self.encoder, &self.separator);
         let mat = |name: &str, group: &str, m: &Matrix| Tensor::new(name, group, m.rows, m.cols, m.data.clone());
         t.push(mat(KEYS, "memory_keys", &self.keys));
+        t.push(mat(KEY_WORDS, "memory_keys", &self.key_words));
         t.push(mat(VALUES, "memory_values", &self.values));
         t.push(mat(META, "memory_meta", &self.meta));
         t.push(mat(EP_KEYS, "episodic_memory", &self.ep_keys));
@@ -867,6 +934,7 @@ impl MemoryStore {
             }
             let target = match got.name.as_str() {
                 KEYS => &mut s.keys.data,
+                KEY_WORDS => &mut s.key_words.data,
                 VALUES => &mut s.values.data,
                 META => &mut s.meta.data,
                 EP_KEYS => &mut s.ep_keys.data,

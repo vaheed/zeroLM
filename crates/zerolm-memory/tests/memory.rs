@@ -132,7 +132,7 @@ fn forgetting_erases_the_fact_and_its_superseded_history() {
     assert_eq!(answer(&m, "other key").as_deref(), Some("kept"));
     assert_eq!(m.forget("kiln home", S).unwrap(), Outcome::Unknown);
     let t = m.tensors();
-    for name in ["memory.semantic.keys", "memory.semantic.values"] {
+    for name in ["memory.semantic.keys", "memory.semantic.key_words", "memory.semantic.values"] {
         let x = t.iter().find(|t| t.name == name).unwrap();
         for &s in &slots {
             assert!(x.data[s * x.cols..(s + 1) * x.cols].iter().all(|v| *v == 0.0), "{name} row {s} not erased");
@@ -207,6 +207,10 @@ fn collisions_and_near_duplicate_keys() {
     assert_eq!(m.teach("k", "", S), Err(MemoryError::EmptyValue));
     assert_eq!(m.teach("k", "a\0b", S), Err(MemoryError::NulInValue));
     assert_eq!(m.teach("k", &"x".repeat(48), S), Err(MemoryError::ValueTooLong { max: 47 }));
+    assert_eq!(m.teach("a b c d e f g h i", "x", S), Err(MemoryError::KeyTooLong { max_words: 8 }));
+    // Late-interaction verification: a shared entity word is not enough.
+    assert_eq!(answer(&m, "zorvan size"), None, "near-miss key abstains");
+    assert_eq!(answer(&m, "what is the color of zorvan?").as_deref(), Some("amber"));
 }
 
 #[test]
