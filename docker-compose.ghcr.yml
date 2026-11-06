@@ -1,5 +1,6 @@
 # Second way to run ZeroLM: the prebuilt image from the GitHub Container
-# Registry, published by .github/workflows/docker.yml. Nothing is compiled
+# Registry, published by the docker-image job of .github/workflows/ci.yml
+# after every test and gate job passes. Nothing is compiled
 # locally. Same services as docker-compose.yml:
 #
 #   docker compose -f docker-compose.ghcr.yml pull

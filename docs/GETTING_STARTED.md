@@ -44,7 +44,7 @@ docker compose run --rm -T reason < examples/reasoning-more.txt
 
 ## B. Docker, prebuilt image from GitHub Packages
 
-The [docker workflow](../.github/workflows/docker.yml) builds, smoke-tests, and publishes `ghcr.io/vaheed/zerolm` on every push to `main`. It publishes `latest` and `sha-<short commit>`, and a version tag for `v*` git tags. [docker-compose.ghcr.yml](../docker-compose.ghcr.yml) has the same services but uses that image:
+The last job of the [CI pipeline](../.github/workflows/ci.yml), `docker-image`, runs only after every test and gate job passes. It then builds and smoke-tests the image, and on pushes to `main` publishes it as `ghcr.io/vaheed/zerolm`. Pull requests build and test the image but never publish it. It publishes `latest` and `sha-<short commit>`, and a version tag for `v*` git tags. [docker-compose.ghcr.yml](../docker-compose.ghcr.yml) has the same services but uses that image:
 
 ```bash
 docker compose -f docker-compose.ghcr.yml pull
