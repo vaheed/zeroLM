@@ -1,8 +1,10 @@
+mod memory_cmd;
+
 use std::io::{BufRead, Write};
 use std::process::ExitCode;
 use zerolm_engine::bootstrap::{default_model, Session, CELL_BUDGET, COMMANDS, DEFAULT_KIND, DEFAULT_SEED, EMBED_DIM};
 
-const USAGE: &str = "usage: zerolm info [--seed N]\n       zerolm run [--seed N] [--trace FILE]   (reads lines on stdin)\n\nprotocol lines: teach K => V | ask K | correct K => V | confirm K | forget K | repeat";
+const USAGE: &str = "usage: zerolm info [--seed N]\n       zerolm run [--seed N] [--trace FILE]   (reads lines on stdin; session ledger, nothing persists)\n       zerolm memory --dir DIR [--seed N] [--trace FILE] [--stream NAME]   (weight-resident memory, persists in DIR)\n\nprotocol lines: teach K => V | ask K | correct K => V | confirm K | forget K | repeat";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
@@ -11,15 +13,28 @@ fn main() -> ExitCode {
         return ExitCode::from(2);
     };
     let (mut seed, mut trace) = (DEFAULT_SEED, None::<String>);
+    let (mut seed_set, mut dir, mut stream) = (false, None::<String>, "cli:stdin".to_string());
     while let Some(a) = args.next() {
         match (a.as_str(), args.next()) {
             ("--seed", Some(v)) => match v.parse() {
-                Ok(n) => seed = n,
+                Ok(n) => {
+                    seed = n;
+                    seed_set = true;
+                }
                 Err(_) => return bad("--seed needs an integer"),
             },
             ("--trace", Some(p)) => trace = Some(p),
+            ("--dir", Some(p)) => dir = Some(p),
+            ("--stream", Some(p)) => stream = p,
             _ => return bad("unknown or incomplete option"),
         }
+    }
+    if cmd == "memory" {
+        let Some(dir) = dir else { return bad("memory needs --dir") };
+        return memory_cmd::run(std::path::Path::new(&dir), seed_set.then_some(seed), trace, &stream);
+    }
+    if dir.is_some() {
+        return bad("--dir is only valid with memory");
     }
     let model = default_model(seed);
     match cmd.as_str() {

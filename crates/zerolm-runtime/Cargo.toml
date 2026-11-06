@@ -1,12 +1,14 @@
 [package]
 name = "zerolm-runtime"
-description = "ZeroLM command-line runtime: sessions over the bootstrap protocol"
+description = "ZeroLM command-line runtime: sessions over the bootstrap protocol and weight-resident memory"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
 zerolm-engine = { path = "../zerolm-engine" }
+zerolm-memory = { path = "../zerolm-memory" }
+serde.workspace = true
 serde_json.workspace = true
 
 [[bin]]

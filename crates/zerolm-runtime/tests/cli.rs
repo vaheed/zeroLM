@@ -52,3 +52,48 @@ fn bad_usage_is_rejected() {
     assert_eq!(Command::new(bin()).output().unwrap().status.code(), Some(2));
     assert_eq!(Command::new(bin()).args(["run", "--seed", "x"]).output().unwrap().status.code(), Some(2));
 }
+
+fn memory(dir: &std::path::Path, input: &[u8], extra: &[&str]) -> (String, String, bool) {
+    let mut c = Command::new(bin())
+        .args(["memory", "--dir", dir.to_str().unwrap()])
+        .args(extra)
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    c.stdin.take().unwrap().write_all(input).unwrap();
+    let o = c.wait_with_output().unwrap();
+    (String::from_utf8_lossy(&o.stdout).into(), String::from_utf8_lossy(&o.stderr).into(), o.status.success())
+}
+
+#[test]
+fn memory_facts_survive_a_process_restart() {
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("zerolm-cli-memory");
+    let _ = std::fs::remove_dir_all(&dir);
+    let trace = dir.with_extension("trace.jsonl");
+    let (out, err, ok) = memory(&dir, b"teach sky color => blue\nteach mill owner => dara\nconfirm sky color\nteach sky color => green\n", &["--trace", trace.to_str().unwrap()]);
+    assert!(ok, "{err}");
+    assert_eq!(out.lines().collect::<Vec<_>>(), ["noted sky color (unconfirmed)", "noted mill owner (unconfirmed)", "confirmed sky color", "conflict: sky color already has a different value; use correct"]);
+    assert!(err.contains("starting from the clean model") && err.contains("core unchanged=true"), "{err}");
+    let events: Vec<serde_json::Value> = std::fs::read_to_string(&trace).unwrap().lines().map(|l| serde_json::from_str(l).unwrap()).collect();
+    assert_eq!(events[0]["memory_events"][0]["op"], "add");
+    assert_eq!(events[0]["memory_events"][0]["signal"], "user_statement");
+    assert!(events.iter().all(|e| e["checkpoint_sha256"].as_str().map(|s| s.len()) == Some(64)));
+
+    // A new process: answers come from the checkpoint tensors only.
+    let (out, err, ok) = memory(&dir, b"ask what is the color of the sky?\nask mill owner\nask sky size\ncorrect mill owner => pell\nforget sky color\n", &[]);
+    assert!(ok, "{err}");
+    assert!(err.contains("loaded Current checkpoint"), "{err}");
+    assert_eq!(out.lines().collect::<Vec<_>>(), ["what is the color of the sky? => blue (confirmed)", "mill owner => dara (unconfirmed)", "unknown sky size", "corrected mill owner (unconfirmed)", "forgot sky color"]);
+
+    let (out, _, ok) = memory(&dir, b"ask sky color\nask mill owner\n", &[]);
+    assert!(ok);
+    assert_eq!(out.lines().collect::<Vec<_>>(), ["unknown sky color", "mill owner => pell (unconfirmed)"]);
+    let mut files: Vec<_> = std::fs::read_dir(&dir).unwrap().map(|e| e.unwrap().file_name().into_string().unwrap()).collect();
+    files.sort();
+    assert_eq!(files, ["memory.prev.zlmc", "memory.zlmc"], "only checkpoint files hold memory");
+    // The session-ledger runtime knows nothing of it.
+    let (out, _, _) = run(b"ask mill owner\n", &[]);
+    assert_eq!(out.trim(), "unknown mill owner");
+}

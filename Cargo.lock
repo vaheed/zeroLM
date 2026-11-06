@@ -156,8 +156,10 @@ dependencies = [
 name = "zerolm-runtime"
 version = "0.3.0-dev"
 dependencies = [
+ "serde",
  "serde_json",
  "zerolm-engine",
+ "zerolm-memory",
 ]
 
 [[package]]
