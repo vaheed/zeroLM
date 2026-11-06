@@ -148,3 +148,35 @@ jobs:
           path: reports/memory/
           if-no-files-found: warn
           retention-days: 30
+  compositional-reasoning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Reasoner invariants (operators vs oracle, operator and pathway ablations, provenance, persistence, parser)
+        run: cargo test -p zerolm-engine -p zerolm-reasoner && cargo test -p zerolm-eval --test reasoning
+      - name: Phase 6 gate (3 seeds + 1 hidden seed, frozen gates; fails on any gate)
+        env:
+          # Optional repository secret; when unset the hidden seed is derived from the commit.
+          ZEROLM_HIDDEN_SEED: ${{ secrets.ZEROLM_HIDDEN_SEED }}
+        run: cargo run --release -p zerolm-eval --bin zerolm-reasoning -- --out reports/reasoning
+      - name: Cross-process reasoning through the CLI
+        run: |
+          mkdir -p reports/reasoning/cli
+          mem="$RUNNER_TEMP/zerolm-reason"
+          printf 'every dog is a mammal\nall mammals are animals\nrex is a dog\nit is in kennel\nkennel is in yard\n' | cargo run -q --release -p zerolm-runtime -- reason --dir "$mem" | tee reports/reasoning/cli/output-1.txt
+          printf 'is rex an animal?\nis rex in yard?\nis rex a fish?\n' | cargo run -q --release -p zerolm-runtime -- reason --dir "$mem" --trace reports/reasoning/cli/trace-2.jsonl | tee reports/reasoning/cli/output-2.txt
+          grep -q '^yes (derived: class_inclusion' reports/reasoning/cli/output-2.txt
+          grep -q '^yes (derived: transitivity; 2 premises; confidence 0.90)' reports/reasoning/cli/output-2.txt
+          grep -qx 'unknown' reports/reasoning/cli/output-2.txt
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -s reports/reasoning/summary.md ]; then cat reports/reasoning/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Phase 6 report: **not produced** (phase incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-phase-6-${{ github.sha }}
+          path: reports/reasoning/
+          if-no-files-found: warn
+          retention-days: 30

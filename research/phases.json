@@ -46,9 +46,9 @@
     {
       "id": 6,
       "name": "Concepts, relations, and compositional reasoning",
-      "status": "planned",
-      "command": null,
-      "report_schema": null
+      "status": "complete",
+      "command": "cargo test -p zerolm-engine -p zerolm-reasoner && cargo run --release -p zerolm-eval --bin zerolm-reasoning",
+      "report_schema": "research/schemas/phase6-report.schema.json"
     },
     {
       "id": 7,
