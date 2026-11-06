@@ -6,6 +6,34 @@ on:
 permissions:
   contents: read
 jobs:
+  engine-unit:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - run: cargo build --workspace --release
+      - run: cargo test --workspace
+  architecture-bakeoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Bake-off (fails on instability, ablation failure, latency, or selection drift)
+        run: cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json --out reports/phase-2
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -s reports/phase-2/summary.md ]; then cat reports/phase-2/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Phase 2 report: **not produced** (phase incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-phase-2-${{ github.sha }}
+          path: reports/phase-2/
+          if-no-files-found: warn
+          retention-days: 30
   policy-and-provenance:
     runs-on: ubuntu-latest
     steps:

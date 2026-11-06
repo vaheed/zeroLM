@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM Phase 2 bake-off report",
+  "type": "object",
+  "required": ["phase", "passed", "failures", "selected", "candidates", "seeds", "budget"],
+  "properties": {
+    "phase": {"const": "phase-2"},
+    "passed": {"type": "boolean"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "selected": {"type": ["string", "null"]},
+    "budget": {"type": "integer"},
+    "seeds": {"type": "array", "items": {"type": "integer"}, "minItems": 3},
+    "candidates": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["kind", "eligible", "cell_params", "checkpoint_bytes", "session_state_bytes", "median_horizon", "stability", "ablations", "cpu", "stable", "score"]
+      }
+    }
+  }
+}

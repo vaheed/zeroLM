@@ -18,9 +18,9 @@
     {
       "id": 2,
       "name": "Neural compute engine and architecture bake-off",
-      "status": "planned",
-      "command": null,
-      "report_schema": null
+      "status": "complete",
+      "command": "cargo test --workspace && cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json",
+      "report_schema": "research/schemas/phase2-report.schema.json"
     },
     {
       "id": 3,
