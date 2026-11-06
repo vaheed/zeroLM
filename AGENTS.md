@@ -3,7 +3,7 @@
 ZeroLM: a CPU-first, Rust, online-learning neural language system with **zero offline pretraining**. Full plan: `docs/ROADMAP.md`. Rules: `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Layout
-- `crates/` - Rust workspace. Today: `zerolm-policy` (audit + baseline tools), `zerolm-tensor`, `zerolm-nn`, `zerolm-tokenizer`, `zerolm-engine` (incl. `bootstrap`), `zerolm-learning` (online predictor), `zerolm-memory` (weight-resident memory, checkpoint format), `zerolm-eval` (bake-off, online-LM and memory benchmarks), `zerolm-runtime` (CLI `zerolm`). Planned: reasoner, world, wsp (roadmap sec. 9). `model/bootstrap/seed.json` pins the init hash; changing initialization requires deliberately re-pinning it. The protocol ledger is scaffolding, never evidence of memory or learning. Selected core: GRU (`model/specs/architecture.json`); the bake-off check fails on selection drift. Phase 4 rule constants, seeds, and the improvement floor are frozen in `model/specs/online-learning.json` (tune only on pilot seeds). Phase 5 memory config and gates are frozen in `model/specs/memory.json`, and `MemoryConfig::default()` must equal it; facts live only in checkpoint tensors (`docs/MEMORY_FORMAT.md`), never in side files.
+- `crates/` - Rust workspace. Today: `zerolm-policy` (audit + baseline tools), `zerolm-tensor`, `zerolm-nn`, `zerolm-tokenizer`, `zerolm-engine` (incl. `bootstrap`), `zerolm-learning` (online predictor), `zerolm-memory` (weight-resident memory, checkpoint format), `zerolm-reasoner` (relational vector memory, operators, oracle), `zerolm-eval` (bake-off, online-LM, memory, reasoning benchmarks), `zerolm-runtime` (CLI `zerolm`). Planned: world, wsp (roadmap sec. 9). `model/bootstrap/seed.json` pins the init hash; changing initialization requires deliberately re-pinning it. The protocol ledger is scaffolding, never evidence of memory or learning. Selected core: GRU (`model/specs/architecture.json`); the bake-off check fails on selection drift. Phase 4 rule constants, seeds, and the improvement floor are frozen in `model/specs/online-learning.json` (tune only on pilot seeds). Phase 5 memory config and gates are frozen in `model/specs/memory.json`, and `MemoryConfig::default()` must equal it; facts live only in checkpoint tensors (`docs/MEMORY_FORMAT.md`), never in side files. Phase 6 config and gates are frozen in `model/specs/reasoning.json` (default config must equal it); the symbolic oracle and lookup baseline are evaluation-only and must never be called by the reasoner (`docs/REASONING.md`).
 - `research/manifest/` - `seed-knowledge.json`, `update-policy.json` (the contract).
 - `research/streams/` - generated exposure/held-out/novel stream specs.
 - `research/phases.json` - phase status; `complete` requires `command` + `report_schema`.
@@ -20,6 +20,7 @@ cargo run -p zerolm-policy --bin zerolm-baseline -- generate && cargo run -p zer
 cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json   # Phase 2 gate (~2 min)
 cargo run --release -p zerolm-eval --bin zerolm-online-lm   # Phase 4 gate (~15 s)
 cargo run --release -p zerolm-eval --bin zerolm-memory      # Phase 5 gate (~65 s)
+cargo run --release -p zerolm-eval --bin zerolm-reasoning   # Phase 6 gate (~90 s)
 ```
 All of these must pass before every commit.
 

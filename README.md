@@ -8,7 +8,7 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 
 ## Status
 
-**Phases 0-5 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, a first online learner, and weight-resident memory.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md). Taught facts now persist across restarts only as checkpoint tensors and are answered by an attention read (1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973). See [docs/MEMORY_FORMAT.md](docs/MEMORY_FORMAT.md). No claim of English understanding is made.
+**Phases 0-6 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, a first online learner, weight-resident memory, and compositional reasoning over bound vectors.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md). Taught facts now persist across restarts only as checkpoint tensors and are answered by an attention read (1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973). See [docs/MEMORY_FORMAT.md](docs/MEMORY_FORMAT.md). Statements of a bounded language are stored as role-filler vectors, and eight programmed operators answer new compositional questions from them (100% agreement with a symbolic reference on 3 seeds plus a hidden seed; a lookup baseline gets 0% of derived questions). See [docs/REASONING.md](docs/REASONING.md). No claim of English understanding is made.
 
 | Phase | Topic | Status |
 |---|---|---|
@@ -18,7 +18,7 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 | 3 | Byte bootstrap and deterministic initialization | complete |
 | 4 | First true online language model (**stop/go gate**) | complete (go, weak learner) |
 | 5 | Weight-resident associative memory | complete |
-| 6 | Concepts, relations, composition | planned |
+| 6 | Concepts, relations, composition | complete |
 | 7 | Grounded learning and interaction | planned |
 | 8 | Generation and multi-turn dialogue | planned |
 | 9 | Controlled self-modification (WSP) | planned |
@@ -71,6 +71,8 @@ cargo run --release -p zerolm-eval --bin zerolm-online-lm   # Phase 4 gate (3 se
 cargo run --release -p zerolm-eval --bin zerolm-memory      # Phase 5 gate (3 seeds x 1,200 facts)
 printf 'teach sky color => blue\n' | cargo run -p zerolm-runtime -- memory --dir /tmp/zlm
 printf 'ask what is the color of the sky?\n' | cargo run -p zerolm-runtime -- memory --dir /tmp/zlm   # new process
+cargo run --release -p zerolm-eval --bin zerolm-reasoning   # Phase 6 gate (3 seeds + hidden seed)
+printf 'every dog is a mammal\nrex is a dog\nis rex a mammal?\n' | cargo run -p zerolm-runtime -- reason
 ```
 
 The audit checks the update policy and seed-knowledge manifests, that every weight group declares an init source and update path, that no phase is marked complete without a command and schema, and that the tree contains no pretrained weight files or model downloads.
@@ -84,9 +86,10 @@ crates/zerolm-nn/         GRU, SSM, fast-weight, hybrid cells
 crates/zerolm-tokenizer/  byte tokenizer
 crates/zerolm-learning/   online predictor, local rules, streams, n-gram baselines
 crates/zerolm-memory/     weight-resident memory, retrieval, W_FAST, atomic checkpoints
-crates/zerolm-engine/     model forward pass, exact state resume
-crates/zerolm-eval/       architecture bake-off, online-LM and memory benchmarks
-crates/zerolm-runtime/    `zerolm` CLI (info, run, memory)
+crates/zerolm-reasoner/   relational vector memory, inference operators, symbolic oracle
+crates/zerolm-engine/     model forward pass, exact state resume, binding, semantic parser
+crates/zerolm-eval/       architecture bake-off, online-LM, memory, and reasoning benchmarks
+crates/zerolm-runtime/    `zerolm` CLI (info, run, memory, reason)
 research/manifest/        seed-knowledge.json, update-policy.json
 research/phases.json      phase status and gates
 model/specs/              weight-group declarations

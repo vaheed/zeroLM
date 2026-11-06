@@ -150,6 +150,8 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 6 — Concepts, relations, and compositional reasoning
 
+> **Implemented:** `zerolm-engine/src/binding.rs` (FHRR phasors, fractional-power numbers), `semantic_state.rs` (bounded grammar, pronoun state), `crates/zerolm-reasoner` (relational tensor memory, 8 operators, `oracle.rs`, `lookup.rs`), frozen spec `model/specs/reasoning.json`, benchmark `zerolm-reasoning` (Rust, not `compositional_reasoning.py`), CLI `zerolm reason`, `docs/REASONING.md`. Operators are programmed; the oracle is evaluation-only. Hidden seed from `ZEROLM_HIDDEN_SEED` or the commit. Tune only on pilot seeds.
+
 **Goal:** Move beyond token prediction and exact fact recall to reusable internal concepts and inference.
 
 **Deliverables**

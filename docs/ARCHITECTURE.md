@@ -12,10 +12,11 @@ Session state is one fixed-size `f32` vector per cell. Nothing grows with stream
 | `zerolm-tensor` | Matrix and vector kernels, SplitMix64 RNG, tagged deterministic init, finite checks. Plain loops, no `unsafe`, no SIMD/BLAS yet. |
 | `zerolm-nn` | `Cell` trait, four cells, trace hooks, ablation hooks, state serialization. No backpropagation exists. |
 | `zerolm-tokenizer` | Bytes 0..255 as IDs, control IDs BOS/EOS/PAD, offsets. No vocabulary. |
-| `zerolm-engine` | `Model`: embed, cell, head; `feed`, `bits_per_byte`, save/load state. |
+| `zerolm-engine` | `Model`: embed, cell, head; `feed`, `bits_per_byte`, save/load state. `binding.rs` (phasor role-filler binding) and `semantic_state.rs` (bounded parser, discourse state) for Phase 6. |
 | `zerolm-learning` | Phase 4 online predictor (plastic readout over frozen GRU features), local rules, generated streams, byte n-gram baselines. See `docs/ONLINE_LEARNING.md`. |
 | `zerolm-memory` | Phase 5 weight-resident memory: semantic slots, episodic ring, W_FAST, attention retrieval, atomic named-tensor checkpoints. See `docs/MEMORY_FORMAT.md`. |
-| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the Phase 4 `zerolm-online-lm` and Phase 5 `zerolm-memory` benchmarks. |
+| `zerolm-reasoner` | Phase 6 relational memory of bound role-filler vectors, eight inference operators, the symbolic oracle and lookup baseline (evaluation only). See `docs/REASONING.md`. |
+| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the Phase 4 `zerolm-online-lm`, Phase 5 `zerolm-memory`, and Phase 6 `zerolm-reasoning` benchmarks. |
 
 ## Candidates (equal parameter budget, within 5%)
 1. `gru`: compact GRU, update-gate biases spread over timescales.
