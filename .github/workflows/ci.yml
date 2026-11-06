@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - run: rustup toolchain install stable --profile minimal --component clippy
       - run: cargo test --workspace
       - run: cargo clippy --workspace --all-targets -- -D warnings
@@ -17,11 +19,16 @@ jobs:
         run: |
           mkdir -p reports/phase-0
           cargo run -q -p zerolm-policy --bin zerolm-audit -- --json | tee reports/phase-0/summary.json
+      - name: Phase 1 baseline (clean-tree provenance)
+        run: |
+          cargo run -q -p zerolm-policy --bin zerolm-baseline -- generate
+          cargo run -q -p zerolm-policy --bin zerolm-baseline -- check
+          mkdir -p reports/phase-1 && cp reports/baseline/*.json reports/phase-1/
       - name: Write job summary
         if: always()
         run: |
           {
-            echo "## ZeroLM phase 0"
+            echo "## ZeroLM phases 0-1"
             echo "- job status: ${{ job.status }}"
             echo "- commit: ${{ github.sha }}"
             if [ -s reports/phase-0/summary.json ]; then
@@ -33,7 +40,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: zerolm-phase-0-${{ github.sha }}
-          path: reports/phase-0/
+          name: zerolm-baseline-${{ github.sha }}
+          path: |
+            reports/phase-0/
+            reports/baseline/
           if-no-files-found: warn
           retention-days: 30
