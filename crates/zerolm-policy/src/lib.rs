@@ -2,6 +2,7 @@
 //! it reads the manifests under `research/` and `model/specs/` and the
 //! repository tree, and returns a list of violations (empty == pass).
 
+pub mod baseline;
 pub mod manifest;
 pub mod phases;
 pub mod scan;
@@ -10,8 +11,9 @@ pub mod weights;
 use std::path::Path;
 
 /// One failed check. `check` is a stable id, `detail` is human-readable.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Violation {
+    #[serde(deserialize_with = "leak")]
     pub check: &'static str,
     pub detail: String,
 }
@@ -89,4 +91,9 @@ pub(crate) fn read_json<T: serde::de::DeserializeOwned>(
     let text = std::fs::read_to_string(path)
         .map_err(|e| Violation::new(check, format!("{rel}: cannot read: {e}")))?;
     serde_json::from_str(&text).map_err(|e| Violation::new(check, format!("{rel}: invalid: {e}")))
+}
+
+fn leak<'de, D: serde::Deserializer<'de>>(d: D) -> Result<&'static str, D::Error> {
+    let s = <String as serde::Deserialize>::deserialize(d)?;
+    Ok(Box::leak(s.into_boxed_str()))
 }

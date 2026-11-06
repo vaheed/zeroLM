@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "status": "removed",
+  "reason": "No backward compatibility: the v0.2 C/Rust parser and ZeroLM Next were deleted when the neural track began.",
+  "git_tag": "legacy-final",
+  "git_commit": "65ff58bdd0b0c4229e913fd6793cf8234ed81816",
+  "components": ["v0.2 C and Rust runtime", "ZeroLM Next compositional parser", "ZeroLM Live"],
+  "results_carried_over": false
+}

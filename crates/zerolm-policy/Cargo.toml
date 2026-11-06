@@ -12,3 +12,7 @@ serde_json.workspace = true
 [[bin]]
 name = "zerolm-audit"
 path = "src/main.rs"
+
+[[bin]]
+name = "zerolm-baseline"
+path = "src/bin/baseline.rs"
