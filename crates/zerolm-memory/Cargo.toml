@@ -1,0 +1,12 @@
+[package]
+name = "zerolm-memory"
+description = "Weight-resident associative memory: fast weights, persistent semantic/episodic tensors, neural retrieval, atomic checkpoints"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+zerolm-tensor = { path = "../zerolm-tensor" }
+zerolm-engine = { path = "../zerolm-engine" }
+serde.workspace = true
+serde_json.workspace = true

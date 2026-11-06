@@ -19,8 +19,8 @@
     {
       "id": "orthogonal-key-init",
       "kind": "init_formula",
-      "description": "Memory keys start from a deterministic seeded orthogonal-ish random projection.",
-      "source": "docs/RESEARCH_CONSTITUTION.md#initialization",
+      "description": "Memory keys are produced by a deterministic seeded random projection: the frozen memory encoder table (uniform in [-1,1), SplitMix64 stream tagged 'core.memory_encoder'), summed over hashed byte trigrams. No corpus statistics.",
+      "source": "crates/zerolm-memory/src/encoder.rs",
       "derived_from_corpus": false
     },
     {

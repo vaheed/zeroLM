@@ -5,7 +5,9 @@
     "observed_next_byte",
     "user_correction",
     "environment_outcome",
-    "independently_validated_signal"
+    "independently_validated_signal",
+    "user_statement",
+    "memory_maintenance"
   ],
   "forbidden_signals": [
     "model_generated_output",
