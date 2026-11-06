@@ -116,6 +116,14 @@ A November 2, 2026 MIT CSAIL blog post, *Sparks of Weight-Space Programming*, re
 
 **Implication for ZeroLM:** WSP is a way to design, inspect, and patch a network's parameters. It is not, by itself, a learning algorithm or an explanation of how an untrained network acquires natural language. Initially, WSP patches will be authored by humans or an external development-time programmer and checked by the repository's deterministic harness. ZeroLM must not depend on a pretrained external LLM at runtime. An internal neural patch proposer is a later research milestone and must prove that it can generate useful, safe patches without an external model.
 
+**Update (2026-11-07): weight space learning.** The survey *Weight Space Learning* (arXiv:2603.10090) and the list [Awesome-Weight-Space-Learning](https://github.com/Zehong-Wang/Awesome-Weight-Space-Learning) group the field into weight space understanding (symmetries and geometry), representation (learning embeddings of whole models), and generation (hypernetworks, weight diffusion). All three learn from populations of trained weights. Compiling algorithms into weights, as ZeroLM does, is not covered there; RASP/Tracr (section 2.8) remain the closest work. Four findings change the plan:
+1. **Weight symmetries.** Permutation, scaling, sign, and head symmetries mean a raw weight diff is not canonical. Once circuits adapt by learning, patches must be compared and merged only after alignment (Git Re-Basin, arXiv:2209.04836).
+2. **Equivariant readers.** A model that reads weights should respect those symmetries (DWSNets arXiv:2301.12780, neural functionals arXiv:2302.14040 and arXiv:2402.05232, graph metanetworks arXiv:2312.04501). The internal patch proposer should be built this way and read circuits as graphs of named blocks.
+3. **Functional guarantees.** Generated weights carry no guarantee of function, and weight generators can memorize (arXiv:2506.07998). Every proposed patch must be reversible, base-hash checked, and gated by behavior, never accepted because a file changed.
+4. **Model zoos.** The field benchmarks on model populations (arXiv:2209.14764). The compiled circuits with their ablated and patched variants form a small, fully labeled zoo for testing the patch proposer.
+
+Details: `docs/weight-space-programming.md`.
+
 ### 2.4 Language acquisition and child-development benchmarks
 
 - The **BabyLM 2026 findings** report that GPT-BERT remained a strong foundation for sample-efficient pretraining and that more training epochs, recursion/looping, and data preprocessing were associated with stronger results. These are results from pretraining under restricted data budgets, not from zero-pretraining systems. [ACL Anthology 2026](https://aclanthology.org/2026.babylm-main.37/).
@@ -710,7 +718,7 @@ crates/
 
 **Goal:** The model proposes useful edits to its own weight programs, safely.
 
-This is revision-1 Phase 9 (Appendix A), now built on the Phase 7 compiler and patch format. Proposals come from the model's own traces and failures. They include adding capacity to a circuit, allocating memory, or composing a new circuit from existing ones. Every proposal is applied to a sandbox copy and passes target tests, all frozen regressions, and resource limits before atomic acceptance. The tests, CI workflow requirements, and exit gate of revision-1 Phase 9 apply unchanged. If the system can only apply prewritten templates, it is described as rule-based self-maintenance.
+This is revision-1 Phase 9 (Appendix A), now built on the Phase 7 compiler and patch format. Proposals come from the model's own traces and failures. They include adding capacity to a circuit, allocating memory, or composing a new circuit from existing ones. Every proposal is applied to a sandbox copy and passes target tests, all frozen regressions, and resource limits before atomic acceptance. The tests, CI workflow requirements, and exit gate of revision-1 Phase 9 apply unchanged. If the system can only apply prewritten templates, it is described as rule-based self-maintenance. The proposer reads circuits as graphs of named blocks and should be equivariant to weight symmetries (section 2.3 update). Patches against learned (adapted) blocks are aligned up to neuron permutation before they are compared, merged, or reverted against another checkpoint.
 
 ### Phase 15 — Capability evaluation and level certification
 
