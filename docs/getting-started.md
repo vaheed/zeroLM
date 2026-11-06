@@ -24,7 +24,7 @@ This runs the guided demo ([scripts/docker/demo.sh](../scripts/docker/demo.sh)) 
 3. a new process answering from the saved checkpoint;
 4. all eight reasoning operators;
 5. weight-resident fact memory (teach, paraphrased ask, correct, forget, across a restart);
-6. a Phase 4 online-learning run (about 15 s), with bits per byte before and after.
+6. an online-learning run (about 15 s), with bits per byte before and after.
 
 Then try it yourself:
 
@@ -136,14 +136,14 @@ The reasoning language is bounded. It accepts sentences such as `x is a y`, `eve
 
 | Check | Passes when | Report |
 |---|---|---|
-| Phase 0 audit | no pretrained artifacts or downloads; manifests valid | stdout JSON |
+| Policy audit | no pretrained artifacts or downloads; manifests valid | stdout JSON |
 | Tests and clippy | all tests pass; no warnings | stdout |
-| Phase 2 bake-off | architecture selection reproduces `model/specs/architecture.json` | `reports/phase-2/` |
-| Phase 4 online learning | held-out BPB (bits per byte) clears the frozen floor (about 2.3 BPB vs 8.0 untrained, 3 seeds) | `reports/online-learning/` |
-| Phase 5 memory | recall, paraphrase, and restart gates (exact recall 1.000) | `reports/memory/` |
-| Phase 6 reasoning | agreement with the symbolic reference, counterfactuals, ablations | `reports/reasoning/` |
+| Architecture bake-off | architecture selection reproduces `model/specs/architecture.json` | `reports/bakeoff/` |
+| Online learning | held-out BPB (bits per byte) clears the frozen floor (about 2.3 BPB vs 8.0 untrained, 3 seeds) | `reports/online-learning/` |
+| Memory | recall, paraphrase, and restart gates (exact recall 1.000) | `reports/memory/` |
+| Reasoning | agreement with the symbolic reference, counterfactuals, ablations | `reports/reasoning/` |
 
-Phase 1 (baseline provenance) needs a clean git checkout, so the container reports it as **NOT RUN**. Run it on the host:
+Baseline provenance needs a clean git checkout, so the container reports it as **NOT RUN**. Run it on the host:
 
 ```bash
 cargo run -p zerolm-policy --bin zerolm-baseline -- generate && cargo run -p zerolm-policy --bin zerolm-baseline -- check

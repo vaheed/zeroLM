@@ -1,6 +1,6 @@
 [package]
 name = "zerolm-eval"
-description = "Phase 2 architecture bake-off, Phase 4 online-learning, Phase 5 memory, and Phase 6 reasoning benchmarks"
+description = "Architecture bake-off, online-learning, memory, and reasoning benchmarks; the reference ISA interpreter"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

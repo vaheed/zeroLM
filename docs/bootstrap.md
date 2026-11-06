@@ -45,7 +45,7 @@ The top 24 bits fill the `f32` mantissa exactly, so the conversion involves no r
 | `head` (256 x $d$) | $0.1/\sqrt d$ | $0.01/(3d)$ |
 | gate biases | `linspace`: $a_0 + (a_1 - a_0)\, i/(d-1)$ | deterministic |
 
-Phasor angles (Phase 6) use 53 bits instead: $\theta = \frac{\lfloor z / 2^{11}\rfloor}{2^{53}} \cdot 2\pi$, which fills an `f64` mantissa.
+Phasor angles (used by reasoning) use 53 bits instead: $\theta = \frac{\lfloor z / 2^{11}\rfloor}{2^{53}} \cdot 2\pi$, which fills an `f64` mantissa.
 
 ### Pinning
 
@@ -64,11 +64,11 @@ One command per line, exact lowercase words:
 | `repeat` | repeat the previous response |
 | anything else | observed as plain text; no claim of understanding |
 
-Each line yields one trace event (JSONL, schema `research/schemas/phase3-trace.schema.json`) with byte spans of the line, key and value, the outcome, the response source, and the weights hash.
+Each line yields one trace event (JSONL, schema `research/schemas/bootstrap-trace.schema.json`) with byte spans of the line, key and value, the outcome, the response source, and the weights hash.
 
 ## What this is not
 - **Not learning.** The session holds `&Model`, so it cannot modify weights; every event carries the unchanged weights hash and the CLI verifies it at exit.
-- **Not model memory.** `teach`/`ask` are served from a small *session-local ledger*, labelled `source: "ledger"`. It is protocol scaffolding to make the control vocabulary testable. Weight-resident memory is Phase 5; this ledger must not be cited as evidence of it.
+- **Not model memory.** `teach`/`ask` are served from a small *session-local ledger*, labelled `source: "ledger"`. It is protocol scaffolding to make the control vocabulary testable. Weight-resident memory is a separate component (`docs/memory-format.md`); this ledger must not be cited as evidence of it.
 - **Not language understanding.** The model has no learning rule yet and predicts at chance (about 8 bits/byte). It receives every byte, but nothing in the bootstrap claims it understands English.
 
 ## Seed inventory
@@ -77,6 +77,6 @@ Listed in full in `model/bootstrap/seed.json` and `research/manifest/seed-knowle
 ## CLI
 ```bash
 cargo run -p zerolm-runtime -- info
-printf 'teach sky => blue\nask sky\n' | cargo run -p zerolm-runtime -- run --trace reports/phase-3/trace.jsonl
+printf 'teach sky => blue\nask sky\n' | cargo run -p zerolm-runtime -- run --trace reports/bootstrap/trace.jsonl
 ```
 `run` exits non-zero if the weights hash changed.

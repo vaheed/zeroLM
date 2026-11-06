@@ -1,4 +1,4 @@
-//! Phase 4: online learning rules for the byte-level language model.
+//! Online learning rules for the byte-level language model.
 //! No offline training loop exists here: every update is driven by one
 //! observed byte, in stream order, and is logged.
 

@@ -4,7 +4,7 @@ use zerolm_eval::reasoning::{run, summary_md, Report, Spec};
 
 const USAGE: &str = "usage: zerolm-reasoning [--pilot] [--out DIR]\n  main run (default): main seeds plus one hidden seed; fails unless every frozen gate passes\n  --pilot: pilot seeds only, never gates (used to set the gates)";
 
-/// Phase 6 gate: compositional answers from stored primitives, with ablations.
+/// Reasoning gate: compositional answers from stored primitives, with ablations.
 fn main() -> ExitCode {
     let mut pilot = false;
     let mut out: Option<PathBuf> = None;

@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ZeroLM Phase 5 weight-resident memory report (reports/memory/summary.json)",
+  "title": "ZeroLM weight-resident memory report (reports/memory/summary.json)",
   "type": "object",
-  "required": ["phase", "mode", "passed", "failures", "spec", "spec_sha256", "seeds", "summary", "scope_note"],
+  "required": ["report", "mode", "passed", "failures", "spec", "spec_sha256", "seeds", "summary", "scope_note"],
   "properties": {
-    "phase": {"const": "phase-5"},
+    "report": {"const": "memory"},
     "mode": {"enum": ["main", "pilot"]},
     "passed": {"type": "boolean"},
     "failures": {"type": "array", "items": {"type": "string"}},

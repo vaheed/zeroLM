@@ -12,8 +12,8 @@ fn scratch(name: &str) -> PathBuf {
     for rel in [
         "research/manifest/update-policy.json",
         "research/manifest/seed-knowledge.json",
-        "research/phases.json",
-        "research/schemas/phase0-report.schema.json",
+        "research/milestones.json",
+        "research/schemas/audit-report.schema.json",
         "model/specs/weight-groups.json",
     ] {
         let to = dir.join(rel);
@@ -69,10 +69,10 @@ fn bad_update_path_fails() {
 }
 
 #[test]
-fn complete_phase_without_command_fails() {
-    let d = scratch("phase");
-    edit(&d, "research/phases.json", "\"command\": \"cargo run -p zerolm-policy --bin zerolm-audit -- --json\"", "\"command\": null");
-    assert!(checks(&d).contains(&"phase-gates"));
+fn complete_milestone_without_command_fails() {
+    let d = scratch("milestone");
+    edit(&d, "research/milestones.json", "\"command\": \"cargo run -p zerolm-policy --bin zerolm-audit -- --json\"", "\"command\": null");
+    assert!(checks(&d).contains(&"milestone-gates"));
 }
 
 #[test]

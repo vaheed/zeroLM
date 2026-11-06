@@ -1,5 +1,5 @@
 //! `zerolm reason`: statements of the bounded language are stored in the
-//! relational tensor memory; questions are answered by the Phase 6 operators,
+//! relational tensor memory; questions are answered by the inference operators,
 //! with the operators and premise count shown for derived answers. With
 //! `--dir`, memory is committed atomically after each stored statement.
 

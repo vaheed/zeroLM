@@ -1,12 +1,12 @@
 # Neural ISA
 
-Status: Phase 7, in progress. Roadmap section 3.7; constitution invariant 10 (uniform execution).
+Status: uniform-engine milestone, in progress. Roadmap section 3.7; constitution invariant 10 (uniform execution).
 
 **What "ISA" means.** ISA stands for *instruction set architecture*, a term from processor design: the fixed list of instructions a CPU can execute, which every program is ultimately built from. ZeroLM borrows the idea for a neural network. The **neural ISA** is the fixed list of tensor operations (matrix-vector products, elementwise gates, normalization, phasor binding, top-k selection, hashed row selection, the delta-rule write, and fixed repetition) that every computation of the model must be expressed in. The name is this project's own, not an external standard, which is why it does not turn up in searches. The closest published ideas are RASP and Tracr, which compile programs into Transformer weights (roadmap section 2.8).
 
-Other abbreviations on this page: WSP = weight-space programming (compiling algorithms into weights; the `zerolm-wsp` crate); W_PROG = the weight group of compiled circuit constants; FNV-1a = Fowler-Noll-Vo hash variant 1a; SHA-256 = Secure Hash Algorithm (256-bit); IEEE-754 = the floating-point standard; NUL = the zero byte. Glossary: [math.md](math.md).
+Other abbreviations on this page: WSP = weight-space programming (compiling algorithms into weights; the `zerolm-wsp` crate); FNV-1a = Fowler-Noll-Vo hash variant 1a; SHA-256 = Secure Hash Algorithm (256-bit); IEEE-754 = the floating-point standard; NUL = the zero byte. Glossary: [math.md](math.md).
 
-**Why it exists.** In Phases 5-6, facts were stored in tensors, but the decisions (parsing, search, accept or abstain) were made by ordinary Rust code. Rust code is a hand-written program, not a network. With an ISA, a capability is data: a program graph plus weights, which can be exported, ablated weight by weight, verified by a second interpreter, and later adapted by learning.
+**Why it exists.** In the memory and reasoning components, facts were stored in tensors, but the decisions (parsing, search, accept or abstain) were made by ordinary Rust code. Rust code is a hand-written program, not a network. With an ISA, a capability is data: a program graph plus weights, which can be exported, ablated weight by weight, verified by a second interpreter, and later adapted by learning.
 
 A capability of the mainline model is a **program** over a small fixed set of tensor operations plus the **weights** it runs on. Host code binds tensors, runs the program, and moves bytes in and out. It does not branch on token content or tensor values, and it does not match strings in the model's input.
 
@@ -23,7 +23,7 @@ A program declares three kinds of tensors:
 | Kind | Meaning |
 |---|---|
 | `inputs` | Supplied per run. `rows: null` lets the caller choose the row count (for example one row per query word). |
-| `weights` | Read-only: compiled `W_PROG` constants and bound model tensors (memory keys, values, embeddings). |
+| `weights` | Read-only: compiled circuit constants (program weights) and bound model tensors (memory keys, values, embeddings). |
 | `state` | Mutable tensors written only by `delta_write`, returned after the run. |
 
 Bound weights must be finite (checkpoint loads already reject non-finite tensors). The engine relies on this to skip zero entries of `x` in a transposed `matvec`, which is exact for finite weights; the reference interpreter does not skip.
@@ -126,9 +126,9 @@ $\max_p \text{keep}_p = \text{keep}_1$, because `keep` never increases, so this 
 
 **Blocks and ablation.** Zeroing `verify` sets both thresholds to 0 and the word selector to 0 (so $n_w = 0$ and $\text{cov} = 0 \ge 0$). Every non-empty read is then accepted: exact answers survive and every negative is answered (measured: recall 1.000, negative false accepts 1.000). Zeroing `select` makes $\mu = 0$; zeroing `attend` sets $\beta = 0$ (a uniform average of all values); zeroing `decode` sets the score scale to 0, so every position decodes to the smallest-norm code. Each of these three drops recall to 0.
 
-## The relational circuits (Phase 6, roadmap C5 and C6)
+## The relational circuits (roadmap C5 and C6)
 
-Phase 6 stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [reasoning.md](reasoning.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\mathrm{sim}(a, b) = \frac1d \mathrm{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
+Reasoning stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [reasoning.md](reasoning.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\mathrm{sim}(a, b) = \frac1d \mathrm{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
 
 ### C5: `relation-graph` (once per memory state)
 
@@ -148,7 +148,7 @@ Given a start vector $x$, a target $y$, and a relation vector $r$ (for example t
 
 $$E_{s,i} = [\![\, \Sigma_{s,i} + \mathrm{sim}(\sigma_s, \text{rel} \circledast r) \ge 2 - 0.5 \,]\!] \cdot \text{pol}_s$$
 
-So $E_{s,i} = 1$ when slot $s$ is an $r$-edge leaving symbol $i$. It is the Phase 6 two-pair probe evaluated for every symbol at once. $x$ and $y$ are cleaned up to one-hot rows $\hat x, \hat y$ (cosine at least 0.9 with a codebook row).
+So $E_{s,i} = 1$ when slot $s$ is an $r$-edge leaving symbol $i$. It is the reasoner's two-pair probe evaluated for every symbol at once. $x$ and $y$ are cleaned up to one-hot rows $\hat x, \hat y$ (cosine at least 0.9 with a codebook row).
 
 The recurrence keeps a frontier $f \in \{0,1\}^N$, the reached set $R$, and a premise matrix $P \in \{0,1\}^{N \times S}$, where $P_{j,s} = 1$ means slot $s$ is on the proof of $j$. It starts from $f = R = \hat x$ and $P = 0$, and runs exactly $D = 8$ steps (`step(8)`):
 
@@ -162,7 +162,7 @@ $Q$ picks one slot per new target (the lowest slot index, because ties in `topk`
 
 $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top \hat y.$$
 
-**Depth gate and operator ablation.** $\gamma_t$ is entry $t$ of the schedule $\gamma = (1, 0, \dots, 0) + \text{enable}_{op} \cdot (0, 1, \dots, 1) \in \mathbb{R}^D$, so $\gamma_1 = 1$ always and $\gamma_{t > 1} = \text{enable}_{op}$. In the program, each step reads the first entry and shifts the schedule left with a constant shift matrix. Each Phase 6 operator has its own block holding one constant $\text{enable}_{op} = 1$. Zeroing that block limits the operator to direct, one-edge answers, which is exactly the Phase 6 ablation semantics. The host passes a one-hot operator selector; that is structure, not content.
+**Depth gate and operator ablation.** $\gamma_t$ is entry $t$ of the schedule $\gamma = (1, 0, \dots, 0) + \text{enable}_{op} \cdot (0, 1, \dots, 1) \in \mathbb{R}^D$, so $\gamma_1 = 1$ always and $\gamma_{t > 1} = \text{enable}_{op}$. In the program, each step reads the first entry and shifts the schedule left with a constant shift matrix. Each inference operator has its own block holding one constant $\text{enable}_{op} = 1$. Zeroing that block limits the operator to direct, one-edge answers, which is exactly the reasoning benchmark's ablation semantics. The host passes a one-hot operator selector; that is structure, not content.
 
 **Cost.** Each step does about six elementwise passes over $N \times S$ plus a sparse `matmul`. One reach costs about 9 ms at $N \approx S \approx 240$.
 
@@ -170,15 +170,15 @@ $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top 
 
 | Circuit | Spec | Replaces | Verified by |
 |---|---|---|---|
-| `memory-read` | `model/prog/memory-read.json` (`zerolm_wsp::circuits::attention_read`) | Phase 5 pooled attention, coverage verification, value cleanup, accept decision | Phase 5 gate unchanged; `reference_interpreter_parity` (every gate query, bit for bit); `circuit_block_ablation` per block |
-| `relation-graph` (C5) | `model/prog/relation-graph.json` (`zerolm_wsp::circuits::relational`) | per-question probe, unbind, and cleanup loops over slots | Phase 6 gate unchanged |
-| `relation-reach` (C6) | `model/prog/relation-reach.json` | breadth-first search in class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation | Phase 6 gate unchanged, including every operator ablation through its `enable` block |
+| `memory-read` | `model/prog/memory-read.json` (`zerolm_wsp::circuits::attention_read`) | memory pooled attention, coverage verification, value cleanup, accept decision | memory gate unchanged; `reference_interpreter_parity` (every gate query, bit for bit); `circuit_block_ablation` per block |
+| `relation-graph` (C5) | `model/prog/relation-graph.json` (`zerolm_wsp::circuits::relational`) | per-question probe, unbind, and cleanup loops over slots | reasoning gate unchanged |
+| `relation-reach` (C6) | `model/prog/relation-reach.json` | breadth-first search in class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation | reasoning gate unchanged, including every operator ablation through its `enable` block |
 
 `zerolm-wsp check` recompiles every spec and compares with `model/prog/pinned.json`.
 
-## Not yet done (Phase 7 remainder)
+## Not yet done
 
 - The query encoder (word split, `#word#` trigram hashing) still runs on the host; `hash_rows` exists for it.
-- Write-time bookkeeping and `W_FAST` recall cleanup are host code.
-- Phase 6: the search (reachability and shortest proofs) runs in C6, and slot decoding in C5. Still Rust control flow: each operator's decision logic (combining yes/no proofs, the inheritance level scan, the negation edge scan, conditional rule chaining, count arithmetic), the one-step `edges` probes they use, and the bounded-language parser.
+- Write-time bookkeeping and fast-weight recall cleanup are host code.
+- Reasoning: the search (reachability and shortest proofs) runs in C6, and slot decoding in C5. Still Rust control flow: each operator's decision logic (combining yes/no proofs, the inheritance level scan, the negation edge scan, conditional rule chaining, count arithmetic), the one-step `edges` probes they use, and the bounded-language parser.
 - No circuit has been through the byte-permutation test yet.

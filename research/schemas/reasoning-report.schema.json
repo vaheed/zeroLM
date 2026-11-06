@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ZeroLM Phase 6 compositional reasoning report (reports/reasoning/summary.json)",
+  "title": "ZeroLM compositional reasoning report (reports/reasoning/summary.json)",
   "type": "object",
-  "required": ["phase", "mode", "passed", "failures", "spec", "spec_sha256", "hidden_seed_source", "seeds", "summary", "scope_note"],
+  "required": ["report", "mode", "passed", "failures", "spec", "spec_sha256", "hidden_seed_source", "seeds", "summary", "scope_note"],
   "properties": {
-    "phase": {"const": "phase-6"},
+    "report": {"const": "reasoning"},
     "mode": {"enum": ["main", "pilot"]},
     "passed": {"type": "boolean"},
     "failures": {"type": "array", "items": {"type": "string"}},

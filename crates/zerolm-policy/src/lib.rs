@@ -1,10 +1,10 @@
-//! Phase 0 auditor. Everything here is deterministic and file-based:
+//! The policy auditor. Everything here is deterministic and file-based:
 //! it reads the manifests under `research/` and `model/specs/` and the
 //! repository tree, and returns a list of violations (empty == pass).
 
 pub mod baseline;
 pub mod manifest;
-pub mod phases;
+pub mod milestones;
 pub mod scan;
 pub mod weights;
 
@@ -26,13 +26,14 @@ impl Violation {
 
 #[derive(Debug, serde::Serialize)]
 pub struct Report {
-    pub phase: &'static str,
+    /// Report kind (always "audit").
+    pub report: &'static str,
     pub passed: bool,
     pub checks_run: Vec<&'static str>,
     pub violations: Vec<Violation>,
 }
 
-/// Run every Phase 0 check against the repository rooted at `root`.
+/// Run every policy check against the repository rooted at `root`.
 pub fn audit(root: &Path) -> Report {
     let mut violations = Vec::new();
     let mut checks_run = Vec::new();
@@ -68,9 +69,9 @@ pub fn audit(root: &Path) -> Report {
         Err(v) => violations.push(v),
     }
 
-    checks_run.push("phase-gates");
-    match phases::load(root) {
-        Ok(p) => violations.extend(phases::validate(root, &p)),
+    checks_run.push(milestones::CHECK);
+    match milestones::load(root) {
+        Ok(m) => violations.extend(milestones::validate(root, &m)),
         Err(v) => violations.push(v),
     }
 
@@ -79,7 +80,7 @@ pub fn audit(root: &Path) -> Report {
         violations.extend(scan::scan_tree(root, &p.forbidden));
     }
 
-    Report { phase: "phase-0", passed: violations.is_empty(), checks_run, violations }
+    Report { report: "audit", passed: violations.is_empty(), checks_run, violations }
 }
 
 pub(crate) fn read_json<T: serde::de::DeserializeOwned>(

@@ -4,7 +4,7 @@ use zerolm_eval::memory::{curves_csv, run, summary_md, Report, Spec};
 
 const USAGE: &str = "usage: zerolm-memory [--pilot] [--out DIR]\n  main run (default): main seeds, fails unless every check and frozen gate passes\n  --pilot: pilot seeds only, never gates (used to set the gates)";
 
-/// Phase 5 gate: persistent weight-resident memory across a restart.
+/// Memory gate: persistent weight-resident memory across a restart.
 fn main() -> ExitCode {
     let mut pilot = false;
     let mut out: Option<PathBuf> = None;

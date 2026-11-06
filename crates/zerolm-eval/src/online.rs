@@ -1,4 +1,4 @@
-//! Phase 4 benchmark: chronological online exposure, held-out evaluation,
+//! Online-learning benchmark: chronological online exposure, held-out evaluation,
 //! baselines, ablation, and the acquisition gate.
 //!
 //! Every learner sees the exposure stream once, byte by byte, in order. At
@@ -179,7 +179,8 @@ pub struct Verdict {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Report {
-    pub phase: &'static str,
+    /// Report kind (always "online-learning").
+    pub report: &'static str,
     pub mode: &'static str,
     pub passed: bool,
     pub failures: Vec<String>,
@@ -400,7 +401,7 @@ pub fn run(root: &Path, p: &Protocol, seeds: &[u64], gate: bool) -> Result<Repor
     }
     let abl: Vec<f64> = seeds.iter().map(|&s| find(s, ABLATION_ARM).heldout.bpb - find(s, "delta").heldout.bpb).collect();
     Ok(Report {
-        phase: "phase-4",
+        report: "online-learning",
         mode: if gate { "main" } else { "pilot" },
         passed: failures.is_empty(),
         failures,
@@ -415,7 +416,7 @@ pub fn run(root: &Path, p: &Protocol, seeds: &[u64], gate: bool) -> Result<Repor
         recurrence_ablation_delta_bpb: Stat::of(&abl).mean,
         bptt_control: serde_json::json!({
             "status": p.bptt_control,
-            "reason": "Optional online truncated-BPTT control not implemented: the project has no backpropagation code, and the strict local rule passed, so the gradient control was not needed to decide the Phase 4 gate. Any future BPTT control must be reported separately and never as the strict local-plasticity result.",
+            "reason": "Optional online truncated-BPTT control not implemented: the project has no backpropagation code, and the strict local rule passed, so the gradient control was not needed to decide the online-learning gate. Any future BPTT control must be reported separately and never as the strict local-plasticity result.",
         }),
         scope_note: SCOPE_NOTE,
     })
@@ -437,7 +438,7 @@ pub fn learning_curve_csv(r: &Report) -> String {
 pub fn summary_md(r: &Report) -> String {
     let seeds: Vec<String> = r.seeds.iter().map(|s| s.seed.to_string()).collect();
     let mut s = format!(
-        "## Phase 4 online learning ({}): {}\n\nStream `{}` (spec sha256 `{}`), {} exposure events per seed, seeds {}. Improvement floor {} BPB (frozen before the main run).\n\n",
+        "## Online learning ({}): {}\n\nStream `{}` (spec sha256 `{}`), {} exposure events per seed, seeds {}. Improvement floor {} BPB (frozen before the main run).\n\n",
         r.mode,
         if r.passed { "PASS" } else { "FAIL" },
         r.stream_spec_id,

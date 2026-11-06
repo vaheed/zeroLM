@@ -15,13 +15,13 @@ RUN rustup component add clippy
 WORKDIR /zerolm
 COPY . .
 
-# Release binaries (CLI and phase benchmarks) plus compiled tests, so tests and
+# Release binaries (CLI and benchmarks) plus compiled tests, so tests and
 # gates start immediately. --locked keeps dependency versions identical to Cargo.lock.
 RUN cargo build --release --workspace --bins --locked \
  && cargo test --workspace --locked --no-run \
  && mkdir -p /data reports
 
-# The commit this image was built from (no .git is copied). The Phase 6 gate
+# The commit this image was built from (no .git is copied). The reasoning gate
 # derives its hidden seed from it, exactly as in a git checkout. Declared after
 # the build step so a new commit does not invalidate the compile cache.
 ARG ZEROLM_COMMIT=unknown

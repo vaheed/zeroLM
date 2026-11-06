@@ -55,7 +55,7 @@ The field evaluates on **model zoos**, large collections of trained networks (*M
 model/prog/memory-read.json      typed spec (parameters only)
         |
         v   zerolm-wsp compile (deterministic)
-program (JSON graph of ISA ops)  +  W_PROG constants (named tensors in named blocks)
+program (JSON graph of ISA ops)  +  program weights (named constant tensors in named blocks)
         |                                   |
         |   SHA-256 pinned in model/prog/pinned.json, checked by `zerolm-wsp check`
         v

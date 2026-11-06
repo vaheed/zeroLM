@@ -1,4 +1,4 @@
-//! Phase 5: weight-resident associative memory.
+//! Weight-resident associative memory.
 //!
 //! Facts are stored only as f32 tensors in the model checkpoint
 //! (`memory.semantic.*`, `memory.episodic.*`, `memory.fast`) and are answered

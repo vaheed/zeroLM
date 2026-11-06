@@ -235,15 +235,15 @@ UTF-8 input stream / feedback / optional environment observations
 The serialized model checkpoint should declare at least these groups:
 
 ```text
-W_CORE       recurrent encoder/core/decoder parameters
-W_EMBED      byte or subword embedding parameters
-W_FAST       rapidly updated associative weights
-W_MEMORY     persistent semantic and episodic memory tensors
-W_SKILL      optional skill/circuit modules created through WSP
-W_META       bounded update-rule parameters and architecture metadata
+core weights        recurrent encoder/core/decoder parameters
+embedding weights   byte or subword embedding parameters
+fast weights        rapidly updated associative weights
+memory weights      persistent semantic and episodic memory tensors
+skill weights       optional skill/circuit modules created through WSP
+meta weights        bounded update-rule parameters and architecture metadata
 ```
 
-`W_CORE` and `W_SKILL` are slow parameters. They may evolve only through the patch/consolidation protocol. `W_FAST` and `W_MEMORY` may be written online using explicit update rules. `W_EMBED` may be updated only after its update rule passes stability and retention tests. Session state is not part of persistent memory and must be resettable.
+Core weights and skill weights are slow parameters. They may evolve only through the patch/consolidation protocol. Fast weights and memory weights may be written online using explicit update rules. Embedding weights may be updated only after their update rule passes stability and retention tests. Session state is not part of persistent memory and must be resettable.
 
 ### 3.4 Recurrent core candidate
 
@@ -313,7 +313,7 @@ Host code may load programs and tensors, read and write bytes, and run `step` a 
 
 **What a circuit may not contain:** vocabulary, word lists, natural-language grammar beyond the control protocol, facts, or any statistic computed from a corpus. Enforcement: the **byte-permutation test**. Exposure text is passed through a secret, fixed permutation of byte values. A compiled circuit with no language knowledge reaches the same held-out BPB on permuted text as on the original (within noise). A circuit that secretly encodes English will not.
 
-**Weight groups.** Compiled circuit weights are a new group `W_PROG` (init source: `zerolm-wsp` compiler output; update path: `wsp_patch`, plus `local_plasticity` where a circuit declares adaptable blocks). It is declared in `weight-groups.json` before first use.
+**Weight groups.** Compiled circuit weights are a new group, the program weights (init source: `zerolm-wsp` compiler output; update path: `wsp_patch`, plus `local_plasticity` where a circuit declares adaptable blocks). It is declared in `weight-groups.json` before first use.
 
 ---
 
@@ -508,7 +508,7 @@ crates/
 **Goal:** Give the neural model persistent memory without transcript replay or an external semantic database.
 
 **Work**
-- Implement `W_FAST` for short-lived associations and `W_MEMORY` for persistent facts/relations.
+- Implement fast weights for short-lived associations and memory weights for persistent facts/relations.
 - Store memory as structured key/value/role tensors that participate in neural retrieval, not as a separate JSON fact database.
 - Use a neural encoder to construct keys and values; use query-key similarity or a learned/programmed associative read operation.
 - Add provenance, source, confidence, creation time, supersession, and contradiction metadata as tensor fields.
@@ -527,7 +527,7 @@ crates/
 - Exact key recall and paraphrase retrieval are scored separately.
 - Test collisions, capacity, interference, contradictory facts, supersession, deletion, and memory compaction.
 - Prove that semantic facts are present in checkpoint tensor groups and not in `life.json`, transcript files, SQLite, or a vector database.
-- Verify that unrelated `W_CORE` tensors remain byte-identical during a memory-only write.
+- Verify that unrelated core-weight tensors remain byte-identical during a memory-only write.
 - Corrupt-checkpoint and interrupted-write tests must fail safely or recover the last valid checkpoint.
 
 **Exit gate**
@@ -570,7 +570,7 @@ crates/
 
 **Work**
 - Implement the neural ISA interpreter (section 3.7) in `zerolm-engine` and the minimal reference interpreter in tests.
-- Create `crates/zerolm-wsp`: a compiler from small typed circuit specifications to `W_PROG` tensors, plus a versioned patch format (apply, diff, revert).
+- Create `crates/zerolm-wsp`: a compiler from small typed circuit specifications to program-weight tensors, plus a versioned patch format (apply, diff, revert).
 - Recompile Phase 6 onto the engine. The bounded grammar becomes a recurrent parser circuit whose state holds role bindings token by token. The eight operators become fixed-step recurrent circuits (C5, C6), with transitivity as repeated association and cleanup instead of breadth-first search.
 - Recompile Phase 5 retrieval (pooled attention plus coverage verification) as an engine program.
 - Delete the replaced Rust control flow once parity holds. The symbolic oracle stays evaluation-only.
@@ -584,7 +584,7 @@ crates/
 **CI tests**
 - The frozen Phase 5 and Phase 6 gates pass unchanged through the compiled programs.
 - The reference interpreter reproduces every gate answer exactly from exported programs and weights.
-- Compilation is reproducible: the same specification gives byte-identical `W_PROG` (hash pinned).
+- Compilation is reproducible: the same specification gives byte-identical program weights (hash pinned).
 - Weight ablation: zeroing or permuting one named circuit block removes exactly the answers that depend on it.
 - Patch round trip: apply, then revert, gives the original checkpoint hash.
 - Host audit: no function on the model path matches strings or branches on token content (lint plus review checklist).
@@ -683,7 +683,7 @@ crates/
 **Goal:** Connect the language model to memory and reasoning. Facts read once in ordinary text are stored and then composed to answer new questions.
 
 **Work**
-- A learned write gate decides what goes into `W_MEMORY` while reading. It is trained online from retrieval success signals, never from the model's own answers.
+- A learned write gate decides what goes into memory weights while reading. It is trained online from retrieval success signals, never from the model's own answers.
 - The mapping from text to role bindings is learned from the stream. The Phase 6 English grammar seed is retired from the model path and stays only as a test harness.
 - The reasoning circuits (C5, C6) are driven by the network's own bindings.
 
@@ -708,7 +708,7 @@ crates/
 **CI tests**
 - Generated continuations do not appear in the exposure stream (n-gram novelty) and are not templates.
 - Consistency with retrieved facts; hallucination rate on unsupported questions; calibration.
-- Multi-turn state survives restart when stored in `W_MEMORY`.
+- Multi-turn state survives restart when stored in memory weights.
 - Blind human ratings of fluency and helpfulness on a hidden prompt set, against the Level L2 checkpoint.
 
 **Exit gate**
@@ -728,7 +728,7 @@ This is revision-1 Phase 10 (Appendix A) with Levels L1-L4 (section 7.1) as the 
 
 ### Phase 16 — CPU deployment and 1.0 release
 
-This is revision-1 Phase 11 (Appendix A), unchanged in scope. In addition, the release bundle includes the corpus manifest hash, the `W_PROG` compiler output hash, and the Phase 15 level report. **1.0 requires Level L3.**
+This is revision-1 Phase 11 (Appendix A), unchanged in scope. In addition, the release bundle includes the corpus manifest hash, the compiler output hash of the program weights, and the Phase 15 level report. **1.0 requires Level L3.**
 
 ### Track G — Grounded interaction (optional, parallel)
 
@@ -1075,7 +1075,7 @@ Kept for reference by Phases 14-16 and Track G. Their numbering is superseded by
 **GitHub Actions tests**
 - Generate continuations not present in the exposure stream and not encoded as templates.
 - Evaluate response consistency with retrieved facts and reasoning traces.
-- Multi-turn tests must survive process restart when the relevant information has been stored in `W_MEMORY`.
+- Multi-turn tests must survive process restart when the relevant information has been stored in memory weights.
 - Test hallucination, unsupported questions, calibration, repetition loops, and prompt paraphrases.
 - Measure free-generation diversity and degeneration; do not score only exact strings.
 

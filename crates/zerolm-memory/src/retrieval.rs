@@ -3,7 +3,7 @@
 //! Semantic queries are answered by the compiled read circuit
 //! (`read_circuit`), which does its own cleanup. `decode` remains a host
 //! helper for write-time value comparison and `W_FAST` recall; moving those
-//! onto the engine is Phase 7 work still open.
+//! onto the engine is still open uniform-engine work.
 
 use zerolm_tensor::Matrix;
 

@@ -1,6 +1,6 @@
 [package]
 name = "zerolm-policy"
-description = "Phase 0 research-constitution auditor: manifests, weight groups, forbidden artifacts, phase gates"
+description = "Research-constitution auditor: manifests, weight groups, forbidden artifacts, milestone gates; baseline provenance"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

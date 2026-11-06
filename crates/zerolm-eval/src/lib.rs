@@ -1,7 +1,7 @@
 //! Bake-off metrics. No learning happens here: every candidate is evaluated
 //! at its seeded initialization, so the metrics measure *architectural
 //! capacity* (memory horizon, stability, cost), not language ability.
-//! Held-out generalization and chronological acquisition: see [`online`] (Phase 4).
+//! Held-out generalization and chronological acquisition: see [`online`].
 
 pub mod isa_ref;
 pub mod memory;

@@ -20,7 +20,7 @@ fn main() -> ExitCode {
     if json {
         println!("{}", serde_json::to_string_pretty(&report).expect("serialize"));
     } else {
-        println!("phase-0 audit: {}", if report.passed { "PASS" } else { "FAIL" });
+        println!("policy audit: {}", if report.passed { "PASS" } else { "FAIL" });
         for c in &report.checks_run {
             println!("  ran {c}");
         }

@@ -6,7 +6,7 @@ use zerolm_nn::Kind;
 /// Usage: zerolm-bakeoff [--quick] [--out DIR] [--check ARCH_JSON]
 fn main() -> ExitCode {
     let mut cfg = Config::full();
-    let mut out = PathBuf::from("reports/phase-2");
+    let mut out = PathBuf::from("reports/bakeoff");
     let mut check: Option<PathBuf> = None;
     let mut args = std::env::args().skip(1);
     while let Some(a) = args.next() {
@@ -47,7 +47,7 @@ fn main() -> ExitCode {
         }
     }
     let report = serde_json::json!({
-        "phase": "phase-2",
+        "report": "bakeoff",
         "quick": cfg.budget != Config::full().budget,
         "budget": cfg.budget,
         "seeds": cfg.seeds,
@@ -67,7 +67,7 @@ fn main() -> ExitCode {
 
 fn summary(r: &serde_json::Value) -> String {
     let mut s = format!(
-        "## Phase 2 bake-off: {}\n\nSelected: **{}** (cell budget {} params, seeds {})\n\n| candidate | eligible | hidden | cell params | state bytes | horizon | p50 us | p95 us | tok/s | score |\n|---|---|---|---|---|---|---|---|---|---|\n",
+        "## Architecture bake-off: {}\n\nSelected: **{}** (cell budget {} params, seeds {})\n\n| candidate | eligible | hidden | cell params | state bytes | horizon | p50 us | p95 us | tok/s | score |\n|---|---|---|---|---|---|---|---|---|---|\n",
         if r["passed"] == true { "PASS" } else { "FAIL" },
         r["selected"].as_str().unwrap_or("none"),
         r["budget"],

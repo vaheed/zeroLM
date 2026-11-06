@@ -1,6 +1,6 @@
-# Online learning (Phase 4)
+# Online learning
 
-Phase 4 asks whether the same untrained architecture gets better at predicting **unseen** text after a chronological stream of observations, using local update rules and no offline training loop.
+This milestone asks whether the same untrained architecture gets better at predicting **unseen** text after a chronological stream of observations, using local update rules and no offline training loop.
 
 Short answer: **yes, measurably, but only in a narrow sense.** BPB means bits per byte: the average number of bits the model needs to encode each next byte (8 is chance; lower is better). A local rule on the readout layer brings held-out bits-per-byte from 8.0 (untrained) down to about 2.3, and beats the byte-frequency baseline by about 1.9 BPB on sentences and word combinations never seen in exposure. A plain byte trigram is still much better (about 1.2 BPB). This is a first, weak, honest language learner, not a competitive one.
 
@@ -12,13 +12,13 @@ features phi = [h ; embedding(last byte)]                          (90 values)
 p(next byte) = softmax(readout.weight * phi + readout.bias)       <- the only plastic tensors
 ```
 
-| Tensor group | Init | Updated in Phase 4 |
+| Tensor group | Init | Updated by the online learner |
 |---|---|---|
 | `byte_embed` | seeded PRNG | no |
 | `recurrent_core` (GRU) | seeded PRNG | no |
 | `readout_head` (`readout.weight` 256x90, `readout.bias` 256) | zeros (uniform prediction) | yes, by the configured rule |
 
-The Phase 3 `Model.head` stays in the weight hash but is not used by the online predictor. Its job goes to the zero-initialized readout.
+The bootstrap model's `Model.head` stays in the weight hash but is not used by the online predictor. Its job goes to the zero-initialized readout.
 
 ## Protocol per byte
 
@@ -154,5 +154,5 @@ Additional evidence:
 
 - No English understanding. The text is a tiny generated language with about 50 words.
 - No competitive language modeling. A byte trigram is about 1 BPB better. Only 23k readout parameters learn, on top of frozen random features.
-- No memory beyond the GRU state's short horizon, and no facts stored across sessions (that is Phase 5).
+- No memory beyond the GRU state's short horizon, and no facts stored across sessions (that is the memory component, `docs/memory-format.md`).
 - Forgetting and longer streams have not been measured yet. Learning saturates within about 20k events at this capacity.

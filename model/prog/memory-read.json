@@ -2,7 +2,7 @@
   "id": "memory-read",
   "version": 1,
   "seed_entry": "memory-read-circuit",
-  "description": "Phase 5 retrieval compiled to the neural ISA: active-slot selection, softmax attention read over memory.semantic.keys/values, late-interaction coverage verification on memory.semantic.key_words, nearest-code cleanup against core.embed, and the accept gate. Parameters equal model/specs/memory.json.",
+  "description": "Memory retrieval compiled to the neural ISA: active-slot selection, softmax attention read over memory.semantic.keys/values, late-interaction coverage verification on memory.semantic.key_words, nearest-code cleanup against core.embed, and the accept gate. Parameters equal model/specs/memory.json.",
   "circuit": {
     "kind": "attention_read",
     "slots": 2048,

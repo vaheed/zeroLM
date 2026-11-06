@@ -59,7 +59,7 @@ fn patches_round_trip_and_refuse_the_wrong_base() {
 fn blocks_can_be_ablated_by_name() {
     let mut c = shipped("memory-read").unwrap();
     assert_eq!(c.blocks(), vec!["attend", "decode", "select", "support", "verify"]);
-    // Every Phase 6 operator has its own block in the reach circuit.
+    // Every inference operator has its own block in the reach circuit.
     let reach = shipped("relation-reach").unwrap();
     for op in zerolm_wsp::circuits::relational::OPERATORS {
         assert!(reach.blocks().iter().any(|b| b == op), "{op}");

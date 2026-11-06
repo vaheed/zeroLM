@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ZeroLM Phase 2 bake-off report",
+  "title": "ZeroLM bake-off report",
   "type": "object",
-  "required": ["phase", "passed", "failures", "selected", "candidates", "seeds", "budget"],
+  "required": ["report", "passed", "failures", "selected", "candidates", "seeds", "budget"],
   "properties": {
-    "phase": {"const": "phase-2"},
+    "report": {"const": "bakeoff"},
     "passed": {"type": "boolean"},
     "failures": {"type": "array", "items": {"type": "string"}},
     "selected": {"type": ["string", "null"]},

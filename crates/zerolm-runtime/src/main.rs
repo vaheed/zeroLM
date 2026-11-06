@@ -6,7 +6,7 @@ use std::io::{BufRead, Write};
 use std::process::ExitCode;
 use zerolm_engine::bootstrap::{default_model, Session, CELL_BUDGET, COMMANDS, DEFAULT_KIND, DEFAULT_SEED, EMBED_DIM};
 
-const USAGE: &str = "usage: zerolm info [--seed N]\n       zerolm run [--seed N] [--trace FILE]   (reads lines on stdin; session ledger, nothing persists)\n       zerolm memory --dir DIR [--seed N] [--trace FILE] [--stream NAME]   (weight-resident memory, persists in DIR)\n       zerolm reason [--dir DIR] [--trace FILE] [--stream NAME]   (Phase 6: statements are stored, questions are reasoned over)\n\n--verbose (or ZEROLM_VERBOSE=1) shows what happens inside each step on stderr\n\nprotocol lines: teach K => V | ask K | correct K => V | confirm K | forget K | repeat";
+const USAGE: &str = "usage: zerolm info [--seed N]\n       zerolm run [--seed N] [--trace FILE]   (reads lines on stdin; session ledger, nothing persists)\n       zerolm memory --dir DIR [--seed N] [--trace FILE] [--stream NAME]   (weight-resident memory, persists in DIR)\n       zerolm reason [--dir DIR] [--trace FILE] [--stream NAME]   (statements are stored, questions are reasoned over)\n\n--verbose (or ZEROLM_VERBOSE=1) shows what happens inside each step on stderr\n\nprotocol lines: teach K => V | ask K | correct K => V | confirm K | forget K | repeat";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);

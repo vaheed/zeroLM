@@ -1,4 +1,4 @@
-//! Phase 6 relational inference as circuits (roadmap C5, C6).
+//! Relational inference as circuits (roadmap circuits C5 and C6).
 //!
 //! **C5 `relation_graph`** decodes the relation memory (bound role-filler
 //! bundles, one row per statement) into slot x symbol matrices, once per
@@ -23,7 +23,7 @@
 //! ```
 //! A depth gate (1 for the first step, the operator's `enable` constant
 //! afterwards) makes "operator disabled" mean "direct statements only", which
-//! is the Phase 6 ablation semantics.
+//! is the reasoning benchmark's operator-ablation semantics.
 
 use crate::compiler::{Builder, Compiled};
 use serde::{Deserialize, Serialize};

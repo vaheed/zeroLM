@@ -8,9 +8,8 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 |---|---|---|
 | **ISA** | Instruction set architecture | Borrowed from CPU design, where an ISA is the fixed list of instructions a processor can run. The **neural ISA** is ZeroLM's fixed list of tensor operations (matvec, gate, norm, bind, top-k, hash_rows, delta_write, step) that every model computation must be built from. The name is coined by this project; see [neural-isa.md](neural-isa.md). |
 | **WSP** | Weight-space programming | Writing an algorithm directly into network weights instead of learning it. In ZeroLM, WSP is a *compiler* (`zerolm-wsp`) from small circuit specifications to weights; it never writes language data. |
-| **W_PROG** | Program weights | The weight group holding compiled circuit constants (tensors `prog.<circuit>.<name>`). |
-| **W_CORE, W_EMBED, W_FAST, W_MEMORY, W_SKILL, W_META** | Weight groups | Recurrent core, byte embedding, fast associative weights, persistent memory, skill modules, and update-rule metadata (roadmap section 3.3). |
-| **Circuit** | | A compiled program plus its `W_PROG` constants that implements one algorithm, for example `memory-read`. Its **blocks** are named groups of constants that can be ablated. |
+| **Weight groups** | | Named sets of tensors, each with its own initialization source and update rule (`model/specs/weight-groups.json`): core weights (recurrent core), embedding weights, fast weights (short-lived associations), memory weights (persistent facts), skill weights, meta weights (update-rule parameters), and program weights (compiled circuit constants, tensors `prog.<circuit>.<name>`, group id `w_prog`). |
+| **Circuit** | | A compiled program plus its constants (program weights) that implements one algorithm, for example `memory-read`. Its **blocks** are named groups of constants that can be ablated. |
 | **Ablation** | | Disabling or zeroing a component to test causally whether behavior depends on it. |
 | **GRU** | Gated recurrent unit | The selected recurrent cell ([architecture.md](architecture.md)). |
 | **SSM** | State-space model | Here, a diagonal gated linear recurrence (a bake-off candidate). |
@@ -24,21 +23,21 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 | **FHRR** | Fourier holographic reduced representations | A vector-symbolic algebra with complex unit phasors, where binding is elementwise multiplication ([reasoning.md](reasoning.md)). |
 | **VSA** | Vector-symbolic architecture | The family of algebras (FHRR is one) that encode structures as high-dimensional vectors. |
 | **Phasor** | | A complex number of modulus 1, $e^{i\theta}$. |
-| **kWTA** | k-winners-take-all | Keep the $k$ largest entries of a vector and zero the rest; used as a sparse code in W_FAST. |
+| **kWTA** | k-winners-take-all | Keep the $k$ largest entries of a vector and zero the rest; used as a sparse code in fast weights. |
 | **FNV-1a** | Fowler-Noll-Vo hash, variant 1a | The 64-bit byte hash used for tags, trigram buckets, and `hash_rows`. |
 | **SplitMix64** | | The integer pseudo-random generator behind every seeded initialization ([bootstrap.md](bootstrap.md)). |
 | **SHA-256** | Secure Hash Algorithm, 256-bit | Used to pin weights, checkpoints, compiled circuits, and reports. |
-| **PPM** | Prediction by partial matching | A classic adaptive context-mixing compressor; a planned Phase 8 baseline. |
-| **KN-5** | Kneser-Ney smoothing, order 5 | A smoothed 5-gram language model; a planned Phase 8 baseline. |
-| **Witten-Bell** | | The n-gram smoothing used by the Phase 4 byte baselines ([online-learning.md](online-learning.md)). |
-| **BLiMP** | Benchmark of Linguistic Minimal Pairs | A grammaticality benchmark planned for Phase 8+. |
-| **LAMBADA** | | A last-word prediction benchmark planned for Phase 8+. |
+| **PPM** | Prediction by partial matching | A classic adaptive context-mixing compressor; a planned baseline for the real-text milestone. |
+| **KN-5** | Kneser-Ney smoothing, order 5 | A smoothed 5-gram language model; a planned baseline for the real-text milestone. |
+| **Witten-Bell** | | The n-gram smoothing used by the online-learning byte baselines ([online-learning.md](online-learning.md)). |
+| **BLiMP** | Benchmark of Linguistic Minimal Pairs | A grammaticality benchmark planned from the real-text milestone on. |
+| **LAMBADA** | | A last-word prediction benchmark planned from the real-text milestone on. |
 | **p50 / p95** | 50th / 95th percentile | Median and tail latency. |
 | **RSS** | Resident set size | Physical memory used by the process. |
 | **MSRV** | Minimum supported Rust version | 1.75 for this workspace. |
 | **CI** | Continuous integration | The GitHub Actions jobs in `.github/workflows/ci.yml`. |
 | **L0-L4** | Language-model levels | Capability levels defined in roadmap section 7.1; the system is at L0. |
-| **Gate A / B / C** | | Pre-registered pass/fail tests for Phases 9, 10, 11 (roadmap section 5). |
+| **Gate A / B / C** | | Pre-registered pass/fail tests for the scalable-core, local-representation, and scaling milestones (roadmap section 5). |
 
 ## Notation
 
@@ -62,6 +61,6 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 | Seeded initialization | SplitMix64, tag streams, uniform and fan-in init, FNV-1a, phasor angles | [bootstrap.md](bootstrap.md#mathematics) |
 | Recurrent cells and bake-off | GRU, SSM scan composition, fast-weight cell, hybrid attention, sensitivity, horizon, selection score | [architecture.md](architecture.md#mathematics) |
 | Online learning | BPB, softmax readout, delta rule as a normalized gradient step, update-norm bound, Hebbian prototypes, Witten-Bell, ECE, gate statistic | [online-learning.md](online-learning.md#mathematics) |
-| Memory | trigram key encoder, attention read, coverage, nearest-code cleanup, kWTA, W_FAST delta rule, 24-bit integer packing | [memory-format.md](memory-format.md#mathematics) |
+| Memory | trigram key encoder, attention read, coverage, nearest-code cleanup, kWTA, fast-weight delta rule, 24-bit integer packing | [memory-format.md](memory-format.md#mathematics) |
 | Reasoning | FHRR bind/unbind/bundle, similarity statistics, probe threshold, cleanup, fractional-power numbers, discourse state, operator semantics | [reasoning.md](reasoning.md#mathematics) |
 | Neural ISA and circuits | operation semantics, masking with a large penalty, the memory-read circuit as equations, exactness of the zero-skip | [neural-isa.md](neural-isa.md) |

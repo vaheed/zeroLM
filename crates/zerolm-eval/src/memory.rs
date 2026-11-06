@@ -1,4 +1,4 @@
-//! Phase 5 benchmark: weight-resident associative memory.
+//! Memory benchmark: weight-resident associative memory.
 //!
 //! Per seed: >= 1,000 generated facts go through the live update API
 //! (`teach`), then confirm / contradict / supersede / forget operations,
@@ -400,7 +400,8 @@ pub struct GroupDigest {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Report {
-    pub phase: &'static str,
+    /// Report kind (always "memory").
+    pub report: &'static str,
     pub mode: &'static str,
     pub passed: bool,
     pub failures: Vec<String>,
@@ -599,7 +600,7 @@ fn capacity_full(e: Result<Outcome, MemoryError>) -> bool {
 pub fn run_seed(spec: &Spec, seed: u64, work: &Path) -> Result<SeedResult, String> {
     let cfg = spec.config;
     let tau = cfg.coverage_threshold;
-    let stream = format!("phase5:synthetic-facts-v1:seed={seed}");
+    let stream = format!("memory:synthetic-facts-v1:seed={seed}");
     let mut set = FactSet::generate(seed, spec.facts, spec.negatives_per_category);
     let facts_sha256 = {
         let mut all = String::new();
@@ -986,7 +987,7 @@ pub fn run(root: &Path, spec: &Spec, seeds: &[u64], gate: bool, work: &Path) -> 
         query_p95_us: stat(&|r| r.latency.query_p95_us),
     };
     Ok(Report {
-        phase: "phase-5",
+        report: "memory",
         mode: if gate { "main" } else { "pilot" },
         passed: gate && failures.is_empty(),
         failures,
@@ -999,7 +1000,7 @@ pub fn run(root: &Path, spec: &Spec, seeds: &[u64], gate: bool, work: &Path) -> 
 }
 
 pub fn summary_md(r: &Report) -> String {
-    let mut s = format!("## ZeroLM Phase 5: weight-resident memory ({} mode)\n\n", r.mode);
+    let mut s = format!("## Weight-resident memory ({} mode)\n\n", r.mode);
     s += &format!("**{}**", if r.passed { "PASSED" } else if r.mode == "pilot" { "PILOT (not gated)" } else { "FAILED" });
     s += &format!(" | seeds {:?} | {} facts per seed | pooled threshold {} | coverage threshold {}\n\n", r.seeds.iter().map(|x| x.seed).collect::<Vec<_>>(), r.spec.facts, r.spec.config.read_threshold, r.spec.config.coverage_threshold);
     let st = |x: &Stat| format!("{:.4} ± {:.4}", x.mean, x.std);

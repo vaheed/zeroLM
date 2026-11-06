@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ZeroLM Phase 4 online-learning report (reports/online-learning/summary.json)",
+  "title": "ZeroLM online-learning report (reports/online-learning/summary.json)",
   "type": "object",
-  "required": ["phase", "mode", "passed", "failures", "protocol", "stream_spec_id", "stream_spec_sha256", "seeds", "runs", "baselines", "gates", "verdicts", "recurrence_ablation_delta_bpb", "bptt_control", "scope_note"],
+  "required": ["report", "mode", "passed", "failures", "protocol", "stream_spec_id", "stream_spec_sha256", "seeds", "runs", "baselines", "gates", "verdicts", "recurrence_ablation_delta_bpb", "bptt_control", "scope_note"],
   "properties": {
-    "phase": {"const": "phase-4"},
+    "report": {"const": "online-learning"},
     "mode": {"enum": ["main", "pilot"]},
     "passed": {"type": "boolean"},
     "failures": {"type": "array", "items": {"type": "string"}},

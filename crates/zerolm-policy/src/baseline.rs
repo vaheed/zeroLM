@@ -1,4 +1,4 @@
-//! Phase 1: provenance and baseline snapshot.
+//! Provenance and baseline snapshot.
 //!
 //! Writes `reports/baseline/{environment,legacy,next}.json` and verifies
 //! them. Reports from a dirty tree are rejected by `check`, so a baseline

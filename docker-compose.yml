@@ -4,7 +4,7 @@
 #   docker compose run --rm reason         interactive reasoner, memory persists in the zerolm-data volume
 #   docker compose run --rm memory         interactive teach/ask/correct/forget memory
 #   docker compose run --rm test           cargo test --workspace
-#   docker compose run --rm gates          audit, tests, clippy, Phase 2/4/5/6 gates (~5 min)
+#   docker compose run --rm gates          audit, tests, clippy, bake-off/online-learning/memory/reasoning gates (~12 min)
 #   docker compose run --rm gates quick    audit, tests, clippy only
 #
 # Second way, without building: docker-compose.ghcr.yml uses the published
@@ -18,7 +18,7 @@ x-zerolm: &zerolm
   build:
     context: .
     args:
-      # Commit recorded in the image; set it to match CI's Phase 6 hidden seed:
+      # Commit recorded in the image; set it to match CI's reasoning hidden seed:
       #   ZEROLM_COMMIT=$(git rev-parse HEAD) docker compose build
       ZEROLM_COMMIT: ${ZEROLM_COMMIT:-unknown}
   image: zerolm:dev

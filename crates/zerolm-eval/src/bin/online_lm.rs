@@ -4,7 +4,7 @@ use zerolm_eval::online::{learning_curve_csv, run, summary_md, Protocol, Report}
 
 const USAGE: &str = "usage: zerolm-online-lm [--pilot] [--out DIR]\n  main run (default): main seeds, fails unless the frozen gate passes\n  --pilot: pilot seeds only, never gates (used to set the floor)";
 
-/// Phase 4 gate: chronological online exposure and held-out evaluation.
+/// Online-learning gate: chronological online exposure and held-out evaluation.
 fn main() -> ExitCode {
     let mut pilot = false;
     let mut out: Option<PathBuf> = None;

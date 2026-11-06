@@ -15,7 +15,7 @@ step "1. The model at birth" \
 "No pretrained weights: initialization is seeded and pinned by SHA-256."
 zerolm info
 
-step "2. Reasoning over stored statements (Phase 6)" \
+step "2. Reasoning over stored statements" \
 "Statements become bound vectors in tensor memory. Questions are answered by
 composing them; the verbose lines show the parse, the tensors written, and the
 premises behind each derived answer.  Input: examples/reasoning.txt"
@@ -31,14 +31,14 @@ step "4. All eight reasoning operators" \
 Input: examples/reasoning-more.txt"
 zerolm reason < examples/reasoning-more.txt 2>&1
 
-step "5. Weight-resident fact memory (Phase 5)" \
+step "5. Weight-resident fact memory" \
 "teach/ask/correct/forget write and read checkpoint tensors; the frozen core
 stays byte-identical (see 'core unchanged=true').
 Input: examples/memory.txt, then examples/memory-after-restart.txt in a new process"
 zerolm memory --dir "$DATA/memory" < examples/memory.txt 2>&1
 zerolm memory --dir "$DATA/memory" < examples/memory-after-restart.txt 2>&1
 
-step "6. Online learning from a stream (Phase 4, about 15 s)" \
+step "6. Online learning from a stream (about 15 s)" \
 "One chronological pass; held-out bits per byte before and after, against baselines."
 zerolm-online-lm --out "$DATA/online-lm" 2>&1
 

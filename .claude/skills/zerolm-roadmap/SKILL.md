@@ -141,7 +141,7 @@ Invariants: see `AGENTS.md` and `docs/research-constitution.md`.
 - Exact key recall and paraphrase retrieval are scored separately.
 - Test collisions, capacity, interference, contradictory facts, supersession, deletion, and memory compaction.
 - Prove that semantic facts are present in checkpoint tensor groups and not in `life.json`, transcript files, SQLite, or a vector database.
-- Verify that unrelated `W_CORE` tensors remain byte-identical during a memory-only write.
+- Verify that unrelated core-weight tensors remain byte-identical during a memory-only write.
 - Corrupt-checkpoint and interrupted-write tests must fail safely or recover the last valid checkpoint.
 
 **Exit gate**
@@ -174,7 +174,7 @@ Invariants: see `AGENTS.md` and `docs/research-constitution.md`.
 
 ## Revision 2 (phases 7-16) — read docs/roadmap.md sec. 0.3, 3.7, 5, 7.1 first
 
-Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language data) into `W_PROG`; local online rules learn from licensed human-written text; 1.0 = Level L3 small LLM. New invariants 10-13 in the constitution: uniform execution (reference-interpreter test), byte-permutation test for circuits, corpus manifest / no LM-generated text, Gate B is the only way to change the no-backprop rule.
+Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language data) into program weights; local online rules learn from licensed human-written text; 1.0 = Level L3 small LLM. New invariants 10-13 in the constitution: uniform execution (reference-interpreter test), byte-permutation test for circuits, corpus manifest / no LM-generated text, Gate B is the only way to change the no-backprop rule.
 
 | Phase | Goal | Exit gate |
 |---|---|---|

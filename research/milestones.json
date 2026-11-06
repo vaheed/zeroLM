@@ -1,120 +1,121 @@
 {
-  "version": 1,
-  "phases": [
+  "version": 2,
+  "order": "roadmap order (docs/roadmap.md); a milestone may be complete only if every earlier one is",
+  "milestones": [
     {
-      "id": 0,
+      "id": "constitution",
       "name": "Research constitution and scope freeze",
       "status": "complete",
       "command": "cargo run -p zerolm-policy --bin zerolm-audit -- --json",
-      "report_schema": "research/schemas/phase0-report.schema.json"
+      "report_schema": "research/schemas/audit-report.schema.json"
     },
     {
-      "id": 1,
+      "id": "baseline",
       "name": "Freeze and audit the baseline",
       "status": "complete",
       "command": "cargo run -p zerolm-policy --bin zerolm-baseline -- generate && cargo run -p zerolm-policy --bin zerolm-baseline -- check",
-      "report_schema": "research/schemas/phase1-report.schema.json"
+      "report_schema": "research/schemas/baseline-report.schema.json"
     },
     {
-      "id": 2,
+      "id": "engine",
       "name": "Neural compute engine and architecture bake-off",
       "status": "complete",
       "command": "cargo test --workspace && cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json",
-      "report_schema": "research/schemas/phase2-report.schema.json"
+      "report_schema": "research/schemas/bakeoff-report.schema.json"
     },
     {
-      "id": 3,
+      "id": "bootstrap",
       "name": "Bootstrap language interface and deterministic initialization",
       "status": "complete",
       "command": "cargo test -p zerolm-tokenizer -p zerolm-engine -p zerolm-runtime -p zerolm-policy",
-      "report_schema": "research/schemas/phase3-trace.schema.json"
+      "report_schema": "research/schemas/bootstrap-trace.schema.json"
     },
     {
-      "id": 4,
+      "id": "online-learning",
       "name": "First true online neural language model",
       "status": "complete",
       "command": "cargo test -p zerolm-learning -p zerolm-eval && cargo run --release -p zerolm-eval --bin zerolm-online-lm",
-      "report_schema": "research/schemas/phase4-report.schema.json"
+      "report_schema": "research/schemas/online-learning-report.schema.json"
     },
     {
-      "id": 5,
+      "id": "memory",
       "name": "Weight-resident associative memory",
       "status": "complete",
       "command": "cargo test -p zerolm-memory -p zerolm-runtime && cargo run --release -p zerolm-eval --bin zerolm-memory",
-      "report_schema": "research/schemas/phase5-report.schema.json"
+      "report_schema": "research/schemas/memory-report.schema.json"
     },
     {
-      "id": 6,
+      "id": "reasoning",
       "name": "Concepts, relations, and compositional reasoning",
       "status": "complete",
       "command": "cargo test -p zerolm-engine -p zerolm-reasoner && cargo run --release -p zerolm-eval --bin zerolm-reasoning",
-      "report_schema": "research/schemas/phase6-report.schema.json"
+      "report_schema": "research/schemas/reasoning-report.schema.json"
     },
     {
-      "id": 7,
+      "id": "uniform-engine",
       "name": "Uniform neural engine and WSP compiler",
       "status": "in_progress",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 8,
+      "id": "real-text",
       "name": "Real-text exposure streams and reference baselines",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 9,
+      "id": "scalable-core",
       "name": "Scalable core with compiled seed circuits (Gate A)",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 10,
+      "id": "local-representations",
       "name": "Deep representation learning without backpropagation (Gate B)",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 11,
+      "id": "scaling",
       "name": "Scaling run and forgetting (Gate C)",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 12,
+      "id": "read-and-reason",
       "name": "Reading into memory and reasoning inside the network",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 13,
+      "id": "generation",
       "name": "Generation, instruction following, and dialogue",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 14,
+      "id": "self-patching",
       "name": "Self-proposed WSP patches",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 15,
+      "id": "evaluation",
       "name": "Capability evaluation and level certification",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": 16,
+      "id": "release",
       "name": "CPU deployment and 1.0 release",
       "status": "planned",
       "command": null,

@@ -1,4 +1,4 @@
-//! Phase 6: relational memory of bound role-filler structures and controlled
+//! Relational memory of bound role-filler structures and controlled
 //! inference operators.
 //!
 //! Statements are parsed by `zerolm_engine::semantic_state` into structures,

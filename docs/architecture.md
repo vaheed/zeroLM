@@ -1,4 +1,4 @@
-# Architecture (Phase 2)
+# Architecture and the bake-off
 
 ## Data flow implemented so far
 ```text
@@ -12,11 +12,11 @@ Session state is one fixed-size `f32` vector per cell. Nothing grows with stream
 | `zerolm-tensor` | Matrix and vector kernels, SplitMix64 RNG, tagged deterministic init, finite checks. Plain loops, no `unsafe`, no SIMD/BLAS yet. |
 | `zerolm-nn` | `Cell` trait, four cells, trace hooks, ablation hooks, state serialization. No backpropagation exists. |
 | `zerolm-tokenizer` | Bytes 0..255 as IDs, control IDs BOS/EOS/PAD, offsets. No vocabulary. |
-| `zerolm-engine` | `Model`: embed, cell, head; `feed`, `bits_per_byte`, save/load state. `binding.rs` (phasor role-filler binding) and `semantic_state.rs` (bounded parser, discourse state) for Phase 6. |
-| `zerolm-learning` | Phase 4 online predictor (plastic readout over frozen GRU features), local rules, generated streams, byte n-gram baselines. See `docs/online-learning.md`. |
-| `zerolm-memory` | Phase 5 weight-resident memory: semantic slots, episodic ring, W_FAST, attention retrieval, atomic named-tensor checkpoints. See `docs/memory-format.md`. |
-| `zerolm-reasoner` | Phase 6 relational memory of bound role-filler vectors, eight inference operators, the symbolic oracle and lookup baseline (evaluation only). See `docs/reasoning.md`. |
-| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the Phase 4 `zerolm-online-lm`, Phase 5 `zerolm-memory`, and Phase 6 `zerolm-reasoning` benchmarks. |
+| `zerolm-engine` | `Model`: embed, cell, head; `feed`, `bits_per_byte`, save/load state. `binding.rs` (phasor role-filler binding) and `semantic_state.rs` (bounded parser, discourse state) for reasoning. |
+| `zerolm-learning` | Online predictor (plastic readout over frozen GRU features), local rules, generated streams, byte n-gram baselines. See `docs/online-learning.md`. |
+| `zerolm-memory` | Weight-resident memory: semantic slots, episodic ring, fast weights, attention retrieval, atomic named-tensor checkpoints. See `docs/memory-format.md`. |
+| `zerolm-reasoner` | Relational memory of bound role-filler vectors, eight inference operators, the symbolic oracle and lookup baseline (evaluation only). See `docs/reasoning.md`. |
+| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the `zerolm-online-lm`, `zerolm-memory`, and `zerolm-reasoning` benchmarks. |
 
 ## Candidates (equal parameter budget, within 5%)
 1. `gru`: compact GRU, update-gate biases spread over timescales.
@@ -109,8 +109,8 @@ GRU, worked through: $H = 128$; a 296-byte state against a maximum of 15,840; 3 
 ## What this does and does not show
 - Metrics are taken **at seeded initialization; nothing is trained or learned**. The retention horizon is the largest lag at which the hidden state still differs measurably (relative difference >= 1e-3) when only the first byte changes. It shows how long information *can* persist, not that a later learner can use it.
 - GRU and fast_weight tie on horizon; GRU wins on compactness (a 296-byte state vs 15.8 KB, because M is state). The choice is sensitive to the weights in the score. With horizon alone the hybrid would lead, but it is a comparison arm by the roadmap.
-- The fast-weight cell is **not evaluated as a memory** here. Phase 5 measures memory separately (`docs/memory-format.md`). Selecting the GRU as the Phase 3-4 core does not rule out adding the delta-rule memory later.
-- Chronological learning, held-out generalization, and forgetting cannot be measured until Phase 4.
+- The fast-weight cell is **not evaluated as a memory** here. The memory benchmark measures memory separately (`docs/memory-format.md`). Selecting the GRU as the core of the bootstrap and the online learner does not rule out adding the delta-rule memory later.
+- Chronological learning, held-out generalization, and forgetting are measured by the online-learning benchmark, not here.
 - Bits per byte of the untrained models is about 8.0, as expected for random weights.
 - The independent kernel reference is a naive `f64` implementation in Rust tests, not Python (the project has no Python).
 - Linux was run locally; macOS builds are exercised by the CI matrix only.

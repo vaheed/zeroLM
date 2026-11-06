@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "ZeroLM Phase 1 baseline environment report",
+  "title": "ZeroLM baseline environment report",
   "type": "object",
   "required": ["git_commit", "git_dirty", "os", "arch", "rustc", "cargo", "cpu_model", "cpu_cores"],
   "properties": {

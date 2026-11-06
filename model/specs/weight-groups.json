@@ -3,7 +3,7 @@
   "groups": [
     {
       "id": "byte_embed",
-      "description": "Byte to vector embedding. Frozen in Phase 4 (no rule updates it yet).",
+      "description": "Byte to vector embedding. Frozen in the online learner (no rule updates it yet).",
       "init_source": "seeded_prng",
       "update_path": "local_plasticity"
     },
@@ -57,7 +57,7 @@
     },
     {
       "id": "relation_memory",
-      "description": "Phase 6 relational memory (memory.relations.*): one bound role-filler bundle per stated fact or rule, its polarity/confidence/provenance metadata, and the codebook of symbol vectors seen. Written only from user statements; derived answers are never written back.",
+      "description": "Relational memory (memory.relations.*): one bound role-filler bundle per stated fact or rule, its polarity/confidence/provenance metadata, and the codebook of symbol vectors seen. Written only from user statements; derived answers are never written back.",
       "init_source": "zeros",
       "update_path": "memory_write"
     },

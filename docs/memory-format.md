@@ -1,8 +1,8 @@
-# Weight-resident memory (Phase 5)
+# Weight-resident memory
 
-Phase 5 gives the model memory that persists across processes without transcript replay or an external database. Every stored fact lives only as `f32` tensors in the model checkpoint. Since Phase 7, every answer is computed from those tensors by the compiled `memory-read` circuit: a program for the neural ISA (instruction set architecture, the fixed list of tensor operations the model may use; see [neural-isa.md](neural-isa.md)), whose constants are the `W_PROG` tensors `prog.memory-read.*`.
+This component gives the model memory that persists across processes without transcript replay or an external database. Every stored fact lives only as `f32` tensors in the model checkpoint. Since the uniform-engine work, every answer is computed from those tensors by the compiled `memory-read` circuit: a program for the neural ISA (instruction set architecture, the fixed list of tensor operations the model may use; see [neural-isa.md](neural-isa.md)), whose constants are the program weights tensors `prog.memory-read.*`.
 
-Abbreviations used below: W_FAST = the fast associative weight matrix, W_MEMORY = persistent memory tensors, W_PROG = compiled circuit constants, kWTA = k-winners-take-all, FNV-1a = Fowler-Noll-Vo hash variant 1a, SHA-256 = Secure Hash Algorithm (256-bit). Glossary: [math.md](math.md).
+Abbreviations used below: kWTA = k-winners-take-all, FNV-1a = Fowler-Noll-Vo hash variant 1a, SHA-256 = Secure Hash Algorithm (256-bit). Glossary: [math.md](math.md).
 
 ## Checkpoint file
 
@@ -33,7 +33,7 @@ The tests and the benchmark inject a crash at three points: during the temporary
 | `core.embed` | `byte_embed` | 256 x 16 | frozen byte embedding; also the code book for values |
 | `core.cell.*` | `recurrent_core` | per GRU tensor | frozen GRU core |
 | `core.memory_encoder` | `memory_encoder` | 4096 x 128 | frozen key encoder table |
-| `core.fast_separator` | `memory_encoder` | 1024 x 128 | frozen pattern-separation projection for W_FAST |
+| `core.fast_separator` | `memory_encoder` | 1024 x 128 | frozen pattern-separation projection for fast weights |
 | `memory.semantic.keys` | `memory_keys` | 2048 x 128 | pooled unit key per slot |
 | `memory.semantic.key_words` | `memory_keys` | 2048 x (8*128) | per-word key vectors |
 | `memory.semantic.values` | `memory_values` | 2048 x (48*16) | value as embedding rows, NUL-terminated |
@@ -41,7 +41,7 @@ The tests and the benchmark inject a crash at three points: during the temporary
 | `memory.state` | `memory_meta` | 1 x 4 | logical clock, episode count |
 | `memory.episodic.keys` | `episodic_memory` | 4096 x 128 | key of each operation (ring) |
 | `memory.episodic.meta` | `episodic_memory` | 4096 x 9 | op, time, slot, source, provenance |
-| `memory.fast` | `fast_weights` | 768 x 1024 | W_FAST association matrix |
+| `memory.fast` | `fast_weights` | 768 x 1024 | fast-weight association matrix |
 
 Each `core.*` tensor is compared bit for bit with its pinned seeded initialization on every load, and any mismatch is rejected. Memory operations write only `memory.*`. Each event's `changed_tensors` list records this, and both the tests and the benchmark verify it.
 
@@ -61,7 +61,7 @@ Semantic and episodic memory are kept separate. The semantic bank holds what is 
   - `forget` zeroes the key, key-word, and value rows of the fact and of every value it superseded. It also erases the key vectors of the matching episodic records. The metadata keeps `deleted`.
   - `compact` reclaims superseded and deleted slots and remaps links.
   - A write to a full memory is refused with `CapacityFull` and leaves memory unchanged.
-- **W_FAST.** The key passes through a frozen k-winners-take-all expansion: the top 32 of 1024 units of `core.fast_separator * k`. The matrix is then updated by a normalized delta rule with a decay of 0.99 per write. W_FAST holds short-lived associations only and never answers `ask`.
+- **Fast weights.** The key passes through a frozen k-winners-take-all expansion: the top 32 of 1024 units of `core.fast_separator * k`. The matrix is then updated by a normalized delta rule with a decay of 0.99 per write. fast weights holds short-lived associations only and never answers `ask`.
 
 ## Mathematics
 
@@ -109,7 +109,7 @@ In the circuit this is the product of four $\{0, 1\}$ gates, multiplied into the
 
 **Writes** address an existing slot when $s_{\text{best}} \ge 0.95$ (same fact key). That uses the circuit's `best` and `score` outputs, queried with the write key as its only word.
 
-### W_FAST: sparse keys and the delta rule (`fast_weights.rs`)
+### Fast weights: sparse keys and the delta rule (`fast_weights.rs`)
 
 The pooled key $k$ is expanded and sparsified by a frozen projection $P \in \mathbb{R}^{1024 \times 128}$, $P_{ij} \sim \mathcal{U}(-1,1)$:
 
@@ -147,19 +147,19 @@ Command: `cargo run --release -p zerolm-eval --bin zerolm-memory`. Spec: `model/
 - **Forgotten keys.** Up to 2 of 100 forgotten keys still got an answer: another fact's value, through a near-miss key. The forgotten value itself was never returned, and its rows are zero.
 - **Interference and capacity.** Exact recall stays 1.0 from 100 facts to a full memory of 2,048. Paraphrase recall on a fixed probe of 100 facts goes from 0.983 to 0.973, and the mean best-minus-runner-up margin falls from 0.42 to 0.35. When all 2,048 slots are full, a further write is refused.
 - **Ablations.** Zeroing the value tensor, zeroing the keys, or permuting key rows among slots each drops exact recall to 0.000. The answers depend on these tensors.
-- **W_FAST recall by load.** 8 associations: 1.00. 16: 0.94-1.00. 32: 0.72-0.78. 64: 0.50-0.58. 256: about 0.13. Capacity is small, and older associations fade.
-- **Latency and size** (release build, 3 seeds in parallel on a 32-core Xeon). Query p50 (median) is about 0.9 ms and p95 (95th percentile) about 1.4-1.6 ms at 1,100 facts through the compiled circuit; the earlier Rust read path took about 215 µs. Write p50 is about 300 µs before Phase 7 (writes now also run the circuit for same-key detection). The checkpoint is 24 MB. A full save takes 0.9-1.2 s, and a load takes 0.8-1.0 s.
+- **Fast-weight recall by load.** 8 associations: 1.00. 16: 0.94-1.00. 32: 0.72-0.78. 64: 0.50-0.58. 256: about 0.13. Capacity is small, and older associations fade.
+- **Latency and size** (release build, 3 seeds in parallel on a 32-core Xeon). Query p50 (median) is about 0.9 ms and p95 (95th percentile) about 1.4-1.6 ms at 1,100 facts through the compiled circuit; the earlier Rust read path took about 215 µs. Write p50 is about 300 µs before the compiled circuit (writes now also run the circuit for same-key detection). The checkpoint is 24 MB. A full save takes 0.9-1.2 s, and a load takes 0.8-1.0 s.
 
-Curves are in `reports/memory/`: `interference-capacity.csv`, `precision-recall.csv` (a sweep over the coverage threshold), and `fast-weights.csv`. The report schema is `research/schemas/phase5-report.schema.json`.
+Curves are in `reports/memory/`: `interference-capacity.csv`, `precision-recall.csv` (a sweep over the coverage threshold), and `fast-weights.csv`. The report schema is `research/schemas/memory-report.schema.json`.
 
 ## Limitations
 
 - The encoder is a fixed random-feature bag of words, so it ignores word order: "a likes b" and "b likes a" get the same key. It has no learned synonymy, so a query with a different word for the same thing fails. A query that contains every key word plus contradicting words is still accepted.
 - Facts are generated `entity attribute => value` triples of pseudo-words, not natural-language statements. The CLI's `teach K => V` relies on the user to split key and value.
-- Memory is slot-addressed. Retrieval is programmed, not learned, and its soft read is sharp, so this behaves more like a content-addressable store inside the model than like distributed memory. Superposed storage is tested only in W_FAST, and W_FAST capacity is small.
-- Every save rewrites the full 24 MB checkpoint. That is about 1 s per mutating CLI line, which is fine for experiments but not for high write rates. Incremental checkpoints are Phase 11 work.
-- The Phase 4 readout and the engine's next-byte head are not in this checkpoint yet. The memory reads nothing from the GRU state, and the GRU is stored only so the checkpoint holds the full frozen core. Connecting memory to prediction belongs to Phases 6 and 8.
+- Memory is slot-addressed. Retrieval is programmed, not learned, and its soft read is sharp, so this behaves more like a content-addressable store inside the model than like distributed memory. Superposed storage is tested only in fast weights, and fast weights capacity is small.
+- Every save rewrites the full 24 MB checkpoint. That is about 1 s per mutating CLI line, which is fine for experiments but not for high write rates. Incremental checkpoints are planned for the scaling milestone.
+- The online learner's readout and the engine's next-byte head are not in this checkpoint yet. The memory reads nothing from the GRU state, and the GRU is stored only so the checkpoint holds the full frozen core. Connecting memory to prediction belongs to Phases 6 and 8.
 
 ## Design history
 
-The first pilot used only a pooled-cosine threshold of 0.55. With it, about 100% of near-miss negatives were accepted. For example, `zorvan size` was answered when only `zorvan color` was stored, because sharing one of two words gives a cosine of about 0.5-0.6, the same range as question paraphrases (about 0.58). Per-word coverage verification fixed this. In the same pilot, W_FAST recalled only 3 of 8 associations: keys sharing an attribute word are correlated, so the delta-rule writes interfered. The sparse expansion fixed that. Both changes were made on pilot seeds only, before the gates were frozen and before any main-seed run.
+The first pilot used only a pooled-cosine threshold of 0.55. With it, about 100% of near-miss negatives were accepted. For example, `zorvan size` was answered when only `zorvan color` was stored, because sharing one of two words gives a cosine of about 0.5-0.6, the same range as question paraphrases (about 0.58). Per-word coverage verification fixed this. In the same pilot, fast weights recalled only 3 of 8 associations: keys sharing an attribute word are correlated, so the delta-rule writes interfered. The sparse expansion fixed that. Both changes were made on pilot seeds only, before the gates were frozen and before any main-seed run.

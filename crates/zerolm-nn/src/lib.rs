@@ -1,4 +1,4 @@
-//! Recurrent cell candidates for the Phase 2 bake-off.
+//! Recurrent cell candidates for the architecture bake-off.
 //!
 //! All state lives in one fixed-size `Vec<f32>` per session (no KV cache
 //! that grows with the stream). The first `hidden_dim` entries of the state

@@ -1,4 +1,4 @@
-//! Phase 5 retrieval as a circuit: active-slot selection, attention read,
+//! Memory retrieval as a circuit: active-slot selection, attention read,
 //! late-interaction coverage verification, nearest-code value cleanup, and
 //! the accept gate. Every decision is an ISA operation on tensors; the host
 //! only binds the memory tensors and the query vectors.

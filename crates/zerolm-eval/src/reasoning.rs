@@ -1,4 +1,4 @@
-//! Phase 6 benchmark: compositional reasoning over taught primitives.
+//! Reasoning benchmark: compositional reasoning over taught primitives.
 //!
 //! Per seed a world is generated: a class taxonomy with exclusions, abilities
 //! with exceptions, containment, comparative orders, event orders, counts
@@ -663,7 +663,7 @@ fn build(cfg: ReasonerConfig, texts: &[&str], ops: Ops, pathway: Option<Pathway>
     }
     let mut slot_of = Vec::with_capacity(texts.len());
     for t in texts {
-        let o = r.observe(t, "phase6:synthetic-world").map_err(|e| e.to_string())?;
+        let o = r.observe(t, "reasoning:synthetic-world").map_err(|e| e.to_string())?;
         slot_of.push(match o {
             Observed::Stored { slot } | Observed::Duplicate { slot } => Some(slot),
             _ => None,
@@ -773,7 +773,7 @@ pub fn run_seed(spec: &Spec, seed: u64, hidden: bool, work: &Path) -> Result<See
     // Questions through the mutable entry point must not write memory.
     let before = r.n_slots();
     for q in &world.questions {
-        r.observe(&q.text, "phase6:questions").map_err(|e| e.to_string())?;
+        r.observe(&q.text, "reasoning:questions").map_err(|e| e.to_string())?;
     }
     checks.push(Check {
         name: "answers_never_written_back",
@@ -917,7 +917,8 @@ pub struct Summary {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Report {
-    pub phase: &'static str,
+    /// Report kind (always "reasoning").
+    pub report: &'static str,
     pub mode: &'static str,
     pub passed: bool,
     pub failures: Vec<String>,
@@ -1002,7 +1003,7 @@ pub fn run(root: &Path, spec: &Spec, seeds: &[u64], gate: bool, work: &Path) -> 
         provenance_sufficient: stat(&|r| r.provenance_sufficient),
     };
     Ok(Report {
-        phase: "phase-6",
+        report: "reasoning",
         mode: if gate { "main" } else { "pilot" },
         passed: gate && failures.is_empty(),
         failures,
@@ -1016,7 +1017,7 @@ pub fn run(root: &Path, spec: &Spec, seeds: &[u64], gate: bool, work: &Path) -> 
 }
 
 pub fn summary_md(r: &Report) -> String {
-    let mut s = format!("## ZeroLM Phase 6: compositional reasoning ({} mode)\n\n", r.mode);
+    let mut s = format!("## Compositional reasoning ({} mode)\n\n", r.mode);
     s += &format!("**{}** | hidden seed source: {}\n\n", if r.passed { "PASSED" } else if r.mode == "pilot" { "PILOT (not gated)" } else { "FAILED" }, r.hidden_seed_source);
     s += "| seed | questions | agreement | derived | lookup (derived) | paraphrase | counterfactual | provenance | restart |\n|---|---|---|---|---|---|---|---|---|\n";
     for x in &r.seeds {
