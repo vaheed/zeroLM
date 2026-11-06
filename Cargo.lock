@@ -172,6 +172,7 @@ dependencies = [
  "serde_json",
  "zerolm-engine",
  "zerolm-memory",
+ "zerolm-reasoner",
 ]
 
 [[package]]

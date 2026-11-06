@@ -1,6 +1,6 @@
 [package]
 name = "zerolm-runtime"
-description = "ZeroLM command-line runtime: sessions over the bootstrap protocol and weight-resident memory"
+description = "ZeroLM command-line runtime: sessions over the bootstrap protocol, weight-resident memory, and compositional reasoning"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,6 +8,7 @@ license.workspace = true
 [dependencies]
 zerolm-engine = { path = "../zerolm-engine" }
 zerolm-memory = { path = "../zerolm-memory" }
+zerolm-reasoner = { path = "../zerolm-reasoner" }
 serde.workspace = true
 serde_json.workspace = true
 

@@ -97,3 +97,28 @@ fn memory_facts_survive_a_process_restart() {
     let (out, _, _) = run(b"ask mill owner\n", &[]);
     assert_eq!(out.trim(), "unknown mill owner");
 }
+
+#[test]
+fn reason_answers_derived_questions_with_provenance_across_processes() {
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("zerolm-cli-reason");
+    let _ = std::fs::remove_dir_all(&dir);
+    let reason = |input: &[u8]| {
+        let mut c = Command::new(bin())
+            .args(["reason", "--dir", dir.to_str().unwrap()])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        c.stdin.take().unwrap().write_all(input).unwrap();
+        let o = c.wait_with_output().unwrap();
+        assert!(o.status.success(), "{}", String::from_utf8_lossy(&o.stderr));
+        String::from_utf8_lossy(&o.stdout).into_owned()
+    };
+    let out = reason(b"every dog is a mammal\nall mammals are animals\nrex is a dog\nit is in kennel\nthe cat sat on the mat\nis rex an animal?\n");
+    let lines: Vec<&str> = out.lines().collect();
+    assert_eq!(lines[..5], ["noted", "noted", "noted", "noted", "not understood (outside the bounded language)"]);
+    assert_eq!(lines[5], "yes (derived: class_inclusion; 3 premises; confidence 1.00)");
+    let out = reason(b"is rex in kennel?\nis rex a fish?\ntom has 3 apples\nann has 2 more apples than tom\nhow many apples does ann have?\n");
+    assert_eq!(out.lines().collect::<Vec<_>>(), ["yes", "unknown", "noted", "noted", "5 (derived: arithmetic, direct; 2 premises; confidence 1.00)"]);
+}

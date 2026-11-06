@@ -1,10 +1,11 @@
 mod memory_cmd;
+mod reason_cmd;
 
 use std::io::{BufRead, Write};
 use std::process::ExitCode;
 use zerolm_engine::bootstrap::{default_model, Session, CELL_BUDGET, COMMANDS, DEFAULT_KIND, DEFAULT_SEED, EMBED_DIM};
 
-const USAGE: &str = "usage: zerolm info [--seed N]\n       zerolm run [--seed N] [--trace FILE]   (reads lines on stdin; session ledger, nothing persists)\n       zerolm memory --dir DIR [--seed N] [--trace FILE] [--stream NAME]   (weight-resident memory, persists in DIR)\n\nprotocol lines: teach K => V | ask K | correct K => V | confirm K | forget K | repeat";
+const USAGE: &str = "usage: zerolm info [--seed N]\n       zerolm run [--seed N] [--trace FILE]   (reads lines on stdin; session ledger, nothing persists)\n       zerolm memory --dir DIR [--seed N] [--trace FILE] [--stream NAME]   (weight-resident memory, persists in DIR)\n       zerolm reason [--dir DIR] [--trace FILE] [--stream NAME]   (Phase 6: statements are stored, questions are reasoned over)\n\nprotocol lines: teach K => V | ask K | correct K => V | confirm K | forget K | repeat";
 
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
@@ -33,8 +34,11 @@ fn main() -> ExitCode {
         let Some(dir) = dir else { return bad("memory needs --dir") };
         return memory_cmd::run(std::path::Path::new(&dir), seed_set.then_some(seed), trace, &stream);
     }
+    if cmd == "reason" {
+        return reason_cmd::run(dir.as_deref().map(std::path::Path::new), trace, &stream);
+    }
     if dir.is_some() {
-        return bad("--dir is only valid with memory");
+        return bad("--dir is only valid with memory or reason");
     }
     let model = default_model(seed);
     match cmd.as_str() {
