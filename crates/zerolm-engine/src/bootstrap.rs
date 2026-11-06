@@ -4,7 +4,8 @@
 //! weights; this is enforced by the type system and checked by hash in tests.
 //! The protocol keeps a small session-local **ledger** so teach/ask/correct/
 //! confirm/forget are observable. The ledger is bootstrap scaffolding, not
-//! model memory and not learning: weight-resident memory arrives in Phase 5.
+//! model memory and not learning. Weight-resident memory is `zerolm-memory`
+//! (CLI: `zerolm memory --dir`), which persists facts as checkpoint tensors.
 //! The model state still receives every input byte, but with no learning rule
 //! it carries no understanding of English.
 

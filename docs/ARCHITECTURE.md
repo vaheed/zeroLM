@@ -14,7 +14,8 @@ Session state is one fixed-size `f32` vector per cell. Nothing grows with stream
 | `zerolm-tokenizer` | Bytes 0..255 as IDs, control IDs BOS/EOS/PAD, offsets. No vocabulary. |
 | `zerolm-engine` | `Model`: embed, cell, head; `feed`, `bits_per_byte`, save/load state. |
 | `zerolm-learning` | Phase 4 online predictor (plastic readout over frozen GRU features), local rules, generated streams, byte n-gram baselines. See `docs/ONLINE_LEARNING.md`. |
-| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the Phase 4 `zerolm-online-lm` benchmark. |
+| `zerolm-memory` | Phase 5 weight-resident memory: semantic slots, episodic ring, W_FAST, attention retrieval, atomic named-tensor checkpoints. See `docs/MEMORY_FORMAT.md`. |
+| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the Phase 4 `zerolm-online-lm` and Phase 5 `zerolm-memory` benchmarks. |
 
 ## Candidates (equal parameter budget, within 5%)
 1. `gru`: compact GRU, update-gate biases spread over timescales.
@@ -41,7 +42,7 @@ Reproduce: `cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check m
 ## What this does and does not show
 - Metrics are taken **at seeded initialization; nothing is trained or learned**. The retention horizon is the largest lag at which the hidden state still differs measurably (relative difference >= 1e-3) when only the first byte changes. It shows how long information *can* persist, not that a later learner can use it.
 - GRU and fast_weight tie on horizon; GRU wins on compactness (a 296-byte state vs 15.8 KB, because M is state). The choice is sensitive to the weights in the score. With horizon alone the hybrid would lead, but it is a comparison arm by the roadmap.
-- The fast-weight memory is **not evaluated as a memory** here (capacity, interference, recall); that is Phase 5. Selecting the GRU as the Phase 3-4 core does not rule out adding the delta-rule memory later.
+- The fast-weight cell is **not evaluated as a memory** here. Phase 5 measures memory separately (`docs/MEMORY_FORMAT.md`). Selecting the GRU as the Phase 3-4 core does not rule out adding the delta-rule memory later.
 - Chronological learning, held-out generalization, and forgetting cannot be measured until Phase 4.
 - Bits per byte of the untrained models is about 8.0, as expected for random weights.
 - The independent kernel reference is a naive `f64` implementation in Rust tests, not Python (the project has no Python).

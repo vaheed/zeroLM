@@ -126,6 +126,8 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 5 — Weight-resident associative memory
 
+> **Implemented:** `crates/zerolm-memory` (`checkpoint.rs` atomic format + recovery, `encoder.rs`, `retrieval.rs`, `fast_weights.rs`, `persistent_memory.rs`), frozen spec `model/specs/memory.json`, benchmark `zerolm-memory` (Rust, no Python), CLI `zerolm memory --dir`, `docs/MEMORY_FORMAT.md`. Retrieval is programmed (pooled attention + per-word coverage verification), not learned. Tune only on pilot seeds; keep the gate green.
+
 **Goal:** Give the neural model persistent memory without transcript replay or an external semantic database.
 
 **Deliverables**

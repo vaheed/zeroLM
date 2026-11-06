@@ -8,7 +8,7 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 
 ## Status
 
-**Phases 0-4 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, and a first online learner.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md). No claim of English understanding is made.
+**Phases 0-5 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, a first online learner, and weight-resident memory.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md). Taught facts now persist across restarts only as checkpoint tensors and are answered by an attention read (1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973). See [docs/MEMORY_FORMAT.md](docs/MEMORY_FORMAT.md). No claim of English understanding is made.
 
 | Phase | Topic | Status |
 |---|---|---|
@@ -17,7 +17,7 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 | 2 | Neural compute engine and architecture bake-off | complete |
 | 3 | Byte bootstrap and deterministic initialization | complete |
 | 4 | First true online language model (**stop/go gate**) | complete (go, weak learner) |
-| 5 | Weight-resident associative memory | planned |
+| 5 | Weight-resident associative memory | complete |
 | 6 | Concepts, relations, composition | planned |
 | 7 | Grounded learning and interaction | planned |
 | 8 | Generation and multi-turn dialogue | planned |
@@ -68,6 +68,9 @@ cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/a
 cargo run -p zerolm-runtime -- info     # Phase 3: pinned init hash
 printf 'teach sky => blue\nask sky\n' | cargo run -p zerolm-runtime -- run
 cargo run --release -p zerolm-eval --bin zerolm-online-lm   # Phase 4 gate (3 seeds)
+cargo run --release -p zerolm-eval --bin zerolm-memory      # Phase 5 gate (3 seeds x 1,200 facts)
+printf 'teach sky color => blue\n' | cargo run -p zerolm-runtime -- memory --dir /tmp/zlm
+printf 'ask what is the color of the sky?\n' | cargo run -p zerolm-runtime -- memory --dir /tmp/zlm   # new process
 ```
 
 The audit checks the update policy and seed-knowledge manifests, that every weight group declares an init source and update path, that no phase is marked complete without a command and schema, and that the tree contains no pretrained weight files or model downloads.
@@ -80,9 +83,10 @@ crates/zerolm-tensor/     f32 kernels, deterministic RNG and init
 crates/zerolm-nn/         GRU, SSM, fast-weight, hybrid cells
 crates/zerolm-tokenizer/  byte tokenizer
 crates/zerolm-learning/   online predictor, local rules, streams, n-gram baselines
+crates/zerolm-memory/     weight-resident memory, retrieval, W_FAST, atomic checkpoints
 crates/zerolm-engine/     model forward pass, exact state resume
-crates/zerolm-eval/       architecture bake-off
-crates/zerolm-runtime/    `zerolm` CLI (info, run)
+crates/zerolm-eval/       architecture bake-off, online-LM and memory benchmarks
+crates/zerolm-runtime/    `zerolm` CLI (info, run, memory)
 research/manifest/        seed-knowledge.json, update-policy.json
 research/phases.json      phase status and gates
 model/specs/              weight-group declarations
