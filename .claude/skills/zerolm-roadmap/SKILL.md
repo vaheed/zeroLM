@@ -54,6 +54,8 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 2 — Neural compute engine and architecture bake-off
 
+> **Implemented:** crates tensor/nn/tokenizer/engine/eval; GRU selected (`model/specs/architecture.json`). Keep `zerolm-bakeoff --check` green; the f64 reference lives in Rust tests (no Python).
+
 **Goal:** Create a reusable neural runtime rather than another specialized parser.
 
 **Deliverables**
