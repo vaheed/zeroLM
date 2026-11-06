@@ -1,7 +1,8 @@
 # Claims and Limitations
 
-## What is claimed (Phase 0)
+## What is claimed (Phases 0-1)
 - The repository defines, and CI enforces, what is hand-authored, what may be learned online, and what is prohibited.
+- Baseline reports record commit, clean-tree status, and toolchain; `zerolm-baseline check` rejects dirty or missing provenance.
 
 ## What is not claimed
 - No language model exists yet. Phases 2-11 are unimplemented.

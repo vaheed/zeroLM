@@ -8,12 +8,12 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 
 ## Status
 
-**Phase 0 of 11 is done: the research constitution and its automated audit.** No language model exists yet, and nothing here claims any language ability.
+**Phases 0 and 1 are done: the research constitution with its automated audit, and the provenance baseline.** No language model exists yet, and nothing here claims any language ability.
 
 | Phase | Topic | Status |
 |---|---|---|
 | 0 | Research constitution and scope freeze | complete |
-| 1 | Baseline freeze | skipped (legacy code removed) |
+| 1 | Freeze and audit the baseline | complete |
 | 2 | Neural compute engine and architecture bake-off | planned |
 | 3 | Byte bootstrap and deterministic initialization | planned |
 | 4 | First true online language model (**stop/go gate**) | planned |
@@ -63,6 +63,7 @@ No seven-year-old or twenty-year-old cognition, and no age-equivalent claims. Th
 cargo test --workspace
 cargo run -p zerolm-policy --bin zerolm-audit          # Phase 0 gate
 cargo run -p zerolm-policy --bin zerolm-audit -- --json
+cargo run -p zerolm-policy --bin zerolm-baseline -- generate   # then: check
 ```
 
 The audit checks the update policy and seed-knowledge manifests, that every weight group declares an init source and update path, that no phase is marked complete without a command and schema, and that the tree contains no pretrained weight files or model downloads.
@@ -84,6 +85,7 @@ AGENTS.md                 rules and workflow for contributors and AI agents
 - [docs/ROADMAP.md](docs/ROADMAP.md): full research and engineering plan, risks, kill criteria
 - [docs/RESEARCH_CONSTITUTION.md](docs/RESEARCH_CONSTITUTION.md): definitions and invariants
 - [docs/CLAIMS_AND_LIMITATIONS.md](docs/CLAIMS_AND_LIMITATIONS.md): what is and is not claimed
+- [docs/BASELINE.md](docs/BASELINE.md): baseline and reproduction
 - [AGENTS.md](AGENTS.md): working rules
 
 ## License

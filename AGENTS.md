@@ -15,8 +15,9 @@ ZeroLM: a CPU-first, Rust, online-learning neural language system with **zero of
 cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 cargo run -p zerolm-policy --bin zerolm-audit -- --json   # Phase 0 gate
+cargo run -p zerolm-policy --bin zerolm-baseline -- generate && cargo run -p zerolm-policy --bin zerolm-baseline -- check   # Phase 1 gate (needs a clean tree)
 ```
-All three must pass before every commit.
+All of these must pass before every commit.
 
 ## Non-negotiable rules
 1. No pretrained weights, tokenizers, or model downloads. No files with extensions listed in `update-policy.json`.

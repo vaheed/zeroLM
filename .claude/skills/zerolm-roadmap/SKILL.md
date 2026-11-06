@@ -31,7 +31,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 1 — Freeze and audit the existing baseline
 
-> **Superseded in this repo:** the legacy v0.2/Next code was deliberately deleted (no backward compatibility), so there is no baseline to freeze. Skip to Phase 2; keep only the "clean build + CI + provenance (`git_dirty=false`)" ideas.
+> **Implemented differently:** the legacy code was deleted, so Phase 1 froze the new baseline (`zerolm-baseline`, `docs/BASELINE.md`, tag `legacy-final`). Keep `zerolm-baseline check` green.
 
 **Goal:** Keep the current work reproducible and prevent the new engine from hiding regressions.
 
