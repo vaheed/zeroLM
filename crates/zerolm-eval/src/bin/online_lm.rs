@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
-use zerolm_eval::online::{learning_curve_csv, run, summary_md, Protocol, Report};
+use zerolm_eval::online::{learning_curve_csv, run, brief_md, summary_md, Protocol, Report};
 
 const USAGE: &str = "usage: zerolm-online-lm [--pilot] [--out DIR]\n  main run (default): main seeds, fails unless the frozen gate passes\n  --pilot: pilot seeds only, never gates (used to set the floor)";
 
@@ -58,6 +58,7 @@ fn write(root: &Path, out: &Path, r: &Report) -> std::io::Result<()> {
     std::fs::create_dir_all(out.join("trace-samples"))?;
     std::fs::write(out.join("summary.json"), json(r))?;
     std::fs::write(out.join("summary.md"), summary_md(r))?;
+    std::fs::write(out.join("brief.md"), brief_md(r))?;
     std::fs::write(out.join("environment.json"), json(&zerolm_policy::baseline::environment(root)))?;
     let metrics = serde_json::json!({
         "verdicts": r.verdicts,

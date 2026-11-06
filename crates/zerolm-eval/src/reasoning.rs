@@ -1016,6 +1016,30 @@ pub fn run(root: &Path, spec: &Spec, seeds: &[u64], gate: bool, work: &Path) -> 
     })
 }
 
+/// A short summary for CI job pages: status and the numbers that matter.
+pub fn brief_md(r: &Report) -> String {
+    let m = &r.summary;
+    let questions: usize = r.seeds.iter().map(|x| x.questions).sum();
+    let mut s = format!(
+        "## Reasoning: {}\n\n{} seeds (one hidden), {} questions.\n\n| agreement with reference | derived questions | lookup baseline (derived) | counterfactuals | provenance |\n|---|---|---|---|---|\n| {:.3} | {:.3} | {:.3} | {:.3} | {:.3} |\n",
+        if r.passed { "PASSED" } else { "FAILED" },
+        r.seeds.len(),
+        questions,
+        m.agreement.mean,
+        m.derived_agreement.mean,
+        m.lookup_derived_agreement.mean,
+        m.counterfactual_required_followed.mean,
+        m.provenance_sufficient.mean,
+    );
+    if !r.failures.is_empty() {
+        s += "\n**Failures**\n\n";
+        for f in &r.failures {
+            s += &format!("- {f}\n");
+        }
+    }
+    s
+}
+
 pub fn summary_md(r: &Report) -> String {
     let mut s = format!("## Compositional reasoning ({} mode)\n\n", r.mode);
     s += &format!("**{}** | hidden seed source: {}\n\n", if r.passed { "PASSED" } else if r.mode == "pilot" { "PILOT (not gated)" } else { "FAILED" }, r.hidden_seed_source);

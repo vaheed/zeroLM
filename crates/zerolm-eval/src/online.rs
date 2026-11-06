@@ -435,6 +435,25 @@ pub fn learning_curve_csv(r: &Report) -> String {
     s
 }
 
+/// A short summary for CI job pages: status and the numbers that matter.
+pub fn brief_md(r: &Report) -> String {
+    let mut s = format!(
+        "## Online learning: {}\n\nImprovement in held-out bits per byte over the better of (untrained model, byte frequency); floor {} must hold on every seed.\n\n| rule | text | improvement (mean) | passed |\n|---|---|---|---|\n",
+        if r.passed { "PASSED" } else { "FAILED" },
+        r.protocol.improvement_floor_bpb
+    );
+    for g in &r.gates {
+        s += &format!("| {} | {} | {:.2} | {} |\n", g.rule, g.set, g.improvement.mean, if g.passed { "yes" } else { "no" });
+    }
+    if !r.failures.is_empty() {
+        s += "\n**Failures**\n\n";
+        for f in &r.failures {
+            s += &format!("- {f}\n");
+        }
+    }
+    s
+}
+
 pub fn summary_md(r: &Report) -> String {
     let seeds: Vec<String> = r.seeds.iter().map(|s| s.seed.to_string()).collect();
     let mut s = format!(

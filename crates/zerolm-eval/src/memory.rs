@@ -999,6 +999,30 @@ pub fn run(root: &Path, spec: &Spec, seeds: &[u64], gate: bool, work: &Path) -> 
     })
 }
 
+/// A short summary for CI job pages: status and the numbers that matter.
+pub fn brief_md(r: &Report) -> String {
+    let m = &r.summary;
+    let parity_ok = r.seeds.iter().all(|x| x.reference_parity.mismatches == 0);
+    let queries: usize = r.seeds.iter().map(|x| x.reference_parity.queries).sum();
+    let mut s = format!(
+        "## Memory: {}\n\n{} seeds x {} facts, measured after a restart.\n\n| exact recall | paraphrase recall | wrong answers to unknown keys | reference interpreter |\n|---|---|---|---|\n| {:.3} | {:.3} | {:.1}% | {} |\n",
+        if r.passed { "PASSED" } else { "FAILED" },
+        r.seeds.len(),
+        r.spec.facts,
+        m.exact_recall.mean,
+        m.paraphrase_recall.mean,
+        100.0 * m.negative_false_accept.mean,
+        if parity_ok { format!("{queries}/{queries} queries bit-exact") } else { "MISMATCH".into() },
+    );
+    if !r.failures.is_empty() {
+        s += "\n**Failures**\n\n";
+        for f in &r.failures {
+            s += &format!("- {f}\n");
+        }
+    }
+    s
+}
+
 pub fn summary_md(r: &Report) -> String {
     let mut s = format!("## Weight-resident memory ({} mode)\n\n", r.mode);
     s += &format!("**{}**", if r.passed { "PASSED" } else if r.mode == "pilot" { "PILOT (not gated)" } else { "FAILED" });

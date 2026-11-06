@@ -49,7 +49,9 @@ jobs:
       # locally, so lint results are reproducible and fixes stay MSRV-compatible.
       - run: cargo +1.75.0 clippy --workspace --all-targets -- -D warnings
       - name: Compiled circuits match their pinned hashes
-        run: cargo run -q -p zerolm-wsp -- check
+        run: |
+          mkdir -p reports/audit
+          cargo run -q -p zerolm-wsp -- check | tee reports/audit/circuits.txt
       - name: Policy audit
         run: |
           mkdir -p reports/audit
@@ -62,14 +64,14 @@ jobs:
         if: always()
         run: |
           {
-            echo "## Policy and provenance"
-            echo "- job status: ${{ job.status }}"
-            echo "- commit: ${{ github.sha }}"
+            echo "## Policy and provenance: ${{ job.status }}"
             if [ -s reports/audit/summary.json ]; then
-              echo '```json'; cat reports/audit/summary.json; echo '```'
+              echo "- policy audit: $(jq -r 'if .passed then "passed (" + (.checks_run | join(", ")) + ")" else "FAILED: " + ([.violations[].detail] | join("; ")) end' reports/audit/summary.json)"
             else
-              echo "- audit report: **not produced**"
+              echo "- policy audit: **not produced**"
             fi
+            if [ -s reports/audit/circuits.txt ]; then echo "- compiled circuits: $(grep -c ' pinned$' reports/audit/circuits.txt) of $(wc -l < reports/audit/circuits.txt) match their pinned hashes"; fi
+            if [ -s reports/baseline/next.json ]; then echo "- baseline provenance: recorded for commit \`${GITHUB_SHA::7}\`"; fi
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
@@ -93,7 +95,7 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          if [ -s reports/bootstrap/trace.jsonl ]; then { echo "## Bootstrap CLI"; echo '```'; cat reports/bootstrap/info.txt reports/bootstrap/output.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; else echo "Report: **not produced** (gate incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+          if [ -s reports/bootstrap/trace.jsonl ]; then { echo "## Bootstrap: ${{ job.status }}"; echo '```'; cat reports/bootstrap/info.txt reports/bootstrap/output.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; else echo "## Bootstrap: report **not produced**" >> "$GITHUB_STEP_SUMMARY"; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -113,7 +115,10 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          if [ -s reports/online-learning/summary.md ]; then cat reports/online-learning/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Report: **not produced** (gate incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+          {
+            if [ -s reports/online-learning/brief.md ]; then cat reports/online-learning/brief.md; else echo "## online-learning: report **not produced**"; fi
+            echo; echo "Full report: artifact \`zerolm-online-learning-${{ github.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -143,7 +148,11 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          if [ -s reports/memory/summary.md ]; then cat reports/memory/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Report: **not produced** (gate incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+          {
+            if [ -s reports/memory/brief.md ]; then cat reports/memory/brief.md; else echo "## memory: report **not produced**"; fi
+            if [ -s reports/memory/cli/output-2.txt ]; then echo; echo "Command-line check (a new process reading the saved checkpoint):"; echo '```'; cat reports/memory/cli/output-2.txt; echo '```'; fi
+            echo; echo "Full report: artifact \`zerolm-memory-${{ github.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -175,7 +184,11 @@ jobs:
       - name: Job summary
         if: always()
         run: |
-          if [ -s reports/reasoning/summary.md ]; then cat reports/reasoning/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Report: **not produced** (gate incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+          {
+            if [ -s reports/reasoning/brief.md ]; then cat reports/reasoning/brief.md; else echo "## reasoning: report **not produced**"; fi
+            if [ -s reports/reasoning/cli/output-2.txt ]; then echo; echo "Command-line check (a new process reading the saved checkpoint):"; echo '```'; cat reports/reasoning/cli/output-2.txt; echo '```'; fi
+            echo; echo "Full report: artifact \`zerolm-reasoning-${{ github.sha }}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
