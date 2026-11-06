@@ -5,4 +5,4 @@ version: 0.3.0-dev
 type: software
 authors:
   - name: "ZeroLM contributors"
-license: MIT
+license: Apache-2.0
