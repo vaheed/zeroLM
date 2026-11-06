@@ -1,9 +1,10 @@
 # ZeroLM: Research and Engineering Roadmap
 
-**Document status:** Proposed research plan  
+**Document status:** Revision 2 (phases 0-6 complete; phases 7-16 replace the earlier phases 7-11)  
 **Date:** 2026-11-06  
 **Repository baseline:** `vaheed/zeroLM`, default branch `main`  
-**Primary objective:** Build a CPU-first neural language system with no offline pretraining, whose parameters and persistent memory can develop from its own chronological stream of input, prediction, feedback, and interaction.
+**Primary objective:** Build a CPU-first neural language model with no offline pretraining, whose computation is one neural engine and whose parameters and persistent memory develop from a recorded, single-pass, chronological stream of human-written text, feedback, and interaction.  
+**1.0 target:** a genuine small LLM (Level L3, section 7.1), not a toy-language demo.
 
 ---
 
@@ -32,13 +33,38 @@ The initial model is not pretrained on a corpus. During its lifetime it is allow
 
 The default research track should first test local, non-backpropagated plasticity and direct weight-space edits. A small online-gradient implementation may be kept as a clearly labelled research control, not silently introduced into the mainline. If all gradient-based updates are forbidden forever, that restriction must be accepted as a major capability limit; it cannot be hidden behind the term Weight-Space Programming.
 
-### 0.2 What this roadmap does not promise
+### 0.2 What this roadmap does and does not promise
+
+**Promised as the target, with falsifiable gates:** ZeroLM 1.0 is a byte-level language model that has learned English from a single online pass over a recorded corpus of human-written text, generates new text from its own state, reads facts into weight-resident memory, composes them, and reaches Level L3 (section 7.1, roughly the class of the smallest GPT-2 model on named benchmarks). Every phase has a gate that can fail, and a failed gate stops the claim.
+
+**Not promised:**
+- Frontier or ChatGPT-class ability. Frontier models use on the order of 10^24 training FLOPs and trillions of tokens. One 32-core CPU running for a week delivers roughly 10^17-10^18 FLOPs and can read about 10^9 bytes. That is six or more orders of magnitude less. A small LLM is an honest target; a frontier model is not.
+- Language without data. No known method produces a language model that has not read a lot of language. "Zero offline pretraining" means the model reads its corpus online, once, in order, with every update logged. It does not mean it reads nothing.
+- That local learning will work. No published result shows non-backpropagation learning reaching the language-modeling quality of backpropagation at scale. This is the central research bet. Phase 10 is a pre-registered decision gate for it (section 0.3).
+- Human-age equivalence. "Seven-year-old" and "twenty-year-old" remain aspiration labels only.
+
+### 0.3 Revision 2: what changed and why
+
+An assessment after Phase 6 found that the system is neural in its **storage** but not in its **computation**. Phase 5 and Phase 6 keep facts as tensors, but parsing is a Rust `match` over token templates, and reasoning is Rust breadth-first search over vector probes. Agreement with the symbolic oracle holds by construction. The Phase 4 learner is the only learned component and is weaker than a trigram baseline, and the parts are not connected. Scaling that design would give a larger template system, not an LLM.
+
+Revision 2 makes four changes.
+
+1. **One neural engine (uniform execution).** Every content-dependent decision in the model is computed by a small fixed set of tensor operations (the neural ISA, section 3.7). Host code only loads programs, schedules fixed-shape steps, and moves bytes. A capability is a weight program, not Rust control flow. This is tested: an independent minimal interpreter that knows nothing about language must reproduce the model's outputs from the weights alone.
+2. **WSP compiles algorithms; learning supplies knowledge.** Weight-space programming is used as a compiler. It writes algorithmic priors into weights: hashing contexts, counting, copying from earlier context, segmenting, binding, retrieval, and inference. It never writes vocabulary, grammar of a natural language, facts, or corpus statistics. Local online rules then fill those circuits from the stream. This is the breakthrough bet: **compiled algorithms plus local learning can reach in about 10^9 bytes, without backpropagation, what a randomly initialized network needs backpropagation and far more data to discover.** It is tested against an online-backpropagation control at equal data and compute.
+3. **Real data and real baselines.** From Phase 8 on, exposure is licensed human-written text (no model-generated text). Evaluation uses external benchmarks (held-out BPB, BLiMP, LAMBADA, read-then-answer) and is compared against PPM/Kneser-Ney, published online compressors, and the backpropagation control. Generated toy languages remain unit tests only.
+4. **A pre-registered decision on backpropagation.** The mainline stays free of backpropagation. If Gate B (Phase 10) shows that local learning cannot learn generalizing representations, the project lead must choose in writing, before continuing: either (a) amend the constitution to allow single-pass online gradient updates (still zero offline pretraining and fully logged, the NNCP route in section 2.6), or (b) continue as a local-learning research project and limit claims to Level L1. Either choice is legitimate; continuing silently is not.
+
+The reasoning, memory, and online-learning work from Phases 4-6 is not discarded. In Phase 7 it is recompiled onto the uniform engine, and its frozen gates become regression tests.
+
+### 0.4 Original scope note (revision 1)
 
 This plan does **not** guarantee a seven-year-old level of cognition, much less a twenty-year-old level. No known research result establishes that an initially untrained neural network can acquire broad human language and world knowledge through a small CPU-only online stream. The roadmap is designed to test that hypothesis in falsifiable steps. A successful parser, memory demo, or low perplexity on a tiny synthetic language is not evidence of human-level understanding.
 
 ---
 
 ## 1. Repository assessment and starting point
+
+> **Historical (revision 1).** This section describes the repository before Phase 1. The v0.2 and ZeroLM Next code was removed and lives only in git history (tag `legacy-final`). For the state after Phase 6, see section 0.3 and `docs/CLAIMS_AND_LIMITATIONS.md`.
 
 The current `main` branch already contains useful research infrastructure:
 
@@ -100,6 +126,29 @@ A November 2, 2026 MIT CSAIL blog post, *Sparks of Weight-Space Programming*, re
 ### 2.5 Continual-learning evaluation
 
 Continual-learning research distinguishes the ability to learn new information from the ability to retain old information and transfer knowledge to new tasks. ZeroLM must report learning curves, average performance, forgetting, backward transfer, forward transfer, calibration, resource use, and per-task results—not just the final score. [Continual LLM survey](https://doi.org/10.1145/3716629) · [systematic review](https://doi.org/10.1016/j.neunet.2025.108226).
+
+### 2.6 Single-pass online compressors are zero-pretraining language models
+
+Context-mixing compressors (PAQ, cmix) and NNCP read their input once, in order, start from no trained weights, and predict every next byte before seeing it. That is exactly ZeroLM's learning setting. They reach strong bits-per-byte on Wikipedia text (the enwik8/enwik9 benchmarks used by the Hutter Prize). PAQ-style context mixing combines many count-based context models with an online logistic mixer, which is a single-layer local update of the same kind as the Phase 4 delta rule. NNCP and the LSTM inside cmix use online backpropagation. [PAQ / context mixing](https://mattmahoney.net/dc/dce.html) · [cmix](https://www.byronknoll.com/cmix.html) · [NNCP](https://bellard.org/nncp/) · [Hutter Prize](http://prize.hutter1.net/).
+
+Unbounded n-gram models backed by suffix arrays (infini-gram) also show that pure count statistics remain useful next to neural models at large scale. [Liu et al. 2024, arXiv:2401.17377](https://arxiv.org/abs/2401.17377).
+
+**Implication for ZeroLM:** strong next-byte prediction from a single pass with no pretraining is already proven, so Gate A (Phase 9) is a realistic first milestone, and these systems are the correct baselines. Compressors do not, however, show fluent long-range generation, generalization across synonyms, or question answering. Those require learned distributed representations, which is the open part of the bet (Phase 10).
+
+### 2.7 Learning without backpropagation
+
+- **Forward-Forward** trains each layer with its own local objective and no backward pass. It works on small vision tasks and has not been shown to match backpropagation on language modeling. [Hinton 2022, arXiv:2212.13345](https://arxiv.org/abs/2212.13345).
+- **Predictive coding** networks with only local Hebbian-like updates can approximate backpropagation's weight changes under specific conditions. [Whittington and Bogacz 2017, Neural Computation](https://doi.org/10.1162/NECO_a_00949).
+- **Random indexing** builds useful distributional word vectors with incremental, local, count-like updates and no gradient. Sahlgren, *An Introduction to Random Indexing* (2005).
+- **Delta-rule recurrences** (DeltaNet, Gated DeltaNet, RWKV-7) use the delta rule as their state update at inference time, so fast-weight learning happens inside every forward step. Their slow projections are still trained with backpropagation. [Yang et al. 2025, arXiv:2412.06464](https://arxiv.org/abs/2412.06464).
+
+**Implication for ZeroLM:** each of these pieces is local, but none of them alone is known to produce a competitive language model. ZeroLM combines them: compiled projections instead of backpropagation-trained ones (section 2.8), delta-rule fast state, distributional embeddings learned online, and layer-local predictive objectives. Any claim must beat the online-backpropagation control on an equal budget, or report the gap.
+
+### 2.8 Compiling programs into network weights
+
+RASP describes algorithms in terms of attention-and-MLP primitives, and Tracr compiles RASP programs into actual transformer weights that run them exactly. [Weiss et al. 2021, arXiv:2106.06981](https://arxiv.org/abs/2106.06981) · [Lindner et al. 2023, arXiv:2301.05062](https://arxiv.org/abs/2301.05062). Mechanistic studies of trained models find circuits of this kind, such as induction heads that copy what followed an earlier occurrence of the current context. [Olsson et al. 2022](https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html).
+
+**Implication for ZeroLM:** the useful form of weight-space programming here is a **compiler from small algorithm specifications to weights of the uniform engine**. The compiled circuits run inside the same forward pass as everything else, can be ablated weight by weight, and can then be adapted by online learning. This replaces hand-written Rust control flow. The compiler is a development-time tool, its output is pinned by hash, and every circuit is a seed entry.
 
 ---
 
@@ -223,6 +272,41 @@ A model with no pretrained weights does not begin with English understanding. Th
 
 This is engineered prior structure, not learned language knowledge. The bootstrap must be documented and counted. Natural-language competence beyond this seed must be acquired from subsequent chronological experience.
 
+### 3.7 Revision 2: the uniform neural engine
+
+**Neural ISA.** The model is a set of weight tensors plus a fixed-shape program graph over a small operation set:
+
+| Op | Meaning |
+|---|---|
+| `matvec` / `matmul` | dense or block-sparse linear maps |
+| `gate` | elementwise sigmoid, tanh, softmax, ReLU, multiply, add |
+| `norm` | RMS or L2 normalization |
+| `bind` / `unbind` | complex phasor binding (Phase 6) |
+| `topk` | fixed-k sparse selection and its soft version |
+| `hash_rows` | sparse row selection by a seeded hash of recent bytes |
+| `delta_write` | normalized delta-rule write into a fast-weight or memory tensor |
+| `step(n)` | repeat a sub-graph a fixed number of times |
+
+Host code may load programs and tensors, read and write bytes, and run `step` a fixed number of times. It may not branch on token content or tensor values, and it may not do string matching on the model's input. A program's output is a function of its weights and inputs only.
+
+**Verification.** A second, deliberately minimal interpreter (in tests, a few hundred lines, with no language-specific code) runs exported programs and weights. It must reproduce the main engine's outputs exactly for every gate benchmark. If it does, the behavior lives in the weights.
+
+**Seed circuits (compiled by `zerolm-wsp`).** Each one is a seed entry, pinned by hash, ablatable, and adaptable by local learning.
+
+| ID | Circuit | What it does |
+|---|---|---|
+| C1 | context hasher | maps the last 1..k bytes and units to sparse row sets |
+| C2 | count memory | online n-gram style statistics stored as sparse delta-rule rows |
+| C3 | induction / copy | retrieves what followed an earlier occurrence of the current context |
+| C4 | segmenter | marks unit boundaries where prediction surprise peaks; new units get embedding rows online |
+| C5 | binding and cleanup | role-filler binding, unbinding, codebook cleanup (from Phase 6) |
+| C6 | inference | transitivity, inheritance, comparison, arithmetic, negation as fixed-step recurrent circuits (from Phase 6) |
+| C7 | mixer | gated mixing of expert predictions; mixer weights learned online by the delta rule |
+
+**What a circuit may not contain:** vocabulary, word lists, natural-language grammar beyond the control protocol, facts, or any statistic computed from a corpus. Enforcement: the **byte-permutation test**. Exposure text is passed through a secret, fixed permutation of byte values. A compiled circuit with no language knowledge reaches the same held-out BPB on permuted text as on the original (within noise). A circuit that secretly encodes English will not.
+
+**Weight groups.** Compiled circuit weights are a new group `W_PROG` (init source: `zerolm-wsp` compiler output; update path: `wsp_patch`, plus `local_plasticity` where a circuit declares adaptable blocks). It is declared in `weight-groups.json` before first use.
+
 ---
 
 ## 4. Research rules and non-negotiable invariants
@@ -237,12 +321,17 @@ This is engineered prior structure, not learned language knowledge. The bootstra
 8. Every accepted weight patch is versioned, attributable, reversible, and re-evaluated against frozen regression suites.
 9. No self-modification may execute arbitrary code, change the runtime binary, alter CI tests, or edit protected evaluation data.
 10. “Seven-year-old” and “twenty-year-old” are aspiration labels only. Report concrete capabilities and benchmark performance instead.
+11. **Uniform execution.** Content-dependent computation in the mainline model runs only through neural ISA operations on tensors (section 3.7). This is verified by the reference-interpreter test.
+12. **Compiled circuits encode algorithms, not language.** No vocabulary, word lists, facts, or corpus statistics. Every circuit must pass the byte-permutation test.
+13. **Exposure text is human-written and licensed.** Every shard is listed in a corpus manifest with source, license, and SHA-256. No text generated by any language model may enter an exposure stream. Benchmark items must never appear in exposure; this is checked by long n-gram overlap.
 
 ---
 
 ## 5. Phased roadmap and exit gates
 
 Each phase adds an executable test suite. A phase is complete only when its tests run in GitHub Actions, its evidence is uploaded, and its job summary is generated even on failure.
+
+> **Revision 2 note.** Phases 0-6 below are complete and unchanged. Phases 7-16 replace the earlier phases 7-11. The earlier Phase 7 (grounded interaction) became the optional Track G at the end of this section. The earlier phases 8-11 became Phases 13-16. Gate letters A-C mark the pre-registered research gates.
 
 ### Phase 0 — Research constitution and scope freeze
 
@@ -467,143 +556,175 @@ crates/
 - The model answers new compositional questions from stored primitives and relations, not from a full-sentence lookup.
 - Causal ablations demonstrate that the relevant neural pathways are actually used.
 
-### Phase 7 — Grounded learning and interaction
+### Phase 7 — Uniform neural engine and WSP compiler
 
-**Goal:** Give concepts meaning through observed consequences, not language strings alone.
+**Goal:** Make "neural" literally true. Move parsing, retrieval, and reasoning from Rust control flow into compiled weight programs on one engine.
 
 **Work**
-- Create a deterministic text-and-world simulator with objects, properties, actions, state changes, and causal outcomes.
-- Let ZeroLM observe descriptions, make predictions, choose actions, and receive environment results.
-- Teach by contrastive examples: similar inputs with different outcomes, interventions, and corrections.
-- Add optional visual and audio encoders only after the text-and-world loop passes; do not import pretrained encoders.
-- If using CHILDES or another child-directed corpus, feed it as a chronological exposure stream and record it as online learning input. Keep evaluation sets disjoint.
+- Implement the neural ISA interpreter (section 3.7) in `zerolm-engine` and the minimal reference interpreter in tests.
+- Create `crates/zerolm-wsp`: a compiler from small typed circuit specifications to `W_PROG` tensors, plus a versioned patch format (apply, diff, revert).
+- Recompile Phase 6 onto the engine. The bounded grammar becomes a recurrent parser circuit whose state holds role bindings token by token. The eight operators become fixed-step recurrent circuits (C5, C6), with transitivity as repeated association and cleanup instead of breadth-first search.
+- Recompile Phase 5 retrieval (pooled attention plus coverage verification) as an engine program.
+- Delete the replaced Rust control flow once parity holds. The symbolic oracle stays evaluation-only.
 
 **Deliverables**
-- `crates/zerolm-world/`
-- `research/environments/`
-- `research/benchmark/grounding.py`
-- `docs/GROUNDED_LEARNING.md`
+- `crates/zerolm-engine/src/isa/`
+- `crates/zerolm-wsp/src/{compiler,patch}.rs`
+- `model/prog/` (circuit specifications and pinned output hashes)
+- `docs/NEURAL_ISA.md`
 
-**GitHub Actions tests**
-- Prediction-before-observation tests: the model must commit to an outcome before seeing the result.
-- Intervention tests: change one variable and verify counterfactual predictions change appropriately.
-- Action-result learning: performance must improve over a frozen model on unseen combinations.
-- Test transfer to new object names, properties, and action sequences.
-- Verify the environment result, not the model's own text, is the learning target.
+**CI tests**
+- The frozen Phase 5 and Phase 6 gates pass unchanged through the compiled programs.
+- The reference interpreter reproduces every gate answer exactly from exported programs and weights.
+- Compilation is reproducible: the same specification gives byte-identical `W_PROG` (hash pinned).
+- Weight ablation: zeroing or permuting one named circuit block removes exactly the answers that depend on it.
+- Patch round trip: apply, then revert, gives the original checkpoint hash.
+- Host audit: no function on the model path matches strings or branches on token content (lint plus review checklist).
 
 **Exit gate**
-- Demonstrable forward transfer from learned experiences to new tasks in a controlled world.
-- No claim of physical-world understanding until multimodal grounding has been independently tested.
+- Phases 5 and 6 work with their behavior in weights, verified by the independent interpreter.
+- The old Rust parser and operator control flow are gone from the model path.
 
-### Phase 8 — Natural-language generation and multi-turn dialogue
+### Phase 8 — Real-text exposure streams and reference baselines
 
-**Goal:** Produce new language from the model's learned internal state.
+**Goal:** Replace toy languages with licensed human-written text, and fix the baselines every later claim must beat.
 
 **Work**
-- Implement a recurrent autoregressive decoder over byte or dynamically formed subword tokens.
-- Condition generation on recurrent state, retrieved memory, and structured reasoning results.
-- Implement interruption, correction, turn boundaries, uncertainty, and explicit “I do not know” behavior.
-- Keep current-turn working state separate from persistent memory weights.
-- Do not use canned answer paths as the primary generator. Fixed responses may remain only for low-level errors and protocol commands.
+- Create `crates/zerolm-data`: a corpus manifest (source, license, SHA-256 per shard, order), a fetch-and-verify tool, a deterministic stream reader, and splits by whole document (held-out books and articles).
+- Candidate sources, each checked for license before use: CHILDES transcripts (child-directed, early in the curriculum), Simple English Wikipedia, English Wikipedia (CC BY-SA), and Project Gutenberg public-domain books. Excluded: any LM-generated or synthetic text (for example TinyStories), and any benchmark data.
+- Contamination check: long n-gram overlap (for example 13-grams) between exposure shards and every evaluation set.
+- Baselines in `zerolm-eval`, run on the same stream: byte frequency, online PPM and Kneser-Ney order-5, the Phase 4 learner, and an **online-backpropagation control** (small LSTM, single pass, same bytes, labelled CONTROL and excluded from strict results). Published compressor results are recorded as reference points, not rerun.
+- Evaluation harnesses: held-out BPB, BLiMP (log-probability of minimal pairs), LAMBADA (last-word accuracy). All are evaluation-only, hashed, and never in exposure.
+- Freeze the numeric thresholds of Levels L1-L3 (section 7.1) from these measurements before Phase 9 starts.
 
 **Deliverables**
-- `crates/zerolm-engine/src/decoder.rs`
-- `crates/zerolm-runtime/src/dialogue.rs`
-- `research/benchmark/dialogue.py`
+- `research/corpus/manifest.json`, `crates/zerolm-data/`
+- `zerolm-eval` baselines and `controls/`
+- `model/specs/levels.json` (frozen thresholds)
+- `docs/DATA.md`
 
-**GitHub Actions tests**
-- Generate continuations not present in the exposure stream and not encoded as templates.
-- Evaluate response consistency with retrieved facts and reasoning traces.
-- Multi-turn tests must survive process restart when the relevant information has been stored in `W_MEMORY`.
-- Test hallucination, unsupported questions, calibration, repetition loops, and prompt paraphrases.
-- Measure free-generation diversity and degeneration; do not score only exact strings.
+**CI tests**
+- Manifest validation: every shard has a license, a hash, and a role. Fetched data must match the hashes.
+- CI runs a small pinned sample (about 10 MB). Full runs are scheduled or manual.
+- Contamination check passes for every evaluation set.
+- Baseline learning curves at 10^6, 10^7, and 10^8 bytes are reproducible.
 
 **Exit gate**
-- The system is a genuine autoregressive neural language model with learned predictive behavior and non-template generation.
-- It remains honest about uncertainty and does not present unverified self-generated text as fact.
+- A reproducible real-text pipeline and baseline table exist, and the level thresholds are frozen.
 
-### Phase 9 — Controlled self-modification and internal WSP
+### Phase 9 — Scalable core with compiled seed circuits (Gate A)
 
-**Goal:** Enable the model to improve the structure of its own neural engine safely.
+**Goal:** Beat strong count-based baselines on real text with one engine, using only compiled circuits and local rules.
 
 **Work**
-- Formalize a typed WSP patch DSL. Supported operations should include bounded tensor edits, low-rank circuit addition, embedding extension, memory-layout migration, and module activation/deactivation.
-- Every patch must include: hypothesis, target tensor/module, preconditions, expected behavior, mathematical effect, resource impact, target tests, protected regression tests, and rollback metadata.
-- Implement a deterministic validator and sandboxed candidate model. The active model is never edited in place.
-- Initially let developers author WSP patches. Next, let ZeroLM produce patch proposals from its own traces and observed failures. The proposal is not automatically trusted.
-- Add a meta-model of its own architecture: tensor names, shapes, dependencies, update policies, invariants, and causal tests.
-- Require acceptance to improve a predefined target while preserving old competencies and staying within resource limits.
-- Keep an external developer-time programmer as an experimental tool only. The deployed system must not depend on a pretrained external LLM to understand or edit its own weights.
+- Re-run the architecture bake-off for scale on real text: the incumbent GRU against a chunk-parallel gated delta-rule recurrence. The Phase 2 selection measured initialization-time capacity, not learning at scale or throughput.
+- Compile circuits C1-C4 and C7 into the selected core. Learning is local only (count and delta-rule writes, mixer updates).
+- Profile and optimize for the reference machine: 32 cores, 15 GB RAM.
 
-**Deliverables**
-- `crates/zerolm-wsp/src/patch.rs`
-- `crates/zerolm-wsp/src/validator.rs`
-- `crates/zerolm-wsp/src/sandbox.rs`
-- `crates/zerolm-wsp/src/rollback.rs`
-- `docs/WSP_PROTOCOL.md`
+**CI tests**
+- BPB learning curves against the Phase 8 baselines, 3 seeds.
+- Byte-permutation test for every circuit.
+- Circuit ablations: removing each circuit costs held-out BPB.
+- Throughput and RSS reported. Updates are logged under the existing event contract.
 
-**GitHub Actions tests**
-- Schema, tensor shape, value range, and protected-region validation.
-- Candidate patch is applied to a copy; active checkpoint hash remains unchanged until acceptance.
-- Target tests, all frozen regression suites, adversarial tests, and CPU/RAM budgets run before acceptance.
-- Fault injection: malformed patch, NaN, out-of-range edit, failed test, interrupted checkpoint, and rollback.
-- Compare the patch against a no-op patch, random patch, and manually authored reference patch.
-- Report target gain, regression delta, changed-parameter count, tensor names, and full before/after hashes.
-- No patch may edit the tests, evaluator, workflow, or protected manifest.
+**Exit gate (Gate A, Level L1)**
+- Held-out BPB is at or below online PPM / Kneser-Ney order-5 at equal exposure (10^8 bytes), on 3 seeds.
+- Sustained throughput is at least 1,650 bytes/s including updates, so that 10^9 bytes fit in 7 days on the reference machine.
+- Gate A shows a good online compressor. It does not show an LLM.
 
-**Exit gate**
-- The engine can propose at least one useful patch from a trace and evidence; the patch passes a hidden evaluation and does not regress protected tasks.
-- If it can only apply prewritten patch templates, describe it honestly as rule-based self-maintenance, not autonomous WSP.
+### Phase 10 — Deep representation learning without backpropagation (Gate B, decision gate)
 
-### Phase 10 — Developmental capability evaluation
-
-**Goal:** Measure whether the system is becoming more capable over a sequence of experiences.
+**Goal:** Learn distributed representations that generalize ("cat" and "dog" behave alike), which count circuits cannot do.
 
 **Work**
-- Build a task ladder across vocabulary, syntax, compositional semantics, memory, arithmetic, causal reasoning, spatial relations, pragmatic inference, dialogue, and grounded interaction.
-- Evaluate the same model checkpoint at fixed exposure milestones (for example, after 0, 1k, 10k, 100k, and 1M interaction events; actual milestones depend on Phase 4 throughput).
-- Keep hidden test families that are never used as learning data.
-- Compare the continual model with frozen-initialized, memory-only, fast-weight-only, WSP-only, and optional online-gradient controls.
-- Include tests written by independent contributors and human review of open-ended outputs.
-- Use age-normed benchmarks only when their licensing and administration rules permit; never infer an age-equivalent from one benchmark score.
+- Grow unit embeddings online from the segmenter (C4); learn them with distributional, random-indexing-style updates.
+- Add layer-local predictive learning: each block predicts the next step of its own input representation and updates only from its own error (predictive coding or delta rule). There is no gradient across layers or time.
+- Consolidate from fast weights to slow weights using only memory tensors. Re-reading raw exposure text is not allowed unless the constitution is amended.
 
-**Deliverables**
-- `research/benchmark/developmental_suite/`
-- `reports/developmental/learning_curves.json`
-- `reports/developmental/forgetting.json`
-- `docs/DEVELOPMENTAL_EVALUATION.md`
+**CI tests**
+- Embedding structure emerges: nearest-neighbour purity against an evaluation-only part-of-speech labelled set.
+- BPB, BLiMP, and LAMBADA against the Gate A system and the online-backpropagation control, at equal bytes and compute, 3 seeds.
+- Ablation: freezing the learned representations removes the gain.
 
-**GitHub Actions tests**
-- Report per-stage performance and learning curves.
-- Report average accuracy, forgetting, backward transfer, forward transfer, calibration, memory capacity, and compute cost.
-- Require performance improvement on new tasks while bounding regressions on protected old tasks.
-- Run multiple seeds and distinguish independent test data from exposure streams.
-- Detect benchmark contamination by content hashes and source manifests.
+**Exit gate (Gate B), pre-registered**
+- (i) Held-out BPB improves on the Gate A system by the frozen margin δ.
+- (ii) BLiMP accuracy is at least 65%.
+- (iii) The BPB gap to the online-backpropagation control is at most 15% at equal bytes.
+- (i) and (ii) pass but (iii) fails: continue, and report the gap in every later claim.
+- (i) or (ii) fails: **stop and decide.** The project lead records in `research/decisions/` either (a) a constitution amendment allowing single-pass online gradient updates in the mainline, after which Phases 10-11 rerun under the new rule, or (b) continuing with local learning only and claims limited to Level L1.
 
-**Exit gate**
-- Publish a capability profile with both successes and failures. “Equivalent to a seven-year-old” is not an allowed release claim unless a suitable independent, normed evaluation actually supports that exact statement.
+### Phase 11 — Scaling run and forgetting (Gate C, Level L2)
 
-### Phase 11 — CPU deployment, checkpoint durability, and 1.0 release
-
-**Goal:** Turn the validated research engine into a usable local model.
+**Goal:** Show that capability keeps improving with exposure and model size, without catastrophic forgetting.
 
 **Work**
-- Optimize the measured hot paths using SIMD, cache-aware tensor layouts, and optionally a small BLAS backend. Keep a portable pure-Rust CPU implementation.
-- Add CLI, streaming input, local HTTP API, model inspection, memory inspection, and safe backup/restore.
-- Support per-user model checkpoints without making external databases the memory source of truth.
-- Add model format versioning, migration, checksums, crash-safe atomic saves, and downgrade/rollback support.
-- Publish a reproducibility bundle for every release: source commit, compiler, architecture, seed, initial-weight hash, final-weight hash, exposure manifest, benchmark report, and CI run.
+- Run 10^8 to 10^9 bytes at two or three model sizes. Checkpoint at fixed milestones.
+- Fit scaling curves (BPB against bytes and parameters).
+- Measure forgetting on held-out text from early curriculum stages.
 
-**GitHub Actions tests**
-- Linux and macOS CPU builds; x86_64 first, ARM64 when runner availability permits.
-- Offline execution test: no network access during inference or learning.
-- Restart and checkpoint migration tests.
-- Resource benchmark on a named, documented runner profile; report p50/p95 latency, tokens/sec, peak RSS, checkpoint size, and update cost.
-- CLI/API end-to-end tests and Docker smoke test.
-- Full regression and developmental suite.
+**CI tests**
+- Scheduled full run. CI checks a short run and validates the published curves and hashes.
+- Forgetting and backward-transfer report.
+
+**Exit gate (Gate C, Level L2)**
+- The Level L2 thresholds in `model/specs/levels.json` are met.
+- Kill criterion: if the BPB slope over the last decade of exposure is below the frozen ε, and the extrapolated value is far from L3, stop scaling and diagnose instead of buying more compute.
+
+### Phase 12 — Reading into memory and reasoning inside the network
+
+**Goal:** Connect the language model to memory and reasoning. Facts read once in ordinary text are stored and then composed to answer new questions.
+
+**Work**
+- A learned write gate decides what goes into `W_MEMORY` while reading. It is trained online from retrieval success signals, never from the model's own answers.
+- The mapping from text to role bindings is learned from the stream. The Phase 6 English grammar seed is retired from the model path and stays only as a test harness.
+- The reasoning circuits (C5, C6) are driven by the network's own bindings.
+
+**CI tests**
+- Read-then-answer: held-out human-written paragraphs, each followed by questions that require one or more hops. Evaluation-only.
+- The Phase 6 categories still pass, phrased in varied natural language, with the grammar seed removed.
+- Ablating memory or reasoning removes the multi-hop gains. The lookup baseline stays near 0% on derived questions.
 
 **Exit gate**
-- Reproducible CPU-only release, persistent weight-resident memory, online learning, safe WSP updates, and documented capability boundaries.
+- Answers composed from facts read once beat the LM alone and the lookup baseline, and the gain disappears under ablation.
+
+### Phase 13 — Generation, instruction following, and dialogue
+
+**Goal:** Produce useful new language from the model's own state across multi-turn interaction.
+
+**Work**
+- Decoding from the model's distribution (temperature, nucleus sampling, repetition control), turn structure, interruption, and correction.
+- Exposure to human-written dialogue and instruction data, licensed and in the corpus manifest. User corrections act as feedback signals.
+- Calibrated abstention: answer "I do not know" when memory and prediction confidence are low.
+- No canned answers except protocol and error messages.
+
+**CI tests**
+- Generated continuations do not appear in the exposure stream (n-gram novelty) and are not templates.
+- Consistency with retrieved facts; hallucination rate on unsupported questions; calibration.
+- Multi-turn state survives restart when stored in `W_MEMORY`.
+- Blind human ratings of fluency and helpfulness on a hidden prompt set, against the Level L2 checkpoint.
+
+**Exit gate**
+- A genuine autoregressive LM that follows simple instructions and holds a short dialogue, with honest uncertainty.
+
+### Phase 14 — Self-proposed WSP patches
+
+**Goal:** The model proposes useful edits to its own weight programs, safely.
+
+This is revision-1 Phase 9 (Appendix A), now built on the Phase 7 compiler and patch format. Proposals come from the model's own traces and failures. They include adding capacity to a circuit, allocating memory, or composing a new circuit from existing ones. Every proposal is applied to a sandbox copy and passes target tests, all frozen regressions, and resource limits before atomic acceptance. The tests, CI workflow requirements, and exit gate of revision-1 Phase 9 apply unchanged. If the system can only apply prewritten templates, it is described as rule-based self-maintenance.
+
+### Phase 15 — Capability evaluation and level certification
+
+**Goal:** Publish a capability profile with successes and failures.
+
+This is revision-1 Phase 10 (Appendix A) with Levels L1-L4 (section 7.1) as the reporting frame. Evaluate fixed checkpoints at exposure milestones, on hidden sets and external benchmarks, over at least 3 seeds. Compare against the frozen-init, memory-only, compiled-only (no learning), and online-backpropagation controls. Include prompts written by independent contributors and blind human review. The level claimed is the highest level whose every threshold is met.
+
+### Phase 16 — CPU deployment and 1.0 release
+
+This is revision-1 Phase 11 (Appendix A), unchanged in scope. In addition, the release bundle includes the corpus manifest hash, the `W_PROG` compiler output hash, and the Phase 15 level report. **1.0 requires Level L3.**
+
+### Track G — Grounded interaction (optional, parallel)
+
+Revision-1 Phase 7 (Appendix A; a deterministic text-and-world simulator, prediction before observation, interventions, transfer to new objects) continues as an optional research track. It may start after Phase 9 and is not required for the 1.0 LLM claim. Its earlier deliverables, tests, and exit gate still apply.
 
 ---
 
@@ -718,6 +839,25 @@ Report at least:
 
 A fixed set of generated grammar examples is useful for unit tests but cannot be the only evidence. Include independent human-written prompts, external benchmark tasks, adversarial inputs, and environment-based evaluations.
 
+
+### 7.1 Language-model levels
+
+Every capability claim names a level. Thresholds marked "frozen in Phase 8" are set from measured baselines and published reference values (for example the GPT-2 paper's small-model results). They are checked against their sources when frozen, and never changed after a main run starts.
+
+| Level | Name | Requires (all of) |
+|---|---|---|
+| L0 | Toy | Learning on generated languages only (Phases 4-6 today) |
+| L1 | Compressor-grade | Held-out real-text BPB at or below online PPM / Kneser-Ney order-5 at equal exposure (Gate A) |
+| L2 | Fluent | BLiMP at least 75%; held-out Wikipedia BPB at or below a threshold frozen in Phase 8 (indicatively about 1.5); blind raters judge generated sentences locally grammatical |
+| L3 | Small LLM (1.0 target) | BLiMP at least 80%; LAMBADA accuracy at least 35%; held-out BPB at or below a threshold frozen in Phase 8 (indicatively about 1.2); read-then-answer at the frozen threshold; coherent multi-sentence generation under blind rating |
+| L4 | Assistant | L3 plus instruction following and multi-turn dialogue on hidden human-written prompts, with calibrated abstention |
+
+A level is claimed only on 3 seeds, hidden evaluation data, and a clean commit.
+
+### 7.2 Compute budget
+
+The reference machine is 32 CPU cores and 15 GB RAM. One main run reads at most 10^9 bytes in at most 7 days, so sustained throughput must be at least 1,650 bytes/s including updates, and model plus memory must fit in about 8 GB. Every report states bytes read, wall time, FLOPs estimate, and peak RSS, so that results are compared at equal budget.
+
 ---
 
 ## 8. Critical risks and kill criteria
@@ -733,16 +873,23 @@ A fixed set of generated grammar examples is useful for unit tests but cannot be
 | External LLM dependency | An external pretrained model doing the reasoning would invalidate the self-developing claim | External model may assist development only; runtime self-modification must eventually work without it |
 | CPU limits | Larger recurrent state and associative memory can still be expensive | Profile every phase on named CPU targets and cap dimensions by measured budgets |
 | “Age equivalence” overclaim | Child development is multidimensional and grounded | Publish capability-specific results; no age-equivalent claim without independent normed evaluation |
+| Local learning cannot learn representations | Count circuits alone plateau at a compressor, not an LLM | Gate B (Phase 10) is pre-registered. On failure, the project lead decides in writing between allowing online gradients and limiting claims to L1 |
+| Compiled circuits smuggle in English | Hand-written "algorithms" could secretly encode language knowledge | Byte-permutation test for every circuit; seed entry and hash for every circuit |
+| Host code does the real work | Rust control flow could again stand in for the network | Uniform-execution invariant; independent reference interpreter must reproduce outputs from weights |
+| Data licensing or contamination | Unlicensed text or leaked benchmarks invalidate results | Corpus manifest with licenses and hashes; long n-gram contamination check |
+| CPU budget too small | A real LM may need more than 10^9 bytes or more compute | Scaling curves (Phase 11) decide; kill criterion on plateau; report results at stated budgets only |
 
-**Stop/go rule:** if Phase 4 cannot show measurable held-out acquisition from chronological input, do not proceed to claims about a self-developing language model. Continue only as a research project on learning rules and small task-specific networks until the core acquisition hypothesis is supported.
+**Stop/go rule (revision 1, still in force):** if Phase 4 cannot show measurable held-out acquisition from chronological input, do not proceed to claims about a self-developing language model. Continue only as a research project on learning rules and small task-specific networks until the core acquisition hypothesis is supported.
+
+**Revision 2 stop/go rules:** Gate A failing means the compiled-circuit core is not viable; redesign before Phase 10. Gate B failing triggers the written decision in section 0.3. Gate C failing (plateau) stops scaling. None of these failures may be reported as success at a lower bar.
 
 ---
 
-## 9. Proposed repository structure after the first architecture milestone
+## 9. Proposed repository structure (revision 2)
 
 ```text
 zeroLM/
-  legacy/                       # optionally migrated wrappers; preserve current behavior first
+
   crates/
     zerolm-tensor/
     zerolm-nn/
@@ -751,15 +898,20 @@ zeroLM/
     zerolm-learning/
     zerolm-memory/
     zerolm-reasoner/
-    zerolm-world/
-    zerolm-wsp/
+    zerolm-world/                # Track G only
+    zerolm-wsp/                  # Phase 7: circuit compiler, patch format; Phase 14: proposals
+    zerolm-data/                 # Phase 8: corpus manifest, fetch-and-verify, streams
+
     zerolm-runtime/
     zerolm-eval/
   model/
     bootstrap/                   # human-authored, auditable seed specification
-    specs/                       # architecture manifests and initialization formulas
+    specs/                       # architecture manifests and initialization formulas; levels.json (Phase 8)
+    prog/                        # Phase 7: circuit specifications and pinned compiler-output hashes
     checkpoints/                 # release/checkpoint format; never commit personal checkpoints
   research/
+    corpus/                      # Phase 8: corpus manifest (sources, licenses, hashes); data itself is not committed
+    decisions/                   # written decisions, e.g. the Gate B outcome
     streams/                     # deterministic synthetic exposure streams + manifests
     environments/
     benchmark/
@@ -784,6 +936,8 @@ zeroLM/
     BOOTSTRAP.md
     LEARNING_RULES.md
     MEMORY_FORMAT.md
+    NEURAL_ISA.md
+    DATA.md
     WSP_PROTOCOL.md
     TESTING.md
     DEVELOPMENTAL_EVALUATION.md
@@ -800,27 +954,25 @@ zeroLM/
     zerolm-nightly.yml
 ```
 
-Do not move or delete the existing implementation until a new engine phase has an equivalent or better reproducible test suite. The old ZeroLM should remain an experimental control.
+The revision-1 legacy code (v0.2, ZeroLM Next) has already been removed and lives only in git history. Code replaced in Phase 7 is deleted only after the compiled version passes the same frozen gates.
 
 ---
 
-## 10. Recommended implementation order
+## 10. Recommended implementation order (revision 2)
 
-The engineering order should be:
+1. Phases 0-6: complete. Keep their gates green as regressions.
+2. Phase 7: uniform neural engine and WSP compiler. Recompile Phases 5-6 and pass the reference-interpreter test.
+3. Phase 8: real-text corpus, contamination checks, baselines, online-backpropagation control, frozen level thresholds.
+4. Phase 9: scalable core with compiled circuits. **Gate A (L1).**
+5. Phase 10: deep local representation learning. **Gate B, the backpropagation decision.**
+6. Phase 11: scaling run and forgetting. **Gate C (L2).**
+7. Phase 12: reading into memory and reasoning inside the network.
+8. Phase 13: generation, instruction following, dialogue.
+9. Phase 14: self-proposed WSP patches.
+10. Phase 15: capability evaluation and level certification.
+11. Phase 16: CPU release 1.0, which requires L3.
 
-1. Phase 0 and Phase 1: definitions and reproducible baseline.
-2. Phase 2: neural runtime and architecture bake-off.
-3. Phase 3: byte bootstrap and deterministic initialization.
-4. Phase 4: first online language prediction and acquisition gate.
-5. Phase 5: persistent weight-resident memory.
-6. Phase 6: compositional concepts and reasoning.
-7. Phase 7: grounded interaction.
-8. Phase 8: open-ended neural generation and dialogue.
-9. Phase 9: model-proposed WSP patches and controlled structural evolution.
-10. Phase 10: developmental capability evaluation.
-11. Phase 11: CPU deployment and release.
-
-Do not implement the full architecture in one large branch. Each phase should land as a small PR with its own tests, report schema, CI summary, and updated research log.
+Track G (grounded interaction) may run in parallel from Phase 9 onward. Phases 8 and the reference-interpreter half of Phase 7 can overlap. Every phase still lands as small commits with tests, a report schema, a CI job, and a summary.
 
 ---
 
@@ -837,13 +989,171 @@ Do not implement the full architecture in one large branch. Each phase should la
 9. Sanchez, A. et al. (2019; dataset updates 2026.1). *childes-db: A flexible and reproducible interface to the Child Language Data Exchange System.* https://langcog.github.io/childes-db-website/
 10. *Towards Lifelong Learning of Large Language Models: A Survey.* ACM Computing Surveys (2025). https://doi.org/10.1145/3716629
 11. Yang, Q. et al. (2026). *Continual learning: A systematic literature review.* Neural Networks. https://doi.org/10.1016/j.neunet.2025.108226
+12. Mahoney, M. *Data Compression Explained* (context mixing, PAQ). https://mattmahoney.net/dc/dce.html
+13. Knoll, B. *cmix.* https://www.byronknoll.com/cmix.html
+14. Bellard, F. *NNCP: lossless data compression with neural networks.* https://bellard.org/nncp/
+15. Liu, J. et al. (2024). *Infini-gram: Scaling Unbounded n-gram Language Models to a Trillion Tokens.* arXiv:2401.17377. https://arxiv.org/abs/2401.17377
+16. Hinton, G. (2022). *The Forward-Forward Algorithm: Some Preliminary Investigations.* arXiv:2212.13345. https://arxiv.org/abs/2212.13345
+17. Whittington, J. and Bogacz, R. (2017). *An Approximation of the Error Backpropagation Algorithm in a Predictive Coding Network with Local Hebbian Synaptic Plasticity.* Neural Computation. https://doi.org/10.1162/NECO_a_00949
+18. Sahlgren, M. (2005). *An Introduction to Random Indexing.* Methods and Applications of Semantic Indexing Workshop, TKE 2005.
+19. Yang, S., Kautz, J., and Hatamizadeh, A. (2025). *Gated Delta Networks: Improving Mamba2 with Delta Rule.* ICLR 2025. arXiv:2412.06464. https://arxiv.org/abs/2412.06464
+20. Weiss, G., Goldberg, Y., and Yahav, E. (2021). *Thinking Like Transformers.* ICML. arXiv:2106.06981. https://arxiv.org/abs/2106.06981
+21. Lindner, D. et al. (2023). *Tracr: Compiled Transformers as a Laboratory for Interpretability.* NeurIPS. arXiv:2301.05062. https://arxiv.org/abs/2301.05062
+22. Olsson, C. et al. (2022). *In-context Learning and Induction Heads.* Transformer Circuits Thread. https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/index.html
+23. Warstadt, A. et al. (2020). *BLiMP: The Benchmark of Linguistic Minimal Pairs for English.* TACL. https://aclanthology.org/2020.tacl-1.25/
+24. Paperno, D. et al. (2016). *The LAMBADA dataset: Word prediction requiring a broad discourse context.* ACL. https://aclanthology.org/P16-1144/
+25. Radford, A. et al. (2019). *Language Models are Unsupervised Multitask Learners* (GPT-2; reference values for level thresholds).
 
 ---
 
 ## Final research position
 
-The realistic near-term research claim is not “we will create a twenty-year-old human-like mind.” It is:
+The near-term claim is not "we will create a human-like mind" or a frontier assistant. It is:
 
-> **We will test whether a small neural language system, initialized only by explicit programmatic design and without offline pretraining, can acquire progressively more language-modeling, memory, and reasoning capability from a chronological stream of observations using online plasticity and controlled weight-space evolution.**
+> **We will test whether one CPU neural engine, initialized only with compiled algorithmic circuits and no offline pretraining, can become a small but genuine language model (Level L3) from a single recorded pass over human-written text, using local learning rules, weight-resident memory, and controlled weight-space programming.**
 
-This is a difficult but falsifiable research objective. The first decisive milestone is Phase 4: show that the same initially untrained neural engine learns from a stream and improves on unseen examples. Everything beyond that depends on passing this gate.
+The decisive milestones are Gate A (does the compiled core beat count baselines?), Gate B (does local learning produce generalizing representations, or must the project choose online gradients?), and Gate C (does capability keep scaling?). The 1.0 label is earned only at L3. If the gates fail, the result is still a published, falsified hypothesis, not a hidden one.
+
+---
+
+## Appendix A. Revision 1 phases 7-11
+
+Kept for reference by Phases 14-16 and Track G. Their numbering is superseded by section 5.
+
+### R1 Phase 7 — Grounded learning and interaction
+
+**Goal:** Give concepts meaning through observed consequences, not language strings alone.
+
+**Work**
+- Create a deterministic text-and-world simulator with objects, properties, actions, state changes, and causal outcomes.
+- Let ZeroLM observe descriptions, make predictions, choose actions, and receive environment results.
+- Teach by contrastive examples: similar inputs with different outcomes, interventions, and corrections.
+- Add optional visual and audio encoders only after the text-and-world loop passes; do not import pretrained encoders.
+- If using CHILDES or another child-directed corpus, feed it as a chronological exposure stream and record it as online learning input. Keep evaluation sets disjoint.
+
+**Deliverables**
+- `crates/zerolm-world/`
+- `research/environments/`
+- `research/benchmark/grounding.py`
+- `docs/GROUNDED_LEARNING.md`
+
+**GitHub Actions tests**
+- Prediction-before-observation tests: the model must commit to an outcome before seeing the result.
+- Intervention tests: change one variable and verify counterfactual predictions change appropriately.
+- Action-result learning: performance must improve over a frozen model on unseen combinations.
+- Test transfer to new object names, properties, and action sequences.
+- Verify the environment result, not the model's own text, is the learning target.
+
+**Exit gate**
+- Demonstrable forward transfer from learned experiences to new tasks in a controlled world.
+- No claim of physical-world understanding until multimodal grounding has been independently tested.
+
+### R1 Phase 8 — Natural-language generation and multi-turn dialogue
+
+**Goal:** Produce new language from the model's learned internal state.
+
+**Work**
+- Implement a recurrent autoregressive decoder over byte or dynamically formed subword tokens.
+- Condition generation on recurrent state, retrieved memory, and structured reasoning results.
+- Implement interruption, correction, turn boundaries, uncertainty, and explicit “I do not know” behavior.
+- Keep current-turn working state separate from persistent memory weights.
+- Do not use canned answer paths as the primary generator. Fixed responses may remain only for low-level errors and protocol commands.
+
+**Deliverables**
+- `crates/zerolm-engine/src/decoder.rs`
+- `crates/zerolm-runtime/src/dialogue.rs`
+- `research/benchmark/dialogue.py`
+
+**GitHub Actions tests**
+- Generate continuations not present in the exposure stream and not encoded as templates.
+- Evaluate response consistency with retrieved facts and reasoning traces.
+- Multi-turn tests must survive process restart when the relevant information has been stored in `W_MEMORY`.
+- Test hallucination, unsupported questions, calibration, repetition loops, and prompt paraphrases.
+- Measure free-generation diversity and degeneration; do not score only exact strings.
+
+**Exit gate**
+- The system is a genuine autoregressive neural language model with learned predictive behavior and non-template generation.
+- It remains honest about uncertainty and does not present unverified self-generated text as fact.
+
+### R1 Phase 9 — Controlled self-modification and internal WSP
+
+**Goal:** Enable the model to improve the structure of its own neural engine safely.
+
+**Work**
+- Formalize a typed WSP patch DSL. Supported operations should include bounded tensor edits, low-rank circuit addition, embedding extension, memory-layout migration, and module activation/deactivation.
+- Every patch must include: hypothesis, target tensor/module, preconditions, expected behavior, mathematical effect, resource impact, target tests, protected regression tests, and rollback metadata.
+- Implement a deterministic validator and sandboxed candidate model. The active model is never edited in place.
+- Initially let developers author WSP patches. Next, let ZeroLM produce patch proposals from its own traces and observed failures. The proposal is not automatically trusted.
+- Add a meta-model of its own architecture: tensor names, shapes, dependencies, update policies, invariants, and causal tests.
+- Require acceptance to improve a predefined target while preserving old competencies and staying within resource limits.
+- Keep an external developer-time programmer as an experimental tool only. The deployed system must not depend on a pretrained external LLM to understand or edit its own weights.
+
+**Deliverables**
+- `crates/zerolm-wsp/src/patch.rs`
+- `crates/zerolm-wsp/src/validator.rs`
+- `crates/zerolm-wsp/src/sandbox.rs`
+- `crates/zerolm-wsp/src/rollback.rs`
+- `docs/WSP_PROTOCOL.md`
+
+**GitHub Actions tests**
+- Schema, tensor shape, value range, and protected-region validation.
+- Candidate patch is applied to a copy; active checkpoint hash remains unchanged until acceptance.
+- Target tests, all frozen regression suites, adversarial tests, and CPU/RAM budgets run before acceptance.
+- Fault injection: malformed patch, NaN, out-of-range edit, failed test, interrupted checkpoint, and rollback.
+- Compare the patch against a no-op patch, random patch, and manually authored reference patch.
+- Report target gain, regression delta, changed-parameter count, tensor names, and full before/after hashes.
+- No patch may edit the tests, evaluator, workflow, or protected manifest.
+
+**Exit gate**
+- The engine can propose at least one useful patch from a trace and evidence; the patch passes a hidden evaluation and does not regress protected tasks.
+- If it can only apply prewritten patch templates, describe it honestly as rule-based self-maintenance, not autonomous WSP.
+
+### R1 Phase 10 — Developmental capability evaluation
+
+**Goal:** Measure whether the system is becoming more capable over a sequence of experiences.
+
+**Work**
+- Build a task ladder across vocabulary, syntax, compositional semantics, memory, arithmetic, causal reasoning, spatial relations, pragmatic inference, dialogue, and grounded interaction.
+- Evaluate the same model checkpoint at fixed exposure milestones (for example, after 0, 1k, 10k, 100k, and 1M interaction events; actual milestones depend on Phase 4 throughput).
+- Keep hidden test families that are never used as learning data.
+- Compare the continual model with frozen-initialized, memory-only, fast-weight-only, WSP-only, and optional online-gradient controls.
+- Include tests written by independent contributors and human review of open-ended outputs.
+- Use age-normed benchmarks only when their licensing and administration rules permit; never infer an age-equivalent from one benchmark score.
+
+**Deliverables**
+- `research/benchmark/developmental_suite/`
+- `reports/developmental/learning_curves.json`
+- `reports/developmental/forgetting.json`
+- `docs/DEVELOPMENTAL_EVALUATION.md`
+
+**GitHub Actions tests**
+- Report per-stage performance and learning curves.
+- Report average accuracy, forgetting, backward transfer, forward transfer, calibration, memory capacity, and compute cost.
+- Require performance improvement on new tasks while bounding regressions on protected old tasks.
+- Run multiple seeds and distinguish independent test data from exposure streams.
+- Detect benchmark contamination by content hashes and source manifests.
+
+**Exit gate**
+- Publish a capability profile with both successes and failures. “Equivalent to a seven-year-old” is not an allowed release claim unless a suitable independent, normed evaluation actually supports that exact statement.
+
+### R1 Phase 11 — CPU deployment, checkpoint durability, and 1.0 release
+
+**Goal:** Turn the validated research engine into a usable local model.
+
+**Work**
+- Optimize the measured hot paths using SIMD, cache-aware tensor layouts, and optionally a small BLAS backend. Keep a portable pure-Rust CPU implementation.
+- Add CLI, streaming input, local HTTP API, model inspection, memory inspection, and safe backup/restore.
+- Support per-user model checkpoints without making external databases the memory source of truth.
+- Add model format versioning, migration, checksums, crash-safe atomic saves, and downgrade/rollback support.
+- Publish a reproducibility bundle for every release: source commit, compiler, architecture, seed, initial-weight hash, final-weight hash, exposure manifest, benchmark report, and CI run.
+
+**GitHub Actions tests**
+- Linux and macOS CPU builds; x86_64 first, ARM64 when runner availability permits.
+- Offline execution test: no network access during inference or learning.
+- Restart and checkpoint migration tests.
+- Resource benchmark on a named, documented runner profile; report p50/p95 latency, tokens/sec, peak RSS, checkpoint size, and update cost.
+- CLI/API end-to-end tests and Docker smoke test.
+- Full regression and developmental suite.
+
+**Exit gate**
+- Reproducible CPU-only release, persistent weight-resident memory, online learning, safe WSP updates, and documented capability boundaries.

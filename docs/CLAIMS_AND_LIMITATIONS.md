@@ -18,7 +18,8 @@
 - Phase 6 reasoning is programmed, not learned: the grammar and every operator's control flow are hand-written, and agreement with the symbolic reference is by construction. The test language is bounded with pseudo-word content; it is not open-domain understanding. Exclusion is directional, there is no modus tollens, and "it" means only the most recent subject. The reasoner is not yet connected to the Phase 4 learner or to generation.
 - `zerolm run` serves `teach`/`ask`/`forget` from a session-local ledger, not from model memory. `zerolm memory --dir DIR` serves them from weight-resident memory. Neither involves understanding English.
 - Bake-off metrics are initialization-time capacity measurements, not language ability, memory capacity, or learning evidence.
-- No capability, benchmark score, or "human-level" claim is made.
+- No capability, benchmark score, or "human-level" claim is made. The roadmap revision 2 language-model levels (L1-L4) and the 1.0 target (L3) are goals, not results; the current system is Level L0.
+- In Phases 5-6, behavior lives in Rust control flow over tensor storage; the uniform-execution requirement (constitution invariant 10) applies from Phase 7 and is not yet met.
 - Memory is finite; capacity and interference will be measured, not assumed.
 - The static scan detects obvious pretrained artifacts and download calls; it cannot prove the absence of every hidden data source.
 - Code and data from the removed v0.2 / ZeroLM Next experiments live only in git history; no results from them carry over.

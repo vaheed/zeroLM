@@ -52,35 +52,70 @@
     },
     {
       "id": 7,
-      "name": "Grounded learning and interaction",
+      "name": "Uniform neural engine and WSP compiler",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
       "id": 8,
-      "name": "Natural-language generation and multi-turn dialogue",
+      "name": "Real-text exposure streams and reference baselines",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
       "id": 9,
-      "name": "Controlled self-modification and internal WSP",
+      "name": "Scalable core with compiled seed circuits (Gate A)",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
       "id": 10,
-      "name": "Developmental capability evaluation",
+      "name": "Deep representation learning without backpropagation (Gate B)",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
       "id": 11,
-      "name": "CPU deployment, checkpoint durability, and 1.0 release",
+      "name": "Scaling run and forgetting (Gate C)",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 12,
+      "name": "Reading into memory and reasoning inside the network",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 13,
+      "name": "Generation, instruction following, and dialogue",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 14,
+      "name": "Self-proposed WSP patches",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 15,
+      "name": "Capability evaluation and level certification",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 16,
+      "name": "CPU deployment and 1.0 release",
       "status": "planned",
       "command": null,
       "report_schema": null

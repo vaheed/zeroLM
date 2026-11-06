@@ -1,6 +1,6 @@
 ---
 name: zerolm-roadmap
-description: Use when implementing, reviewing, or planning any ZeroLM phase (0-11): gives each phase's goal, deliverables, CI tests and exit gate from docs/ROADMAP.md.
+description: Use when implementing, reviewing, or planning any ZeroLM phase (0-16): gives each phase's goal, deliverables, CI tests and exit gate from docs/ROADMAP.md.
 ---
 
 # ZeroLM roadmap skill
@@ -172,105 +172,21 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 - The model answers new compositional questions from stored primitives and relations, not from a full-sentence lookup.
 - Causal ablations demonstrate that the relevant neural pathways are actually used.
 
-## Phase 7 — Grounded learning and interaction
+## Revision 2 (phases 7-16) — read docs/ROADMAP.md sec. 0.3, 3.7, 5, 7.1 first
 
-**Goal:** Give concepts meaning through observed consequences, not language strings alone.
+Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language data) into `W_PROG`; local online rules learn from licensed human-written text; 1.0 = Level L3 small LLM. New invariants 10-13 in the constitution: uniform execution (reference-interpreter test), byte-permutation test for circuits, corpus manifest / no LM-generated text, Gate B is the only way to change the no-backprop rule.
 
-**Deliverables**
-- `crates/zerolm-world/`
-- `research/environments/`
-- `research/benchmark/grounding.py`
-- `docs/GROUNDED_LEARNING.md`
+| Phase | Goal | Exit gate |
+|---|---|---|
+| 7 Uniform engine + WSP compiler | ISA interpreter, `zerolm-wsp` compiler/patches, recompile Phase 5-6 into weights, delete Rust control flow | Phase 5-6 gates pass through compiled programs; independent interpreter reproduces outputs |
+| 8 Real-text streams + baselines | `zerolm-data`, corpus manifest, contamination check, PPM/KN-5, online-backprop CONTROL, BLiMP/LAMBADA/BPB harnesses | Reproducible pipeline; `model/specs/levels.json` frozen |
+| 9 Scalable core + seed circuits | Bake-off at scale (GRU vs gated delta rule), circuits C1-C4, C7 | **Gate A / L1:** BPB <= PPM/KN-5 at 1e8 bytes; >= 1,650 bytes/s |
+| 10 Deep local representations | Online unit embeddings, layer-local predictive learning | **Gate B:** BPB gain δ, BLiMP >= 65%, gap to backprop control <= 15%; on (i)/(ii) failure write decision in `research/decisions/` |
+| 11 Scaling + forgetting | 1e8-1e9 bytes, 2-3 sizes, scaling curves | **Gate C / L2**; stop on plateau |
+| 12 Read into memory + reasoning | Learned write gate, learned text-to-bindings, C5/C6 driven by network | Read-then-answer beats LM alone and lookup; ablation removes gain |
+| 13 Generation + dialogue | Decoding, human-written dialogue exposure, abstention | Non-template generation, blind ratings, calibrated |
+| 14 Self-proposed WSP | Revision-1 Phase 9 on the Phase 7 compiler | Useful proposed patch passes hidden eval, no regressions |
+| 15 Evaluation + levels | Revision-1 Phase 10 framed by L1-L4 | Published level profile, 3 seeds, hidden sets |
+| 16 Release 1.0 | Revision-1 Phase 11 | Requires L3 |
 
-**CI tests**
-- Prediction-before-observation tests: the model must commit to an outcome before seeing the result.
-- Intervention tests: change one variable and verify counterfactual predictions change appropriately.
-- Action-result learning: performance must improve over a frozen model on unseen combinations.
-- Test transfer to new object names, properties, and action sequences.
-- Verify the environment result, not the model's own text, is the learning target.
-
-**Exit gate**
-- Demonstrable forward transfer from learned experiences to new tasks in a controlled world.
-- No claim of physical-world understanding until multimodal grounding has been independently tested.
-
-## Phase 8 — Natural-language generation and multi-turn dialogue
-
-**Goal:** Produce new language from the model's learned internal state.
-
-**Deliverables**
-- `crates/zerolm-engine/src/decoder.rs`
-- `crates/zerolm-runtime/src/dialogue.rs`
-- `research/benchmark/dialogue.py`
-
-**CI tests**
-- Generate continuations not present in the exposure stream and not encoded as templates.
-- Evaluate response consistency with retrieved facts and reasoning traces.
-- Multi-turn tests must survive process restart when the relevant information has been stored in `W_MEMORY`.
-- Test hallucination, unsupported questions, calibration, repetition loops, and prompt paraphrases.
-- Measure free-generation diversity and degeneration; do not score only exact strings.
-
-**Exit gate**
-- The system is a genuine autoregressive neural language model with learned predictive behavior and non-template generation.
-- It remains honest about uncertainty and does not present unverified self-generated text as fact.
-
-## Phase 9 — Controlled self-modification and internal WSP
-
-**Goal:** Enable the model to improve the structure of its own neural engine safely.
-
-**Deliverables**
-- `crates/zerolm-wsp/src/patch.rs`
-- `crates/zerolm-wsp/src/validator.rs`
-- `crates/zerolm-wsp/src/sandbox.rs`
-- `crates/zerolm-wsp/src/rollback.rs`
-- `docs/WSP_PROTOCOL.md`
-
-**CI tests**
-- Schema, tensor shape, value range, and protected-region validation.
-- Candidate patch is applied to a copy; active checkpoint hash remains unchanged until acceptance.
-- Target tests, all frozen regression suites, adversarial tests, and CPU/RAM budgets run before acceptance.
-- Fault injection: malformed patch, NaN, out-of-range edit, failed test, interrupted checkpoint, and rollback.
-- Compare the patch against a no-op patch, random patch, and manually authored reference patch.
-- Report target gain, regression delta, changed-parameter count, tensor names, and full before/after hashes.
-- No patch may edit the tests, evaluator, workflow, or protected manifest.
-
-**Exit gate**
-- The engine can propose at least one useful patch from a trace and evidence; the patch passes a hidden evaluation and does not regress protected tasks.
-- If it can only apply prewritten patch templates, describe it honestly as rule-based self-maintenance, not autonomous WSP.
-
-## Phase 10 — Developmental capability evaluation
-
-**Goal:** Measure whether the system is becoming more capable over a sequence of experiences.
-
-**Deliverables**
-- `research/benchmark/developmental_suite/`
-- `reports/developmental/learning_curves.json`
-- `reports/developmental/forgetting.json`
-- `docs/DEVELOPMENTAL_EVALUATION.md`
-
-**CI tests**
-- Report per-stage performance and learning curves.
-- Report average accuracy, forgetting, backward transfer, forward transfer, calibration, memory capacity, and compute cost.
-- Require performance improvement on new tasks while bounding regressions on protected old tasks.
-- Run multiple seeds and distinguish independent test data from exposure streams.
-- Detect benchmark contamination by content hashes and source manifests.
-
-**Exit gate**
-- Publish a capability profile with both successes and failures. “Equivalent to a seven-year-old” is not an allowed release claim unless a suitable independent, normed evaluation actually supports that exact statement.
-
-## Phase 11 — CPU deployment, checkpoint durability, and 1.0 release
-
-**Goal:** Turn the validated research engine into a usable local model.
-
-**Deliverables**
-
-
-**CI tests**
-- Linux and macOS CPU builds; x86_64 first, ARM64 when runner availability permits.
-- Offline execution test: no network access during inference or learning.
-- Restart and checkpoint migration tests.
-- Resource benchmark on a named, documented runner profile; report p50/p95 latency, tokens/sec, peak RSS, checkpoint size, and update cost.
-- CLI/API end-to-end tests and Docker smoke test.
-- Full regression and developmental suite.
-
-**Exit gate**
-- Reproducible CPU-only release, persistent weight-resident memory, online learning, safe WSP updates, and documented capability boundaries.
+Track G (grounded world, revision-1 Phase 7) is optional and parallel from Phase 9. Revision-1 phase texts are in ROADMAP Appendix A.
