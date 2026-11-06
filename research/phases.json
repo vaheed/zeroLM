@@ -10,10 +10,10 @@
     },
     {
       "id": 1,
-      "name": "Freeze and audit the existing baseline",
-      "status": "planned",
-      "command": null,
-      "report_schema": null
+      "name": "Freeze and audit the baseline",
+      "status": "complete",
+      "command": "cargo run -p zerolm-policy --bin zerolm-baseline -- generate && cargo run -p zerolm-policy --bin zerolm-baseline -- check",
+      "report_schema": "research/schemas/phase1-report.schema.json"
     },
     {
       "id": 2,
