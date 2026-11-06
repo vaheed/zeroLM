@@ -92,15 +92,15 @@ Status values are the exact integers 0 to 3, so $\mu_i = 1$ exactly for active s
 
 **attend** (constants: $\beta = 32$, $w_\min = 10^{-7}$):
 
-$$\tilde s = (K q) \odot \mu - (1 - \mu) B, \qquad (i^*, s^*) = \operatorname{top}_1(\tilde s), \qquad s^{(2)} = \min \operatorname{top}_2(\tilde s)$$
+$$\tilde s = (K q) \odot \mu - (1 - \mu) B, \qquad (i^\star, s^\star) = \operatorname{top}_1(\tilde s), \qquad s^{(2)} = \min \operatorname{top}_2(\tilde s)$$
 
-$$\alpha = \operatorname{softmax}(\beta \tilde s), \qquad r = V^\top \big(\alpha \odot [\![\alpha \ge w_\min]\!]\big), \qquad \text{score} = s^* h_1 + (h_1 - 1), \qquad \text{runner\_up} = s^{(2)} h_2 + (h_2 - 1)$$
+$$\alpha = \operatorname{softmax}(\beta \tilde s), \qquad r = V^\top \big(\alpha \odot [\![\alpha \ge w_\min]\!]\big), \qquad \text{score} = s^\star h_1 + (h_1 - 1), \qquad \text{runner-up} = s^{(2)} h_2 + (h_2 - 1)$$
 
-The best slot's one-hot mask $e_{i^*}$ (from `topk`) gathers its rows by transposed `matvec`: metadata $\Pi^\top e_{i^*}$ and key words $\mathcal{K}^\top e_{i^*}$.
+The best slot's one-hot mask $e_{i^\star}$ (from `topk`) gathers its rows by transposed `matvec`: metadata $\Pi^\top e_{i^\star}$ and key words $\mathcal{K}^\top e_{i^\star}$.
 
 **verify** (constants: thresholds 0.3 and 0.5, the key-word-count selector, and the position index $\iota = (0, 1, \dots, 7)$):
 
-$$n_w = (\Pi^\top e_{i^*})_\text{kw}, \qquad \kappa = \operatorname{reshape}_{8 \times 128}(\mathcal{K}^\top e_{i^*}), \qquad g_j = \max_i (\kappa U^\top)_{ji}$$
+$$n_w = (\Pi^\top e_{i^\star})_\text{kw}, \qquad \kappa = \operatorname{reshape}_{8 \times 128}(\mathcal{K}^\top e_{i^\star}), \qquad g_j = \max_i (\kappa U^\top)_{ji}$$
 
 $$\text{cov} = h_1 \cdot [\![n_w \ge 1]\!] \cdot \min_j \big(g_j + [\![\iota_j \ge n_w]\!]\, B\big)$$
 

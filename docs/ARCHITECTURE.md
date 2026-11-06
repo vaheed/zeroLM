@@ -88,7 +88,7 @@ The write is the normalized delta rule (NLMS). Ignoring decay and $\epsilon$, th
 
 $$q = W_q h_{t-1}, \qquad \alpha_j = \operatorname{softmax}_j\!\left(\frac{q^\top m_j}{\sqrt d}\right), \qquad h_t = \tanh\!\Big(\mathrm{GRU}(h_{t-1}, x_t) + W_o \textstyle\sum_j \alpha_j m_j\Big)$$
 
-**Budget matching.** `build_with_budget` picks the hidden width $d^* = \arg\min_{4 \le d \le 4096} |\text{params}(d) - B|$ for budget $B$, which puts all four cells within 5% of 20,000.
+**Budget matching.** `build_with_budget` picks the hidden width $d^\star = \arg\min_{4 \le d \le 4096} \lvert \text{params}(d) - B \rvert$ for budget $B$, which puts all four cells within 5% of 20,000.
 
 ### Bake-off metrics (`zerolm-eval/src/lib.rs`)
 
