@@ -1,0 +1,17 @@
+birds can fly
+penguins are birds
+penguins cannot fly
+tweety is a bird
+pingu is a penguin
+can tweety fly?
+can pingu fly?
+amy is taller than bob
+bob is taller than cal
+is amy taller than cal?
+who is shorter, amy or cal?
+the storm happened before the flood
+the flood happened before the harvest
+did the storm happen before the harvest?
+if something is wet then it is cold
+the river is wet
+is the river cold?

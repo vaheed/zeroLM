@@ -1,0 +1,4 @@
+teach capital of france => paris
+ask what is the capital of france
+correct capital of france => lyon
+ask capital of france

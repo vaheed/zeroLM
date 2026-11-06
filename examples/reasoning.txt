@@ -1,0 +1,11 @@
+every dog is a mammal
+all mammals are animals
+rex is a dog
+it is in the kennel
+the cat sat on the mat
+is rex an animal?
+is rex in the kennel?
+is rex a fish?
+tom has 3 apples
+ann has 2 more apples than tom
+how many apples does ann have?

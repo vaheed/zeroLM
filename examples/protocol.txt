@@ -1,0 +1,7 @@
+teach sky => blue
+ask sky
+confirm sky
+ask sky
+repeat
+forget sky
+ask sky
