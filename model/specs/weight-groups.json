@@ -68,6 +68,12 @@
       "update_path": "local_plasticity"
     },
     {
+      "id": "w_prog",
+      "description": "W_PROG: compiled circuit constants (tensors prog.<circuit>.<name>), produced by the zerolm-wsp compiler from model/prog/ specs with pinned hashes; verified bit-identical to the compiler output on every checkpoint load. Changed only by validated WSP patches (apply/revert, crates/zerolm-wsp/src/patch.rs); no circuit declares adaptable blocks yet.",
+      "init_source": "wsp-compiler",
+      "update_path": "wsp_patch"
+    },
+    {
       "id": "wsp_skills",
       "description": "Skill-level weight edits, accepted only via validated patches.",
       "init_source": "zeros",

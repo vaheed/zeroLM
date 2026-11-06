@@ -50,6 +50,20 @@
       "description": "Bounded statement/question grammar: about 45 function words, 8 comparatives (4 dimensions), number words zero-twenty, verb normalizations, and the pronoun 'it'. Content words are open. Operator semantics (class inclusion, transitivity, inheritance, comparison, arithmetic, temporal order, negation, conditionals) are programmed.",
       "source": "crates/zerolm-engine/src/semantic_state.rs",
       "derived_from_corpus": false
+    },
+    {
+      "id": "wsp-compiler",
+      "kind": "init_formula",
+      "description": "W_PROG constants are the deterministic output of the zerolm-wsp circuit compiler run on the typed specifications in model/prog/ (one entry per circuit below); each compiled circuit's SHA-256 is pinned in model/prog/pinned.json. Circuits encode algorithms only: no vocabulary, word list, fact, or corpus statistic.",
+      "source": "crates/zerolm-wsp/src/compiler.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "memory-read-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit memory-read (model/prog/memory-read.json): Phase 5 retrieval as a neural ISA program. Constants: a status-column selector and active-status window, attention inverse temperature 32 and minimum read weight 1e-7, read threshold 0.3 and coverage threshold 0.5 (from model/specs/memory.json), a key-word position index, a nearest-code score scale, and a top-2 margin selector.",
+      "source": "crates/zerolm-wsp/src/circuits/attention_read.rs",
+      "derived_from_corpus": false
     }
   ]
 }

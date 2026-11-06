@@ -1,0 +1,4 @@
+//! Circuit templates. Each one turns typed parameters into a program and its
+//! constants; none may contain language data (constitution invariant 12).
+
+pub mod attention_read;
