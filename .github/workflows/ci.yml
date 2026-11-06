@@ -1,0 +1,39 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  policy-and-provenance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal --component clippy
+      - run: cargo test --workspace
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Phase 0 audit
+        run: |
+          mkdir -p reports/phase-0
+          cargo run -q -p zerolm-policy --bin zerolm-audit -- --json | tee reports/phase-0/summary.json
+      - name: Write job summary
+        if: always()
+        run: |
+          {
+            echo "## ZeroLM phase 0"
+            echo "- job status: ${{ job.status }}"
+            echo "- commit: ${{ github.sha }}"
+            if [ -s reports/phase-0/summary.json ]; then
+              echo '```json'; cat reports/phase-0/summary.json; echo '```'
+            else
+              echo "- audit report: **not produced** (phase incomplete)"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-phase-0-${{ github.sha }}
+          path: reports/phase-0/
+          if-no-files-found: warn
+          retention-days: 30
