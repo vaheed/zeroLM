@@ -1,7 +1,10 @@
 //! Forward pass only. Weights are programmed/seeded, never trained here.
 //! Session state is a fixed-size vector; nothing grows with stream length.
 
+pub mod bootstrap;
+
 use zerolm_nn::{build_with_budget, state, Cell, Kind, Trace};
+use zerolm_tensor::sha256::Sha256;
 use zerolm_tensor::{all_finite, log_sum_exp, Matrix};
 
 pub const VOCAB: usize = 256;
@@ -38,6 +41,25 @@ impl Model {
     /// Size of a plain f32 checkpoint of all parameters.
     pub fn checkpoint_bytes(&self) -> usize {
         self.param_count() * 4
+    }
+
+    /// SHA-256 over every parameter (name, length, f32 bits) plus a header.
+    /// Equal hashes mean byte-identical weights.
+    pub fn weights_sha256(&self) -> String {
+        let mut h = Sha256::new();
+        h.update(b"zerolm-weights-v1\0");
+        h.update(self.cell.kind().name().as_bytes());
+        for (name, data) in [("embed", &self.embed.data[..]), ("head", &self.head.data), ("head_bias", &self.head_bias)] {
+            h.update(name.as_bytes());
+            h.update(&(data.len() as u64).to_le_bytes());
+            h.update_f32(data);
+        }
+        for (name, data) in self.cell.groups() {
+            h.update(name.as_bytes());
+            h.update(&(data.len() as u64).to_le_bytes());
+            h.update_f32(data);
+        }
+        h.finish_hex()
     }
 
     pub fn init_state(&self) -> Vec<f32> {

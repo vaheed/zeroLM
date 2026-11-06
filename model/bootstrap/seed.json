@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "bootstrap_language": "utf8-bytes",
+  "byte_values": 256,
+  "control_tokens": {"BOS": 256, "EOS": 257, "PAD": 258},
+  "commands": ["teach", "ask", "correct", "confirm", "forget", "repeat"],
+  "delimiter": " => ",
+  "default_seed": 1,
+  "cell": "gru",
+  "embed_dim": 16,
+  "cell_param_budget": 20000,
+  "init": {
+    "embed": "uniform in [-1,1), SplitMix64 stream tagged 'embed'",
+    "cells": "uniform in +-1/sqrt(fan_in), stream tagged per tensor; gate biases linspace",
+    "head": "uniform in +-0.1/sqrt(hidden), stream tagged 'head'; bias zeros"
+  },
+  "init_weights_sha256": "efb8f0e1b8252cc4e53585849ec1b3ab7533736a1d920453e2aff1e7790f95b6",
+  "not_claimed": "The model has no English understanding at bootstrap; the protocol ledger is session-local scaffolding, not model memory."
+}

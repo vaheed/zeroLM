@@ -9,3 +9,5 @@ license.workspace = true
 zerolm-tensor = { path = "../zerolm-tensor" }
 zerolm-nn = { path = "../zerolm-nn" }
 zerolm-tokenizer = { path = "../zerolm-tokenizer" }
+serde.workspace = true
+serde_json.workspace = true
