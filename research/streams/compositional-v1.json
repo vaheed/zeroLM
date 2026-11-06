@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "id": "compositional-v1",
+  "description": "Generated child-directed-style sentences from a small hand-written lexicon and templates. Exposure data only: never used to initialize weights.",
+  "separator": "\n",
+  "lexicon": {
+    "name": ["mia", "tom", "ana", "leo", "sam", "kai", "zoe", "ben", "ivy", "max"],
+    "animal": ["cat", "dog", "bird", "fox", "cow", "frog", "duck", "bear"],
+    "object": ["ball", "cup", "box", "hat", "book", "kite", "shoe", "drum"],
+    "color": ["red", "blue", "green", "yellow", "brown", "pink"],
+    "verb": ["sees", "likes", "finds", "holds", "wants", "drops"],
+    "place": ["park", "house", "garden", "river", "school", "barn"],
+    "adj": ["big", "small", "happy", "sleepy", "wet", "old"]
+  },
+  "templates": [
+    "{name} {verb} the {color} {object}.",
+    "the {adj} {animal} is in the {place}.",
+    "{name} and the {animal} go to the {place}.",
+    "where is the {color} {object}? it is in the {place}.",
+    "the {animal} {verb} the {adj} {object}.",
+    "{name} has a {color} {object} and a {adj} {animal}."
+  ],
+  "held_out_combinations": [
+    {"color": "green", "object": "kite"},
+    {"color": "red", "object": "drum"},
+    {"color": "pink", "object": "ball"},
+    {"color": "blue", "object": "shoe"},
+    {"adj": "sleepy", "animal": "fox"},
+    {"adj": "wet", "animal": "cat"},
+    {"adj": "big", "animal": "duck"},
+    {"name": "zoe", "verb": "drops"},
+    {"name": "leo", "verb": "likes"},
+    {"name": "ivy", "animal": "bear"},
+    {"animal": "frog", "place": "school"},
+    {"animal": "cow", "place": "river"}
+  ]
+}
