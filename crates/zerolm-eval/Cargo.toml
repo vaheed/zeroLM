@@ -1,6 +1,6 @@
 [package]
 name = "zerolm-eval"
-description = "Phase 2 architecture bake-off and Phase 4 online-learning benchmark"
+description = "Phase 2 architecture bake-off, Phase 4 online-learning benchmark, and Phase 5 memory benchmark"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,6 +11,7 @@ zerolm-nn = { path = "../zerolm-nn" }
 zerolm-engine = { path = "../zerolm-engine" }
 zerolm-learning = { path = "../zerolm-learning" }
 zerolm-policy = { path = "../zerolm-policy" }
+zerolm-memory = { path = "../zerolm-memory" }
 serde.workspace = true
 serde_json.workspace = true
 
@@ -21,3 +22,7 @@ path = "src/bin/bakeoff.rs"
 [[bin]]
 name = "zerolm-online-lm"
 path = "src/bin/online_lm.rs"
+
+[[bin]]
+name = "zerolm-memory"
+path = "src/bin/memory_bench.rs"

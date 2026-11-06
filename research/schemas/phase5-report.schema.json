@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM Phase 5 weight-resident memory report (reports/memory/summary.json)",
+  "type": "object",
+  "required": ["phase", "mode", "passed", "failures", "spec", "spec_sha256", "seeds", "summary", "scope_note"],
+  "properties": {
+    "phase": {"const": "phase-5"},
+    "mode": {"enum": ["main", "pilot"]},
+    "passed": {"type": "boolean"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "spec": {"type": "object", "required": ["config", "facts", "main_seeds", "pilot_seeds", "gates", "gate_rationale"], "properties": {"facts": {"type": "integer", "minimum": 1000}}},
+    "spec_sha256": {"$ref": "#/$defs/sha256"},
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["seed", "facts", "facts_sha256", "initial_core_sha256", "final_core_sha256", "initial_memory_sha256", "final_memory_sha256", "checkpoint_sha256", "checkpoint_files", "tensor_groups", "categories", "exact", "paraphrase", "negatives", "interference", "capacity", "sweep", "fast_capacity", "ablations", "latency", "checks", "update_events"],
+        "properties": {
+          "facts": {"type": "integer", "minimum": 1000},
+          "facts_sha256": {"$ref": "#/$defs/sha256"},
+          "initial_core_sha256": {"$ref": "#/$defs/sha256"},
+          "final_core_sha256": {"$ref": "#/$defs/sha256"},
+          "checkpoint_sha256": {"$ref": "#/$defs/sha256"},
+          "checkpoint_files": {"type": "array", "items": {"enum": ["memory.zlmc", "memory.prev.zlmc"]}},
+          "tensor_groups": {"type": "array", "items": {"type": "object", "required": ["tensor", "group", "changed"]}},
+          "categories": {"type": "array", "items": {"type": "object", "required": ["category", "kind", "score"], "properties": {"kind": {"enum": ["exact", "paraphrase", "paraphrase_trivial", "negative"]}, "score": {"$ref": "#/$defs/score"}}}},
+          "exact": {"$ref": "#/$defs/score"},
+          "paraphrase": {"$ref": "#/$defs/score"},
+          "negatives": {"$ref": "#/$defs/score"},
+          "interference": {"type": "array", "items": {"$ref": "#/$defs/curve"}},
+          "capacity": {"type": "array", "items": {"$ref": "#/$defs/curve"}},
+          "sweep": {"type": "array", "items": {"type": "object", "required": ["threshold", "exact", "paraphrase", "negatives"]}},
+          "fast_capacity": {"type": "array", "items": {"type": "object", "required": ["associations", "recall", "first_recalled"]}},
+          "ablations": {"type": "array", "items": {"type": "array", "prefixItems": [{"type": "string"}, {"$ref": "#/$defs/score"}]}},
+          "latency": {"type": "object", "required": ["write_p50_us", "write_p95_us", "query_p50_us", "query_p95_us", "save_ms", "load_ms", "checkpoint_bytes", "active_facts_at_query"]},
+          "checks": {"type": "array", "items": {"type": "object", "required": ["name", "passed", "detail"], "properties": {"passed": {"type": "boolean"}}}}
+        }
+      }
+    },
+    "summary": {"type": "object", "required": ["exact_recall", "exact_precision", "paraphrase_recall", "paraphrase_precision", "negative_false_accept", "query_p95_us"]},
+    "scope_note": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "unit": {"type": "number", "minimum": 0, "maximum": 1},
+    "score": {"type": "object", "required": ["queries", "recall", "precision", "abstain_rate", "false_accept_rate"], "properties": {"recall": {"$ref": "#/$defs/unit"}, "precision": {"$ref": "#/$defs/unit"}, "abstain_rate": {"$ref": "#/$defs/unit"}, "false_accept_rate": {"$ref": "#/$defs/unit"}}},
+    "curve": {"type": "object", "required": ["facts_stored", "exact", "probe_paraphrase", "probe_mean_margin"], "properties": {"exact": {"$ref": "#/$defs/score"}, "probe_paraphrase": {"$ref": "#/$defs/score"}}}
+  }
+}

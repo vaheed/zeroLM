@@ -3,6 +3,7 @@
 //! capacity* (memory horizon, stability, cost), not language ability.
 //! Held-out generalization and chronological acquisition: see [`online`] (Phase 4).
 
+pub mod memory;
 pub mod online;
 
 use serde::{Deserialize, Serialize};

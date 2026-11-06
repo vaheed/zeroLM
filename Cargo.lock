@@ -111,6 +111,7 @@ dependencies = [
  "serde_json",
  "zerolm-engine",
  "zerolm-learning",
+ "zerolm-memory",
  "zerolm-nn",
  "zerolm-policy",
  "zerolm-tensor",
