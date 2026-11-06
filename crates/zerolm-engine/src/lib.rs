@@ -3,6 +3,7 @@
 
 pub mod binding;
 pub mod bootstrap;
+pub mod isa;
 pub mod semantic_state;
 
 use zerolm_nn::{build_with_budget, state, Cell, Kind, Trace};

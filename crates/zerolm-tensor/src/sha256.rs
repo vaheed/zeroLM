@@ -74,7 +74,8 @@ impl Sha256 {
         }
     }
 
-    pub fn finish_hex(mut self) -> String {
+    /// The 32-byte digest.
+    pub fn finish(mut self) -> [u8; 32] {
         let bits = self.len * 8;
         self.buf.push(0x80);
         while self.buf.len() % 64 != 56 {
@@ -85,9 +86,17 @@ impl Sha256 {
         for b in tail.chunks_exact(64) {
             self.compress(b);
         }
-        self.h.iter().fold(String::new(), |mut acc, x| {
+        let mut out = [0u8; 32];
+        for (o, x) in out.chunks_exact_mut(4).zip(self.h) {
+            o.copy_from_slice(&x.to_be_bytes());
+        }
+        out
+    }
+
+    pub fn finish_hex(self) -> String {
+        self.finish().iter().fold(String::new(), |mut acc, x| {
             use std::fmt::Write;
-            let _ = write!(acc, "{x:08x}");
+            let _ = write!(acc, "{x:02x}");
             acc
         })
     }
