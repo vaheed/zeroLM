@@ -3,11 +3,11 @@
 //! Written separately from `zerolm_engine::isa` and deliberately minimal:
 //! it parses a program bundle from raw bytes with `serde_json::Value`, keeps
 //! tensors in a name map, and runs each operation with the plain loops given
-//! in `docs/NEURAL_ISA.md`. It shares no code with the engine and contains no
+//! in `docs/neural-isa.md`. It shares no code with the engine and contains no
 //! language-specific logic. If it reproduces the engine's outputs bit for bit
 //! from the exported bundle, the behavior lives in the program and weights.
 
-// Plain index loops mirror the spec text in docs/NEURAL_ISA.md.
+// Plain index loops mirror the spec text in docs/neural-isa.md.
 #![allow(clippy::needless_range_loop)]
 
 use serde_json::Value;

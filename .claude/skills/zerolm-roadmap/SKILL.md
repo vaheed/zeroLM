@@ -1,21 +1,21 @@
 ---
 name: zerolm-roadmap
-description: Use when implementing, reviewing, or planning any ZeroLM phase (0-16): gives each phase's goal, deliverables, CI tests and exit gate from docs/ROADMAP.md.
+description: Use when implementing, reviewing, or planning any ZeroLM phase (0-16): gives each phase's goal, deliverables, CI tests and exit gate from docs/roadmap.md.
 ---
 
 # ZeroLM roadmap skill
 
-Generated from `docs/ROADMAP.md` (source of truth; re-read it for detail). Work phases in order. Before starting a phase: read its section, check `research/phases.json`, run the Phase 0 audit. Before marking it complete: executable command, report schema, CI job with `if: always()` summary, and updated `docs/CLAIMS_AND_LIMITATIONS.md`.
+Generated from `docs/roadmap.md` (source of truth; re-read it for detail). Work phases in order. Before starting a phase: read its section, check `research/phases.json`, run the Phase 0 audit. Before marking it complete: executable command, report schema, CI job with `if: always()` summary, and updated `docs/claims-and-limitations.md`.
 
-Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
+Invariants: see `AGENTS.md` and `docs/research-constitution.md`.
 
 ## Phase 0 — Research constitution and scope freeze
 
 **Goal:** Turn the updated objective into an unambiguous scientific contract.
 
 **Deliverables**
-- `docs/RESEARCH_CONSTITUTION.md`
-- `docs/CLAIMS_AND_LIMITATIONS.md`
+- `docs/research-constitution.md`
+- `docs/claims-and-limitations.md`
 - `research/manifest/seed-knowledge.json`
 - `research/manifest/update-policy.json`
 
@@ -31,7 +31,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 1 — Freeze and audit the existing baseline
 
-> **Implemented differently:** the legacy code was deleted, so Phase 1 froze the new baseline (`zerolm-baseline`, `docs/BASELINE.md`, tag `legacy-final`). Keep `zerolm-baseline check` green.
+> **Implemented differently:** the legacy code was deleted, so Phase 1 froze the new baseline (`zerolm-baseline`, `docs/baseline.md`, tag `legacy-final`). Keep `zerolm-baseline check` green.
 
 **Goal:** Keep the current work reproducible and prevent the new engine from hiding regressions.
 
@@ -39,7 +39,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 - `reports/baseline/legacy.json`
 - `reports/baseline/next.json`
 - `reports/baseline/environment.json`
-- `docs/BASELINE.md`
+- `docs/baseline.md`
 
 **CI tests**
 - `make pipeline`
@@ -76,7 +76,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 3 — Bootstrap language interface and deterministic initialization
 
-> **Implemented:** tokenizer hardening, `zerolm-engine/src/bootstrap.rs`, `model/bootstrap/seed.json` (pinned init hash), `zerolm-runtime` CLI, `docs/BOOTSTRAP.md`. The ledger is scaffolding, not memory.
+> **Implemented:** tokenizer hardening, `zerolm-engine/src/bootstrap.rs`, `model/bootstrap/seed.json` (pinned init hash), `zerolm-runtime` CLI, `docs/bootstrap.md`. The ledger is scaffolding, not memory.
 
 **Goal:** Make the system able to receive arbitrary text before it has learned a vocabulary.
 
@@ -84,7 +84,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 - `crates/zerolm-tokenizer/`
 - `crates/zerolm-engine/src/bootstrap.rs`
 - `model/bootstrap/seed.json`
-- `docs/BOOTSTRAP.md`
+- `docs/bootstrap.md`
 
 **CI tests**
 - Round-trip UTF-8 tests for ASCII, Unicode, punctuation, emoji, and malformed input handling.
@@ -99,7 +99,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 4 — First true online neural language model
 
-> **Implemented:** `crates/zerolm-learning` (online predictor; frozen/delta/hebbian rules; streams; n-gram baselines), `research/streams/compositional-v1.json`, frozen protocol `model/specs/online-learning.json`, benchmark `zerolm-online-lm` (Rust, not `language_modeling.py`: the project has no Python), `docs/ONLINE_LEARNING.md`. Only the readout learns; BPTT control not run. Tune only on pilot seeds; keep the gate green.
+> **Implemented:** `crates/zerolm-learning` (online predictor; frozen/delta/hebbian rules; streams; n-gram baselines), `research/streams/compositional-v1.json`, frozen protocol `model/specs/online-learning.json`, benchmark `zerolm-online-lm` (Rust, not `language_modeling.py`: the project has no Python), `docs/online-learning.md`. Only the readout learns; BPTT control not run. Tune only on pilot seeds; keep the gate green.
 
 **Goal:** Demonstrate online language acquisition rather than phrase lookup or fixed answers.
 
@@ -126,7 +126,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 5 — Weight-resident associative memory
 
-> **Implemented:** `crates/zerolm-memory` (`checkpoint.rs` atomic format + recovery, `encoder.rs`, `retrieval.rs`, `fast_weights.rs`, `persistent_memory.rs`), frozen spec `model/specs/memory.json`, benchmark `zerolm-memory` (Rust, no Python), CLI `zerolm memory --dir`, `docs/MEMORY_FORMAT.md`. Retrieval is programmed (pooled attention + per-word coverage verification), not learned. Tune only on pilot seeds; keep the gate green.
+> **Implemented:** `crates/zerolm-memory` (`checkpoint.rs` atomic format + recovery, `encoder.rs`, `retrieval.rs`, `fast_weights.rs`, `persistent_memory.rs`), frozen spec `model/specs/memory.json`, benchmark `zerolm-memory` (Rust, no Python), CLI `zerolm memory --dir`, `docs/memory-format.md`. Retrieval is programmed (pooled attention + per-word coverage verification), not learned. Tune only on pilot seeds; keep the gate green.
 
 **Goal:** Give the neural model persistent memory without transcript replay or an external semantic database.
 
@@ -134,7 +134,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 - `crates/zerolm-memory/src/fast_weights.rs`
 - `crates/zerolm-memory/src/persistent_memory.rs`
 - `crates/zerolm-memory/src/retrieval.rs`
-- `docs/MEMORY_FORMAT.md`
+- `docs/memory-format.md`
 
 **CI tests**
 - Add at least 1,000 synthetic facts through the live update API, then restart from the checkpoint and retrieve them.
@@ -150,7 +150,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 6 — Concepts, relations, and compositional reasoning
 
-> **Implemented:** `zerolm-engine/src/binding.rs` (FHRR phasors, fractional-power numbers), `semantic_state.rs` (bounded grammar, pronoun state), `crates/zerolm-reasoner` (relational tensor memory, 8 operators, `oracle.rs`, `lookup.rs`), frozen spec `model/specs/reasoning.json`, benchmark `zerolm-reasoning` (Rust, not `compositional_reasoning.py`), CLI `zerolm reason`, `docs/REASONING.md`. Operators are programmed; the oracle is evaluation-only. Hidden seed from `ZEROLM_HIDDEN_SEED` or the commit. Tune only on pilot seeds.
+> **Implemented:** `zerolm-engine/src/binding.rs` (FHRR phasors, fractional-power numbers), `semantic_state.rs` (bounded grammar, pronoun state), `crates/zerolm-reasoner` (relational tensor memory, 8 operators, `oracle.rs`, `lookup.rs`), frozen spec `model/specs/reasoning.json`, benchmark `zerolm-reasoning` (Rust, not `compositional_reasoning.py`), CLI `zerolm reason`, `docs/reasoning.md`. Operators are programmed; the oracle is evaluation-only. Hidden seed from `ZEROLM_HIDDEN_SEED` or the commit. Tune only on pilot seeds.
 
 **Goal:** Move beyond token prediction and exact fact recall to reusable internal concepts and inference.
 
@@ -172,7 +172,7 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 - The model answers new compositional questions from stored primitives and relations, not from a full-sentence lookup.
 - Causal ablations demonstrate that the relevant neural pathways are actually used.
 
-## Revision 2 (phases 7-16) — read docs/ROADMAP.md sec. 0.3, 3.7, 5, 7.1 first
+## Revision 2 (phases 7-16) — read docs/roadmap.md sec. 0.3, 3.7, 5, 7.1 first
 
 Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language data) into `W_PROG`; local online rules learn from licensed human-written text; 1.0 = Level L3 small LLM. New invariants 10-13 in the constitution: uniform execution (reference-interpreter test), byte-permutation test for circuits, corpus manifest / no LM-generated text, Gate B is the only way to change the no-backprop rule.
 

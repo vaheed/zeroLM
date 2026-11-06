@@ -8,7 +8,7 @@ What the system is given before it has seen any input, and what it is not.
 
 ## Mathematics
 
-Abbreviations: PRNG = pseudo-random number generator, OOV = out of vocabulary, UTF-8 = Unicode Transformation Format, 8-bit, SHA-256 = Secure Hash Algorithm (256-bit), FNV-1a = Fowler-Noll-Vo hash variant 1a. More in [MATH.md](MATH.md).
+Abbreviations: PRNG = pseudo-random number generator, OOV = out of vocabulary, UTF-8 = Unicode Transformation Format, 8-bit, SHA-256 = Secure Hash Algorithm (256-bit), FNV-1a = Fowler-Noll-Vo hash variant 1a. More in [math.md](math.md).
 
 ### Tokenization
 

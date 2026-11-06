@@ -46,7 +46,7 @@ The discourse state updates as `c ← 0.5 c + subject` after each statement. "it
 | `memory.relations.codebook` | `relation_memory` | symbol vectors seen so far (no names are stored) |
 | `core.reasoner.*` | `binding_roles` | frozen role / relation phasors and the number base, verified on load |
 
-The checkpoint uses the Phase 5 atomic format (`docs/MEMORY_FORMAT.md`). Questions and derived answers are never written to memory.
+The checkpoint uses the Phase 5 atomic format (`docs/memory-format.md`). Questions and derived answers are never written to memory.
 
 ### Operators (`crates/zerolm-reasoner/src/operators.rs`)
 
@@ -67,7 +67,7 @@ Both a positive and a negative proof means **contradiction**. No proof means **u
 
 ## Mathematics
 
-Abbreviations: FHRR = Fourier holographic reduced representations, a vector-symbolic algebra whose vectors are complex unit phasors; VSA = vector-symbolic architecture; phasor = a complex number $e^{i\theta}$ of modulus 1. Glossary: [MATH.md](MATH.md).
+Abbreviations: FHRR = Fourier holographic reduced representations, a vector-symbolic algebra whose vectors are complex unit phasors; VSA = vector-symbolic architecture; phasor = a complex number $e^{i\theta}$ of modulus 1. Glossary: [math.md](math.md).
 
 ### The vector algebra (`binding.rs`)
 
@@ -141,7 +141,7 @@ Yes and no together give **contradiction**; neither gives **unknown**. The premi
 
 $$\text{confidence} = \prod_{s \in \text{premises}} \text{conf}(s), \qquad \text{conf} = 1.0 \text{ (named subject)},\ 0.9 \text{ (subject resolved from "it")}.$$
 
-Since Phase 7, the graph search behind class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation runs as the compiled circuits `relation-graph` (C5) and `relation-reach` (C6): a fixed 8-step recurrence whose premise matrix yields the shortest proof ([NEURAL_ISA.md](NEURAL_ISA.md#the-relational-circuits-phase-6-roadmap-c5-and-c6)). The remaining operator logic is still programmed Rust control flow.
+Since Phase 7, the graph search behind class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation runs as the compiled circuits `relation-graph` (C5) and `relation-reach` (C6): a fixed 8-step recurrence whose premise matrix yields the shortest proof ([neural-isa.md](neural-isa.md#the-relational-circuits-phase-6-roadmap-c5-and-c6)). The remaining operator logic is still programmed Rust control flow.
 
 ## Evaluation
 

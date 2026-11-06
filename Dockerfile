@@ -1,6 +1,6 @@
 # ZeroLM in one image: the toolchain, the source, prebuilt release binaries,
 # and prebuilt tests. No model or data is downloaded; the model starts from
-# its pinned seeded initialization. See docs/GETTING_STARTED.md.
+# its pinned seeded initialization. See docs/getting-started.md.
 #
 #   docker compose up --build          guided demo with internals shown
 #   docker compose run --rm reason     talk to the reasoner yourself

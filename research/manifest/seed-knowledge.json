@@ -6,7 +6,7 @@
       "id": "byte-alphabet",
       "kind": "structural_prior",
       "description": "Input/output alphabet is the 256 UTF-8 byte values; no tokenizer merges, no vocabulary.",
-      "source": "docs/RESEARCH_CONSTITUTION.md#bootstrap",
+      "source": "docs/research-constitution.md#bootstrap",
       "derived_from_corpus": false
     },
     {

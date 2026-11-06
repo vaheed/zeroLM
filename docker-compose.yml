@@ -8,7 +8,7 @@
 #   docker compose run --rm gates quick    audit, tests, clippy only
 #
 # Second way, without building: docker-compose.ghcr.yml uses the published
-# image ghcr.io/vaheed/zerolm (see docs/GETTING_STARTED.md).
+# image ghcr.io/vaheed/zerolm (see docs/getting-started.md).
 #
 # Verbose mode is on by default (gates: off, since it adds all test output); turn it off with ZEROLM_VERBOSE=0, for example
 #   ZEROLM_VERBOSE=0 docker compose run --rm reason

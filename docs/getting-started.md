@@ -8,7 +8,7 @@ This guide shows how to run ZeroLM, watch what happens inside it, and check ever
 | B. Docker, prebuilt image from GitHub Packages | Docker with Compose v2 | Fastest start; nothing is compiled |
 | C. Cargo on your machine | Rust 1.75 or newer | Development |
 
-What to expect: ZeroLM today is a research system at Level L0 (see [ROADMAP.md](ROADMAP.md) sec. 7.1). It reasons over a bounded statement language, stores facts in checkpoint tensors, and shows online learning on a small generated language. It does not understand open English. [CLAIMS_AND_LIMITATIONS.md](CLAIMS_AND_LIMITATIONS.md) lists exactly what is and is not claimed.
+What to expect: ZeroLM today is a research system at Level L0 (see [roadmap.md](roadmap.md) sec. 7.1). It reasons over a bounded statement language, stores facts in checkpoint tensors, and shows online learning on a small generated language. It does not understand open English. [claims-and-limitations.md](claims-and-limitations.md) lists exactly what is and is not claimed.
 
 ## A. Docker, built from your checkout
 
@@ -128,7 +128,7 @@ For machine-readable logs use `--trace FILE` (one JSON event per line). The inte
 
 The test `documented_examples_give_the_documented_answers` in [crates/zerolm-runtime/tests/cli.rs](../crates/zerolm-runtime/tests/cli.rs) keeps these files and their answers in sync.
 
-The reasoning language is bounded. It accepts sentences such as `x is a y`, `every x is a y`, `all xs are ys`, `x can v`, `x cannot v`, `x is in y`, `x is taller than y`, `x happened before y`, `x has 3 things`, `x has 2 more things than y`, and `if something is p then it is q`, plus their questions. Anything else is reported as "not understood". See [REASONING.md](REASONING.md).
+The reasoning language is bounded. It accepts sentences such as `x is a y`, `every x is a y`, `all xs are ys`, `x can v`, `x cannot v`, `x is in y`, `x is taller than y`, `x happened before y`, `x has 3 things`, `x has 2 more things than y`, and `if something is p then it is q`, plus their questions. Anything else is reported as "not understood". See [reasoning.md](reasoning.md).
 
 ## Checking the claims
 

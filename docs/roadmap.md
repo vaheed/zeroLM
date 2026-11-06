@@ -64,7 +64,7 @@ This plan does **not** guarantee a seven-year-old level of cognition, much less 
 
 ## 1. Repository assessment and starting point
 
-> **Historical (revision 1).** This section describes the repository before Phase 1. The v0.2 and ZeroLM Next code was removed and lives only in git history (tag `legacy-final`). For the state after Phase 6, see section 0.3 and `docs/CLAIMS_AND_LIMITATIONS.md`.
+> **Historical (revision 1).** This section describes the repository before Phase 1. The v0.2 and ZeroLM Next code was removed and lives only in git history (tag `legacy-final`). For the state after Phase 6, see section 0.3 and `docs/claims-and-limitations.md`.
 
 The current `main` branch already contains useful research infrastructure:
 
@@ -282,7 +282,7 @@ This is engineered prior structure, not learned language knowledge. The bootstra
 
 ### 3.7 Revision 2: the uniform neural engine
 
-**Neural ISA.** ISA stands for *instruction set architecture*: in a CPU, the fixed list of instructions every program is built from. The neural ISA is this project's analogue for a neural network (the term is coined here; it is not an external standard). The model is a set of weight tensors plus a fixed-shape program graph over a small operation set. Implementation and exact semantics: `docs/NEURAL_ISA.md`.
+**Neural ISA.** ISA stands for *instruction set architecture*: in a CPU, the fixed list of instructions every program is built from. The neural ISA is this project's analogue for a neural network (the term is coined here; it is not an external standard). The model is a set of weight tensors plus a fixed-shape program graph over a small operation set. Implementation and exact semantics: `docs/neural-isa.md`.
 
 | Op | Meaning |
 |---|---|
@@ -346,7 +346,7 @@ Each phase adds an executable test suite. A phase is complete only when its test
 **Goal:** Turn the updated objective into an unambiguous scientific contract.
 
 **Work**
-- Add `docs/RESEARCH_CONSTITUTION.md`.
+- Add `docs/research-constitution.md`.
 - Replace the ambiguous “zero-training” language in the new research track with “zero offline pretraining; online learning is allowed.” Preserve the old definition for the legacy v0.2/Next experiments.
 - Define what counts as a seed prior, an online observation, feedback, memory write, local plasticity update, WSP patch, and training.
 - Define the initial bootstrap language and permitted knowledge inventory.
@@ -354,8 +354,8 @@ Each phase adds an executable test suite. A phase is complete only when its test
 - Define the target CPU profiles and how performance is reported.
 
 **Deliverables**
-- `docs/RESEARCH_CONSTITUTION.md`
-- `docs/CLAIMS_AND_LIMITATIONS.md`
+- `docs/research-constitution.md`
+- `docs/claims-and-limitations.md`
 - `research/manifest/seed-knowledge.json`
 - `research/manifest/update-policy.json`
 
@@ -384,7 +384,7 @@ Each phase adds an executable test suite. A phase is complete only when its test
 - `reports/baseline/legacy.json`
 - `reports/baseline/next.json`
 - `reports/baseline/environment.json`
-- `docs/BASELINE.md`
+- `docs/baseline.md`
 
 **GitHub Actions tests**
 - `make pipeline`
@@ -453,7 +453,7 @@ crates/
 - `crates/zerolm-tokenizer/`
 - `crates/zerolm-engine/src/bootstrap.rs`
 - `model/bootstrap/seed.json`
-- `docs/BOOTSTRAP.md`
+- `docs/bootstrap.md`
 
 **GitHub Actions tests**
 - Round-trip UTF-8 tests for ASCII, Unicode, punctuation, emoji, and malformed input handling.
@@ -520,7 +520,7 @@ crates/
 - `crates/zerolm-memory/src/fast_weights.rs`
 - `crates/zerolm-memory/src/persistent_memory.rs`
 - `crates/zerolm-memory/src/retrieval.rs`
-- `docs/MEMORY_FORMAT.md`
+- `docs/memory-format.md`
 
 **GitHub Actions tests**
 - Add at least 1,000 synthetic facts through the live update API, then restart from the checkpoint and retrieve them.
@@ -579,7 +579,7 @@ crates/
 - `crates/zerolm-engine/src/isa/`
 - `crates/zerolm-wsp/src/{compiler,patch}.rs`
 - `model/prog/` (circuit specifications and pinned output hashes)
-- `docs/NEURAL_ISA.md`
+- `docs/neural-isa.md`
 
 **CI tests**
 - The frozen Phase 5 and Phase 6 gates pass unchanged through the compiled programs.
@@ -609,7 +609,7 @@ crates/
 - `research/corpus/manifest.json`, `crates/zerolm-data/`
 - `zerolm-eval` baselines and `controls/`
 - `model/specs/levels.json` (frozen thresholds)
-- `docs/DATA.md`
+- `docs/data.md`
 
 **CI tests**
 - Manifest validation: every shard has a license, a hash, and a role. Fetched data must match the hashes.
@@ -939,17 +939,17 @@ zeroLM/
     wsp/
     developmental/
   docs/
-    RESEARCH_CONSTITUTION.md
-    ARCHITECTURE.md
-    BOOTSTRAP.md
-    LEARNING_RULES.md
-    MEMORY_FORMAT.md
-    NEURAL_ISA.md
-    DATA.md
-    WSP_PROTOCOL.md
-    TESTING.md
-    DEVELOPMENTAL_EVALUATION.md
-    CLAIMS_AND_LIMITATIONS.md
+    research-constitution.md
+    architecture.md
+    bootstrap.md
+    learning-rules.md
+    memory-format.md
+    neural-isa.md
+    data.md
+    weight-space-programming.md
+    testing.md
+    developmental-evaluation.md
+    claims-and-limitations.md
   scripts/
     ci/
       write_phase_summary.py
@@ -1043,7 +1043,7 @@ Kept for reference by Phases 14-16 and Track G. Their numbering is superseded by
 - `crates/zerolm-world/`
 - `research/environments/`
 - `research/benchmark/grounding.py`
-- `docs/GROUNDED_LEARNING.md`
+- `docs/grounded-learning.md`
 
 **GitHub Actions tests**
 - Prediction-before-observation tests: the model must commit to an outcome before seeing the result.
@@ -1101,7 +1101,7 @@ Kept for reference by Phases 14-16 and Track G. Their numbering is superseded by
 - `crates/zerolm-wsp/src/validator.rs`
 - `crates/zerolm-wsp/src/sandbox.rs`
 - `crates/zerolm-wsp/src/rollback.rs`
-- `docs/WSP_PROTOCOL.md`
+- `docs/weight-space-programming.md`
 
 **GitHub Actions tests**
 - Schema, tensor shape, value range, and protected-region validation.
@@ -1132,7 +1132,7 @@ Kept for reference by Phases 14-16 and Track G. Their numbering is superseded by
 - `research/benchmark/developmental_suite/`
 - `reports/developmental/learning_curves.json`
 - `reports/developmental/forgetting.json`
-- `docs/DEVELOPMENTAL_EVALUATION.md`
+- `docs/developmental-evaluation.md`
 
 **GitHub Actions tests**
 - Report per-stage performance and learning curves.

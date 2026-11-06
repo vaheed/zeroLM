@@ -9,7 +9,7 @@
 //! pure structure.
 //!
 //! Exact semantics (summation order, tie breaking, broadcasting) are specified
-//! in `docs/NEURAL_ISA.md`. An independent reference interpreter in
+//! in `docs/neural-isa.md`. An independent reference interpreter in
 //! `zerolm-eval` must reproduce every output bit for bit.
 
 pub mod bundle;
@@ -93,7 +93,7 @@ impl Decl {
     }
 }
 
-/// Elementwise functions. Binary ones broadcast (see `docs/NEURAL_ISA.md`).
+/// Elementwise functions. Binary ones broadcast (see `docs/neural-isa.md`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GateFn {

@@ -45,4 +45,4 @@ zerolm-online-lm --out "$DATA/online-lm" 2>&1
 step "Done" \
 "Try it yourself:  docker compose run --rm reason   (or: memory)
 Run every gate:    docker compose run --rm gates
-Honest limits:     docs/CLAIMS_AND_LIMITATIONS.md"
+Honest limits:     docs/claims-and-limitations.md"

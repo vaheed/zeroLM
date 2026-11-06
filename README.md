@@ -15,11 +15,11 @@ docker compose run --rm gates                  # run every gate and get a pass/f
 docker compose -f docker-compose.ghcr.yml up   # same demo from the prebuilt image ghcr.io/vaheed/zerolm
 ```
 
-Add `--verbose` to `zerolm run`, `memory`, or `reason` (on by default in Docker) to see each step: the parse, the tensors written, the operators and premises behind every answer, and the checkpoint hash. Full guide with examples and how to check each claim: [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md).
+Add `--verbose` to `zerolm run`, `memory`, or `reason` (on by default in Docker) to see each step: the parse, the tensors written, the operators and premises behind every answer, and the checkpoint hash. Full guide with examples and how to check each claim: [docs/getting-started.md](docs/getting-started.md).
 
 ## Status
 
-**Phases 0-6 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, a first online learner, weight-resident memory, and compositional reasoning over bound vectors.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md). Taught facts now persist across restarts only as checkpoint tensors and are answered by an attention read (1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973). See [docs/MEMORY_FORMAT.md](docs/MEMORY_FORMAT.md). Statements of a bounded language are stored as role-filler vectors, and eight programmed operators answer new compositional questions from them (100% agreement with a symbolic reference on 3 seeds plus a hidden seed; a lookup baseline gets 0% of derived questions). See [docs/REASONING.md](docs/REASONING.md). No claim of English understanding is made.
+**Phases 0-6 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, a first online learner, weight-resident memory, and compositional reasoning over bound vectors.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/online-learning.md](docs/online-learning.md). Taught facts now persist across restarts only as checkpoint tensors and are answered by an attention read (1,200 facts per seed: exact recall 1.000, paraphrase recall 0.973). See [docs/memory-format.md](docs/memory-format.md). Statements of a bounded language are stored as role-filler vectors, and eight programmed operators answer new compositional questions from them (100% agreement with a symbolic reference on 3 seeds plus a hidden seed; a lookup baseline gets 0% of derived questions). See [docs/reasoning.md](docs/reasoning.md). No claim of English understanding is made.
 
 | Phase | Topic | Status |
 |---|---|---|
@@ -41,7 +41,7 @@ Add `--verbose` to `zerolm run`, `memory`, or `reason` (on by default in Docker)
 | 15 | Capability evaluation and level certification | planned |
 | 16 | CPU deployment and 1.0 release (requires Level L3, a small LLM) | planned |
 
-Phases 7-16 follow roadmap revision 2 ([docs/ROADMAP.md](docs/ROADMAP.md) sec. 0.3): one neural engine whose behavior lives in weights, weight-space programming as a compiler of algorithms (never language data), and online learning from licensed human-written text toward a small but genuine LLM.
+Phases 7-16 follow roadmap revision 2 ([docs/roadmap.md](docs/roadmap.md) sec. 0.3): one neural engine whose behavior lives in weights, weight-space programming as a compiler of algorithms (never language data), and online learning from licensed human-written text toward a small but genuine LLM.
 
 Status is machine-readable in [research/phases.json](research/phases.json). A phase counts as complete only with an executable command, a report schema, a CI job, and uploaded evidence.
 
@@ -73,7 +73,7 @@ Weight groups (declared in [model/specs/weight-groups.json](model/specs/weight-g
 
 ## What this does not promise
 
-No seven-year-old or twenty-year-old cognition, and no age-equivalent claims. Those are aspiration labels; results are reported as concrete capabilities on named benchmarks. See [docs/CLAIMS_AND_LIMITATIONS.md](docs/CLAIMS_AND_LIMITATIONS.md).
+No seven-year-old or twenty-year-old cognition, and no age-equivalent claims. Those are aspiration labels; results are reported as concrete capabilities on named benchmarks. See [docs/claims-and-limitations.md](docs/claims-and-limitations.md).
 
 ## Try it with Cargo
 
@@ -117,23 +117,23 @@ research/phases.json      phase status and gates
 model/specs/              weight-group declarations
 docs/                     roadmap, constitution, claims and limitations
 AGENTS.md                 rules and workflow for contributors and AI agents
-.claude/skills/           roadmap skill generated from docs/ROADMAP.md
+.claude/skills/           roadmap skill generated from docs/roadmap.md
 ```
 
 ## Documents
 
-- [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md): run, watch internals, examples, check every claim
-- [docs/ROADMAP.md](docs/ROADMAP.md): full research and engineering plan, risks, kill criteria
-- [docs/RESEARCH_CONSTITUTION.md](docs/RESEARCH_CONSTITUTION.md): definitions and invariants
-- [docs/CLAIMS_AND_LIMITATIONS.md](docs/CLAIMS_AND_LIMITATIONS.md): what is and is not claimed
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): engine, candidates, bake-off results and caveats
-- [docs/BOOTSTRAP.md](docs/BOOTSTRAP.md): byte interface, teaching protocol, what is not claimed
-- [docs/BASELINE.md](docs/BASELINE.md): baseline and reproduction
-- [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md): Phase 4 online learner, update rules, results
-- [docs/MEMORY_FORMAT.md](docs/MEMORY_FORMAT.md): Phase 5 weight-resident memory, checkpoint format, retrieval math
-- [docs/REASONING.md](docs/REASONING.md): Phase 6 vector binding (FHRR) and inference operators
-- [docs/NEURAL_ISA.md](docs/NEURAL_ISA.md): Phase 7 neural ISA (instruction set architecture: the fixed tensor-operation set), compiled circuits
-- [docs/MATH.md](docs/MATH.md): notation, glossary of every abbreviation, and an index of all formulas
+- [docs/getting-started.md](docs/getting-started.md): run, watch internals, examples, check every claim
+- [docs/roadmap.md](docs/roadmap.md): full research and engineering plan, risks, kill criteria
+- [docs/research-constitution.md](docs/research-constitution.md): definitions and invariants
+- [docs/claims-and-limitations.md](docs/claims-and-limitations.md): what is and is not claimed
+- [docs/architecture.md](docs/architecture.md): engine, candidates, bake-off results and caveats
+- [docs/bootstrap.md](docs/bootstrap.md): byte interface, teaching protocol, what is not claimed
+- [docs/baseline.md](docs/baseline.md): baseline and reproduction
+- [docs/online-learning.md](docs/online-learning.md): Phase 4 online learner, update rules, results
+- [docs/memory-format.md](docs/memory-format.md): Phase 5 weight-resident memory, checkpoint format, retrieval math
+- [docs/reasoning.md](docs/reasoning.md): Phase 6 vector binding (FHRR) and inference operators
+- [docs/neural-isa.md](docs/neural-isa.md): Phase 7 neural ISA (instruction set architecture: the fixed tensor-operation set), compiled circuits
+- [docs/math.md](docs/math.md): notation, glossary of every abbreviation, and an index of all formulas
 - [AGENTS.md](AGENTS.md): working rules
 
 ## License

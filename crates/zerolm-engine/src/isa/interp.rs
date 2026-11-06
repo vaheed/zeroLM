@@ -1,5 +1,5 @@
 //! The main ISA interpreter. Kernels are plain loops whose summation order is
-//! the one specified in `docs/NEURAL_ISA.md`, so the reference interpreter can
+//! the one specified in `docs/neural-isa.md`, so the reference interpreter can
 //! reproduce every result bit for bit.
 
 use super::{err, Axis, Buf, GateFn, Instr, IsaError, NormKind, Program, ReduceFn, View};
@@ -214,7 +214,7 @@ fn matvec(w: View<'_>, x: View<'_>, transpose: bool) -> Result<Buf, IsaError> {
     // out[c] = sum over r (in order) of w[r][c] * x[r]. A row with x[r] == 0
     // adds +-0 to an accumulator that starts at +0 and so can never be -0;
     // skipping it is exact for finite weights (a bound-weight precondition,
-    // docs/NEURAL_ISA.md). Attention reads and one-hot gathers are mostly zero.
+    // docs/neural-isa.md). Attention reads and one-hot gathers are mostly zero.
     let mut out = vec![0.0f32; w.cols];
     for (r, &xr) in x.data.iter().enumerate() {
         if xr == 0.0 {

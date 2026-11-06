@@ -44,7 +44,7 @@ The constants are in [model/specs/online-learning.json](../model/specs/online-le
 
 ## Mathematics
 
-Abbreviations: BPB = bits per byte, ECE = expected calibration error, BPTT = backpropagation through time, NLMS = normalized least mean squares, GRU = gated recurrent unit. Notation: [MATH.md](MATH.md).
+Abbreviations: BPB = bits per byte, ECE = expected calibration error, BPTT = backpropagation through time, NLMS = normalized least mean squares, GRU = gated recurrent unit. Notation: [math.md](math.md).
 
 ### Features and prediction
 

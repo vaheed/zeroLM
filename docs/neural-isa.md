@@ -4,7 +4,7 @@ Status: Phase 7, in progress. Roadmap section 3.7; constitution invariant 10 (un
 
 **What "ISA" means.** ISA stands for *instruction set architecture*, a term from processor design: the fixed list of instructions a CPU can execute, which every program is ultimately built from. ZeroLM borrows the idea for a neural network. The **neural ISA** is the fixed list of tensor operations (matrix-vector products, elementwise gates, normalization, phasor binding, top-k selection, hashed row selection, the delta-rule write, and fixed repetition) that every computation of the model must be expressed in. The name is this project's own, not an external standard, which is why it does not turn up in searches. The closest published ideas are RASP and Tracr, which compile programs into Transformer weights (roadmap section 2.8).
 
-Other abbreviations on this page: WSP = weight-space programming (compiling algorithms into weights; the `zerolm-wsp` crate); W_PROG = the weight group of compiled circuit constants; FNV-1a = Fowler-Noll-Vo hash variant 1a; SHA-256 = Secure Hash Algorithm (256-bit); IEEE-754 = the floating-point standard; NUL = the zero byte. Glossary: [MATH.md](MATH.md).
+Other abbreviations on this page: WSP = weight-space programming (compiling algorithms into weights; the `zerolm-wsp` crate); W_PROG = the weight group of compiled circuit constants; FNV-1a = Fowler-Noll-Vo hash variant 1a; SHA-256 = Secure Hash Algorithm (256-bit); IEEE-754 = the floating-point standard; NUL = the zero byte. Glossary: [math.md](math.md).
 
 **Why it exists.** In Phases 5-6, facts were stored in tensors, but the decisions (parsing, search, accept or abstain) were made by ordinary Rust code. Rust code is a hand-written program, not a network. With an ISA, a capability is data: a program graph plus weights, which can be exported, ablated weight by weight, verified by a second interpreter, and later adapted by learning.
 
@@ -86,7 +86,7 @@ For $\mu_i = 1$ this is exactly $s_i$, since $s_i \cdot 1 = s_i$ and $s_i - 0 = 
 
 ## The memory-read circuit
 
-`model/prog/memory-read.json`, compiled by `zerolm_wsp::circuits::attention_read`. Inputs: the pooled query key $q \in \mathbb{R}^{128}$ and query word vectors $U \in \mathbb{R}^{n' \times 128}$. Bound model tensors: keys $K$, key words $\mathcal{K}$, values $V$, metadata $\Pi$, and byte codes $E$ (see [MEMORY_FORMAT.md](MEMORY_FORMAT.md)). Every step below is one ISA instruction or a few; $[\![\cdot]\!]$ is the `ge` gate.
+`model/prog/memory-read.json`, compiled by `zerolm_wsp::circuits::attention_read`. Inputs: the pooled query key $q \in \mathbb{R}^{128}$ and query word vectors $U \in \mathbb{R}^{n' \times 128}$. Bound model tensors: keys $K$, key words $\mathcal{K}$, values $V$, metadata $\Pi$, and byte codes $E$ (see [memory-format.md](memory-format.md)). Every step below is one ISA instruction or a few; $[\![\cdot]\!]$ is the `ge` gate.
 
 **select** (block constants: the status-column selector $e_\text{st}$ and the window bounds 0.5, 1.5):
 
@@ -128,7 +128,7 @@ $\max_p \text{keep}_p = \text{keep}_1$, because `keep` never increases, so this 
 
 ## The relational circuits (Phase 6, roadmap C5 and C6)
 
-Phase 6 stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [REASONING.md](REASONING.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\mathrm{sim}(a, b) = \frac1d \mathrm{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
+Phase 6 stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [reasoning.md](reasoning.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\mathrm{sim}(a, b) = \frac1d \mathrm{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
 
 ### C5: `relation-graph` (once per memory state)
 
