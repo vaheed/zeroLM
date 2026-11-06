@@ -115,3 +115,33 @@ jobs:
           path: reports/online-learning/
           if-no-files-found: warn
           retention-days: 30
+  weight-memory:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Memory invariants (restart, core byte identity, supersession, deletion, compaction, capacity, corrupt/interrupted checkpoints)
+        run: cargo test -p zerolm-memory -p zerolm-runtime && cargo test -p zerolm-eval --test memory
+      - name: Phase 5 gate (3 seeds x 1,200 facts, restart, frozen gates; fails on any failed check)
+        run: cargo run --release -p zerolm-eval --bin zerolm-memory -- --out reports/memory
+      - name: Cross-process recall through the CLI
+        run: |
+          mkdir -p reports/memory/cli
+          ckpt="$RUNNER_TEMP/zerolm-memory"
+          printf 'teach sky color => blue\nconfirm sky color\nteach mill owner => dara\n' | cargo run -q --release -p zerolm-runtime -- memory --dir "$ckpt" --trace reports/memory/cli/trace-1.jsonl | tee reports/memory/cli/output-1.txt
+          printf 'ask what is the color of the sky?\nask mill owner\nask sky size\n' | cargo run -q --release -p zerolm-runtime -- memory --dir "$ckpt" --trace reports/memory/cli/trace-2.jsonl | tee reports/memory/cli/output-2.txt
+          grep -qx 'what is the color of the sky? => blue (confirmed)' reports/memory/cli/output-2.txt
+          grep -qx 'mill owner => dara (unconfirmed)' reports/memory/cli/output-2.txt
+          grep -qx 'unknown sky size' reports/memory/cli/output-2.txt
+          ls "$ckpt" | tee reports/memory/cli/checkpoint-files.txt
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -s reports/memory/summary.md ]; then cat reports/memory/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Phase 5 report: **not produced** (phase incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-phase-5-${{ github.sha }}
+          path: reports/memory/
+          if-no-files-found: warn
+          retention-days: 30

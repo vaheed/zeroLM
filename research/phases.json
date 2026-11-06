@@ -39,9 +39,9 @@
     {
       "id": 5,
       "name": "Weight-resident associative memory",
-      "status": "planned",
-      "command": null,
-      "report_schema": null
+      "status": "complete",
+      "command": "cargo test -p zerolm-memory -p zerolm-runtime && cargo run --release -p zerolm-eval --bin zerolm-memory",
+      "report_schema": "research/schemas/phase5-report.schema.json"
     },
     {
       "id": 6,
