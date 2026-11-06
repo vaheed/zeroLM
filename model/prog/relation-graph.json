@@ -1,0 +1,15 @@
+{
+  "id": "relation-graph",
+  "version": 1,
+  "seed_entry": "relation-graph-circuit",
+  "description": "Roadmap C5: decodes memory.relations.slots into a slot x symbol subject-similarity matrix, a one-hot object cleanup matrix (cosine >= cleanup_min), and positive/negative active-slot masks. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "relation_graph",
+    "dim": 512,
+    "meta_cols": 10,
+    "max_depth": 8,
+    "match_margin": 0.5,
+    "cleanup_min": 0.3,
+    "symbol_same": 0.9
+  }
+}

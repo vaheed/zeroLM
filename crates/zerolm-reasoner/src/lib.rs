@@ -13,6 +13,7 @@
 //! [`oracle`] and the [`lookup`] baseline exist for evaluation only and are
 //! never called by the reasoner.
 
+pub mod circuits;
 pub mod lookup;
 pub mod operators;
 pub mod oracle;
@@ -283,6 +284,10 @@ pub struct Reasoner {
     retrieval_ablated: bool,
     events: Vec<WriteEvent>,
     unsaved_from: usize,
+    /// Compiled relational circuits (`W_PROG`).
+    circuits: circuits::Circuits,
+    /// C5 output for the current memory state (session state, recomputed after writes).
+    graph_cache: std::cell::RefCell<Option<circuits::Graph>>,
 }
 
 pub(crate) const SUBJ: usize = 0;
@@ -318,6 +323,8 @@ impl Reasoner {
             retrieval_ablated: false,
             events: Vec::new(),
             unsaved_from: 0,
+            circuits: circuits::Circuits::new(&cfg),
+            graph_cache: std::cell::RefCell::new(None),
             space,
             cfg,
         })
@@ -589,7 +596,7 @@ impl Reasoner {
         let d2 = 2 * self.cfg.dim;
         let rows = |v: &[Hv]| v.iter().flat_map(|h| h.data.clone()).collect::<Vec<f32>>();
         let fresh = Reasoner::new(self.cfg).expect("valid config");
-        vec![
+        let mut t = vec![
             Tensor::new(ROLES_T, "binding_roles", ROLES.len(), d2, rows(&fresh.roles)),
             Tensor::new(RELATIONS_T, "binding_roles", RELATIONS.len(), d2, rows(&fresh.rels)),
             Tensor::new(NUMBER_T, "binding_roles", 1, d2, self.space.number(1).data),
@@ -603,7 +610,14 @@ impl Reasoner {
                 4,
                 vec![(self.clock % P24) as f32, (self.clock / P24 % P24) as f32, self.n_slots as f32, self.n_sym as f32],
             ),
-        ]
+        ];
+        // Compiled circuit constants (W_PROG), frozen like the role phasors.
+        for c in [&fresh.circuits.graph, &fresh.circuits.reach] {
+            for p in &c.tensors {
+                t.push(Tensor::new(&c.qualified(&p.name), zerolm_wsp::compiler::GROUP, p.rows, p.cols, p.data.clone()));
+            }
+        }
+        t
     }
 
     pub fn save(&mut self, dir: &Path) -> Result<String, ReasonerError> {
@@ -630,7 +644,7 @@ impl Reasoner {
                 return Err(ReasonerError::Format(format!("unexpected tensor {}", got.name)));
             }
             match got.name.as_str() {
-                ROLES_T | RELATIONS_T | NUMBER_T => {
+                name if name == ROLES_T || name == RELATIONS_T || name == NUMBER_T || name.starts_with("prog.") => {
                     if got.data.iter().zip(&w.data).any(|(a, b)| a.to_bits() != b.to_bits()) {
                         return Err(ReasonerError::CoreMismatch(got.name));
                     }

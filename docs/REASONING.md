@@ -141,7 +141,7 @@ Yes and no together give **contradiction**; neither gives **unknown**. The premi
 
 $$\text{confidence} = \prod_{s \in \text{premises}} \text{conf}(s), \qquad \text{conf} = 1.0 \text{ (named subject)},\ 0.9 \text{ (subject resolved from "it")}.$$
 
-Note that these semantics are programmed control flow (breadth-first search in Rust). Phase 7 will recompile them into fixed-step recurrent circuits ([NEURAL_ISA.md](NEURAL_ISA.md)).
+Since Phase 7, the graph search behind class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation runs as the compiled circuits `relation-graph` (C5) and `relation-reach` (C6): a fixed 8-step recurrence whose premise matrix yields the shortest proof ([NEURAL_ISA.md](NEURAL_ISA.md#the-relational-circuits-phase-6-roadmap-c5-and-c6)). The remaining operator logic is still programmed Rust control flow.
 
 ## Evaluation
 

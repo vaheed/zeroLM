@@ -1,0 +1,15 @@
+{
+  "id": "relation-reach",
+  "version": 1,
+  "seed_entry": "relation-reach-circuit",
+  "description": "Roadmap C6: reachability over one relation as a fixed max_depth-step recurrence with a premise matrix (replaces breadth-first search). One enable block per Phase 6 operator; a disabled operator keeps only the first (direct) step. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "relation_reach",
+    "dim": 512,
+    "meta_cols": 10,
+    "max_depth": 8,
+    "match_margin": 0.5,
+    "cleanup_min": 0.3,
+    "symbol_same": 0.9
+  }
+}

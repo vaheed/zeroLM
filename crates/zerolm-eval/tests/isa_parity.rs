@@ -23,7 +23,7 @@ fn program() -> Program {
     let mut body = vec![
         Instr::Matvec { w: s("w"), x: s("x"), out: s("h"), transpose: false },
         Instr::Matvec { w: s("w"), x: s("h"), out: s("ht"), transpose: true },
-        Instr::Matmul { a: s("q"), b: s("w"), out: s("qw") },
+        Instr::Matmul { a: s("q"), b: s("w"), out: s("qw"), ab: false },
         Instr::Softmax { x: s("qw"), out: s("att") },
         Instr::Norm { kind: NormKind::L2, x: s("qw"), eps: s("eps"), out: s("l2") },
         Instr::Norm { kind: NormKind::Rms, x: s("qw"), eps: s("eps"), out: s("rms") },
@@ -35,6 +35,10 @@ fn program() -> Program {
         Instr::Bind { a: s("pq"), b: s("pb"), out: s("pu"), conj: true },
         Instr::HashRows { bytes: s("bytes"), table: s("w"), n: 3, out: s("hr") },
         Instr::Reshape { x: s("qw"), rows: 1, cols: 15, out: s("flat") },
+        Instr::Transpose { x: s("qw"), out: s("qwt") },
+        Instr::Transpose { x: s("w"), out: s("wt") },
+        Instr::Matmul { a: s("tm"), b: s("wt"), out: s("sparse_mm"), ab: false },
+        Instr::Matmul { a: s("tm"), b: s("w"), out: s("sparse_ab"), ab: true },
         gate(GateFn::Ge, "flat", Some("zero"), "pos"),
         Instr::Scan { x: s("pos"), out: s("pre"), exclusive: false },
         Instr::Scan { x: s("pos"), out: s("pre_x"), exclusive: true },
@@ -56,7 +60,7 @@ fn program() -> Program {
             Instr::DeltaWrite { m: s("m"), k: s("acc"), v: s("hk"), lr: s("lr"), decay: s("decay"), eps: s("eps") },
         ],
     });
-    let mut outputs: Vec<String> = ["h", "ht", "qw", "att", "l2", "rms", "rmax", "cmin", "tot", "ti", "tv", "tm", "pq", "pu", "hr", "pre", "pre_x", "acc"]
+    let mut outputs: Vec<String> = ["h", "ht", "qw", "att", "l2", "rms", "rmax", "cmin", "tot", "ti", "tv", "tm", "pq", "pu", "hr", "pre", "pre_x", "acc", "qwt", "sparse_mm", "sparse_ab"]
         .into_iter()
         .map(s)
         .collect();

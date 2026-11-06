@@ -1,6 +1,8 @@
 {
   "version": 1,
   "circuits": {
-    "memory-read": "9c98cab661edf6236d99240165b10db3a33f3c5fbdc477394b46aebeaaa575a5"
+    "memory-read": "9c98cab661edf6236d99240165b10db3a33f3c5fbdc477394b46aebeaaa575a5",
+    "relation-graph": "efefcd319d2f39c8366a3491c1505cbfa8e05287be3293a57fca586ad668bb51",
+    "relation-reach": "7f6ed8d82ffc0d10f9a63bb897b874d53c54eec33960a4c68122449a1438c6ee"
   }
 }

@@ -124,6 +124,21 @@ fn exec(body: &[Value], env: &mut Env) -> Result<(), String> {
                 };
                 put(env, i, "out", T { r: 1, c: out.len(), d: out });
             }
+            "matmul" if i["ab"].as_bool().unwrap_or(false) => {
+                let (a, b) = (get(env, i, "a")?, get(env, i, "b")?);
+                let mut d = Vec::new();
+                for x in 0..a.r {
+                    for y in 0..b.c {
+                        let mut s = 0.0f32;
+                        for k in 0..a.c {
+                            s += a.at(x, k) * b.at(k, y);
+                        }
+                        d.push(s);
+                    }
+                }
+                let t = T { r: a.r, c: b.c, d };
+                put(env, i, "out", t);
+            }
             "matmul" => {
                 let (a, b) = (get(env, i, "a")?, get(env, i, "b")?);
                 let mut d = Vec::new();
@@ -304,6 +319,17 @@ fn exec(body: &[Value], env: &mut Env) -> Result<(), String> {
                         m.d[r * m.c + c] = decay * m.d[r * m.c + c] + g * k[c];
                     }
                 }
+            }
+            "transpose" => {
+                let x = get(env, i, "x")?;
+                let mut d = Vec::new();
+                for c in 0..x.c {
+                    for r in 0..x.r {
+                        d.push(x.at(r, c));
+                    }
+                }
+                let t = T { r: x.c, c: x.r, d };
+                put(env, i, "out", t);
             }
             "reshape" => {
                 let x = get(env, i, "x")?.clone();

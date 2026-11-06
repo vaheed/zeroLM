@@ -41,11 +41,13 @@ Instructions write **registers**. An instruction may overwrite a register (neede
 | `matvec {w, x, out}` | matvec | `w: R x C`, `x: 1 x C`. `out[r] = acc over c = 0..C of w[r][c] * x[c]`; `out: 1 x R`. |
 | `matvec {transpose: true}` | matvec | `x: 1 x R`. For r = 0..R in order, for each c: `out[c] += w[r][c] * x[r]`; `out: 1 x C`. |
 | `matmul {a, b, out}` | matvec | `a: M x K`, `b: N x K`. `out[i][j] = acc over k of a[i][k] * b[j][k]`; `out: M x N` (that is `a b^T`). |
+| `matmul {a, b, out, ab: true}` | matvec | `a: M x K`, `b: K x N`. `out[i][j] = acc over k of a[i][k] * b[k][j]`; `out: M x N` (that is `a b`). |
 | `gate {f, a, b?, out}` | gate | Binary `add sub mul max min ge` (`ge`: 1.0 if a >= b else 0.0). Unary `sigmoid` (`1/(1+exp(-x))`), `tanh`, `relu`, `exp`, `neg`, `copy`. Binary operands broadcast per dimension: each dimension must be equal or 1; the output takes the larger. |
 | `reduce {f, x, axis, out}` | gate | `sum` (acc), `max` (from -inf), `min` (from +inf), over `rows` (one value per row, `R x 1`), `cols` (`1 x C`), or `all` (`1 x 1`, row-major order). |
 | `softmax {x, out}` | gate | Per row: `m = max`, `e_j = exp(x_j - m)`, `s = acc of e_j`, `out_j = e_j / s`. |
 | `scan {x, out, exclusive}` | gate | Per row prefix product from 1.0; `exclusive` writes the product before multiplying. |
 | `reshape {x, rows, cols, out}` | gate | Same data, new shape (sizes must match). |
+| `transpose {x, out}` | gate | `out[c][r] = x[r][c]`; `out: C x R`. Pure data movement, so with `matmul` (which computes $AB^\top$) it also gives $AB$. |
 | `norm {kind, x, eps, out}` | norm | Per row `ss = acc of x_j * x_j`; `l2`: `den = sqrt(ss + eps)`; `rms`: `den = sqrt(ss / C + eps)`; `out_j = x_j / den`, or 0 when `den == 0`. |
 | `bind {a, b, out, conj}` | bind | Rows are `[re_0..re_d, im_0..im_d]`. `b` has the same rows or one row (broadcast). `out = a * b` (complex, elementwise) or `a * conj(b)`: `re = ar*br - ai*bi`, `im = ar*bi + ai*br` with `bi` negated for `conj`. |
 | `topk {x, k, idx?, val?, mask?}` | topk | Per row, k times: the untaken column with the largest value; ties go to the lowest index (strict `>`). `idx`, `val`: `R x k` in selection order; `mask`: `R x C` with 1.0 at selected columns. |
@@ -69,6 +71,8 @@ The header is `{"program": <Program>, "tensors": [{"name", "rows", "cols"}, ...]
 ## Why the zero-skip is exact
 
 The engine's transposed `matvec` computes $o_c = \sum_r w_{rc}\, x_r$ left to right from $o_c = +0$, but it skips every $r$ with $x_r = 0$. For finite $w_{rc}$, a skipped term is $w_{rc} \cdot 0 = \pm 0$. In IEEE-754 round-to-nearest arithmetic, $a + (\pm 0) = a$ for every $a \ne 0$, and $(+0) + (-0) = +0$. The sum $u + v$ is $-0$ only when both $u$ and $v$ are $-0$, so an accumulator that starts at $+0$ can never become $-0$. Skipping zero terms therefore leaves every partial sum bit-identical. The reference interpreter does not skip, and the parity tests confirm the equality on every gate query.
+
+Both forms of `matmul` use the same trick. The engine loops $i \to k \to j$ and skips $a_{ik} = 0$. For a fixed output element $(i, j)$ the surviving terms are still added in increasing $k$, so the order of every per-element sum is unchanged. Provenance and gather matrices are mostly zero, which is what makes the reach circuit affordable.
 
 ## Masking with a large finite penalty
 
@@ -122,11 +126,53 @@ $\max_p \text{keep}_p = \text{keep}_1$, because `keep` never increases, so this 
 
 **Blocks and ablation.** Zeroing `verify` sets both thresholds to 0 and the word selector to 0 (so $n_w = 0$ and $\text{cov} = 0 \ge 0$). Every non-empty read is then accepted: exact answers survive and every negative is answered (measured: recall 1.000, negative false accepts 1.000). Zeroing `select` makes $\mu = 0$; zeroing `attend` sets $\beta = 0$ (a uniform average of all values); zeroing `decode` sets the score scale to 0, so every position decodes to the smallest-norm code. Each of these three drops recall to 0.
 
+## The relational circuits (Phase 6, roadmap C5 and C6)
+
+Phase 6 stores each statement as a bundle of role-filler bindings, one row (a **slot**) of `memory.relations.slots` (see [REASONING.md](REASONING.md#mathematics)). Write $\sigma_s \in \mathbb{C}^d$ for slot $s$, $c_i$ for codebook symbol $i$, and $\operatorname{sim}(a, b) = \frac1d \operatorname{Re}\langle a, \bar b\rangle$. Below, $S$ is the number of used slots and $N$ the number of used symbols. The host binds only those used prefixes, so the shapes are fixed for a given memory state.
+
+### C5: `relation-graph` (once per memory state)
+
+$$\Sigma_{s,i} = \operatorname{sim}(\sigma_s,\ \text{subj} \circledast c_i) \qquad (S \times N,\ \text{one } \texttt{matmul})$$
+
+($\Sigma$ is the circuit output `subj_sim`, $O$ is `obj_t`.)
+
+$$O_{s,j} = [\![\, j = \arg\max_k \cos(\sigma_s \oslash \text{obj},\, c_k) \,]\!] \cdot [\![\, \max_k \cos(\cdot) \ge 0.3 \,]\!]$$
+
+$$\text{pos}_s = [\![\text{active}_s \ge 0.5]\!]\, [\![\text{polarity}_s \ge 0.5]\!], \qquad \text{neg}_s = [\![\text{active}_s \ge 0.5]\!]\, [\![-\text{polarity}_s \ge 0.5]\!]$$
+
+This is the slow, dense step: about $2 \cdot S \cdot N \cdot 2d$ multiply-adds, roughly 85 ms for 240 slots and 240 symbols. The reasoner caches the result and recomputes it only after a write.
+
+### C6: `relation-reach` (per question)
+
+Given a start vector $x$, a target $y$, and a relation vector $r$ (for example the atom *isa*, or *gt* bound with *height*):
+
+$$E_{s,i} = [\![\, \Sigma_{s,i} + \operatorname{sim}(\sigma_s, \text{rel} \circledast r) \ge 2 - 0.5 \,]\!] \cdot \text{pol}_s$$
+
+So $E_{s,i} = 1$ when slot $s$ is an $r$-edge leaving symbol $i$. It is the Phase 6 two-pair probe evaluated for every symbol at once. $x$ and $y$ are cleaned up to one-hot rows $\hat x, \hat y$ (cosine at least 0.9 with a codebook row).
+
+The recurrence keeps a frontier $f \in \{0,1\}^N$, the reached set $R$, and a premise matrix $P \in \{0,1\}^{N \times S}$, where $P_{j,s} = 1$ means slot $s$ is on the proof of $j$. It starts from $f = R = \hat x$ and $P = 0$, and runs exactly $D = 8$ steps (`step(8)`):
+
+$$\ell = E^\top f \in \mathbb{R}^S \qquad \text{(slots leaving the frontier)}$$
+
+$$C_{j,s} = O_{s,j}\; \ell_s\; (1 - R_j)\; \gamma_t \qquad \text{(candidate: slot } s \text{ newly reaches } j\text{)}$$
+
+$$Q = \operatorname{top}_1\text{-mask}(C) \odot \max_s C_{\cdot, s}, \qquad P \leftarrow P + Q E P + Q, \qquad n = \max_s Q_{\cdot,s}, \qquad R \leftarrow R + n, \qquad f \leftarrow n$$
+
+$Q$ picks one slot per new target (the lowest slot index, because ties in `topk` go to the lower index). Then $QEP$ copies the picked slot's subject's proof, and $+Q$ adds the slot itself. Because each level runs once, a node is reached for the first time at the step equal to its distance from $x$, so $\sum_s P_{j,s}$ is the length of a **shortest** proof. This is what breadth-first search computed. The answer is
+
+$$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top \hat y.$$
+
+**Depth gate and operator ablation.** $\gamma_t$ is entry $t$ of the schedule $\gamma = (1, 0, \dots, 0) + \text{enable}_{op} \cdot (0, 1, \dots, 1) \in \mathbb{R}^D$, so $\gamma_1 = 1$ always and $\gamma_{t > 1} = \text{enable}_{op}$. In the program, each step reads the first entry and shifts the schedule left with a constant shift matrix. Each Phase 6 operator has its own block holding one constant $\text{enable}_{op} = 1$. Zeroing that block limits the operator to direct, one-edge answers, which is exactly the Phase 6 ablation semantics. The host passes a one-hot operator selector; that is structure, not content.
+
+**Cost.** Each step does about six elementwise passes over $N \times S$ plus a sparse `matmul`. One reach costs about 9 ms at $N \approx S \approx 240$.
+
 ## Compiled circuits
 
 | Circuit | Spec | Replaces | Verified by |
 |---|---|---|---|
 | `memory-read` | `model/prog/memory-read.json` (`zerolm_wsp::circuits::attention_read`) | Phase 5 pooled attention, coverage verification, value cleanup, accept decision | Phase 5 gate unchanged; `reference_interpreter_parity` (every gate query, bit for bit); `circuit_block_ablation` per block |
+| `relation-graph` (C5) | `model/prog/relation-graph.json` (`zerolm_wsp::circuits::relational`) | per-question probe, unbind, and cleanup loops over slots | Phase 6 gate unchanged |
+| `relation-reach` (C6) | `model/prog/relation-reach.json` | breadth-first search in class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation | Phase 6 gate unchanged, including every operator ablation through its `enable` block |
 
 `zerolm-wsp check` recompiles every spec and compares with `model/prog/pinned.json`.
 
@@ -134,5 +180,5 @@ $\max_p \text{keep}_p = \text{keep}_1$, because `keep` never increases, so this 
 
 - The query encoder (word split, `#word#` trigram hashing) still runs on the host; `hash_rows` exists for it.
 - Write-time bookkeeping and `W_FAST` recall cleanup are host code.
-- The Phase 6 parser and the eight inference operators still run as Rust control flow; they are the next circuits (C5, C6).
+- Phase 6: the search (reachability and shortest proofs) runs in C6, and slot decoding in C5. Still Rust control flow: each operator's decision logic (combining yes/no proofs, the inheritance level scan, the negation edge scan, conditional rule chaining, count arithmetic), the one-step `edges` probes they use, and the bounded-language parser.
 - No circuit has been through the byte-permutation test yet.

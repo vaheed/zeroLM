@@ -64,6 +64,20 @@
       "description": "Circuit memory-read (model/prog/memory-read.json): Phase 5 retrieval as a neural ISA program. Constants: a status-column selector and active-status window, attention inverse temperature 32 and minimum read weight 1e-7, read threshold 0.3 and coverage threshold 0.5 (from model/specs/memory.json), a key-word position index, a nearest-code score scale, and a top-2 margin selector.",
       "source": "crates/zerolm-wsp/src/circuits/attention_read.rs",
       "derived_from_corpus": false
+    },
+    {
+      "id": "relation-graph-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit relation-graph (model/prog/relation-graph.json, roadmap C5): decodes relation slots into a slot x symbol subject-similarity matrix, a one-hot object cleanup matrix (cosine >= 0.3), and polarity masks. Constants: role and metadata-column selectors, 1/d, 1/sqrt(d), 0.5, the cleanup threshold. No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/relational.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "relation-reach-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit relation-reach (model/prog/relation-reach.json, roadmap C6): reachability over one relation as a fixed 8-step recurrence with a premise matrix, replacing breadth-first search. Constants: probe threshold 2 - 0.5, symbol cleanup threshold 0.9, an 8-step depth schedule and shift matrix, one enable scalar per Phase 6 operator, operator selectors.",
+      "source": "crates/zerolm-wsp/src/circuits/relational.rs",
+      "derived_from_corpus": false
     }
   ]
 }

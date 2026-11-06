@@ -31,6 +31,8 @@ pub struct Spec {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Circuit {
     AttentionRead(circuits::attention_read::Params),
+    RelationGraph(circuits::relational::Params),
+    RelationReach(circuits::relational::Params),
 }
 
 /// One compiled constant. `block` names the circuit block it belongs to (the
@@ -113,6 +115,8 @@ impl Compiled {
 pub fn compile(spec: &Spec) -> Result<Compiled, IsaError> {
     let c = match &spec.circuit {
         Circuit::AttentionRead(p) => circuits::attention_read::compile(&spec.id, p)?,
+        Circuit::RelationGraph(p) => circuits::relational::compile_graph(&spec.id, p)?,
+        Circuit::RelationReach(p) => circuits::relational::compile_reach(&spec.id, p)?,
     };
     c.program.validate()?;
     Ok(c)
@@ -161,6 +165,13 @@ impl Builder {
         self.external.push(n.into());
     }
 
+    /// A model tensor whose row count the caller fixes at run time (for
+    /// example the used prefix of a slot table).
+    pub fn external_dyn(&mut self, n: &str, rows: Option<usize>, cols: Option<usize>) {
+        self.weights.push(Decl::dynamic(n, rows, cols));
+        self.external.push(n.into());
+    }
+
     /// A compiled `W_PROG` constant in the current block.
     pub fn constant(&mut self, n: &str, rows: usize, cols: usize, data: Vec<f32>) {
         assert_eq!(rows * cols, data.len(), "constant {n}");
@@ -189,11 +200,16 @@ impl Builder {
     }
 
     pub fn matmul(&mut self, a: &str, b: &str, out: &str) {
-        self.op(Instr::Matmul { a: a.into(), b: b.into(), out: out.into() });
+        self.op(Instr::Matmul { a: a.into(), b: b.into(), out: out.into(), ab: false });
     }
 
     pub fn reduce(&mut self, f: ReduceFn, x: &str, axis: Axis, out: &str) {
         self.op(Instr::Reduce { f, x: x.into(), axis, out: out.into() });
+    }
+
+    /// out = a b (plain product).
+    pub fn matmul_ab(&mut self, a: &str, b: &str, out: &str) {
+        self.op(Instr::Matmul { a: a.into(), b: b.into(), out: out.into(), ab: true });
     }
 
     pub fn reshape(&mut self, x: &str, rows: usize, cols: usize, out: &str) {

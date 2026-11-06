@@ -22,7 +22,7 @@ fn compilation_is_reproducible_and_matches_the_pins() {
 fn a_parameter_change_changes_the_hash() {
     let mut spec = parse_spec(SPECS[0].1).unwrap();
     let base = compile(&spec).unwrap().sha256();
-    let zerolm_wsp::Circuit::AttentionRead(p) = &mut spec.circuit;
+    let zerolm_wsp::Circuit::AttentionRead(p) = &mut spec.circuit else { panic!("memory-read is an attention_read circuit") };
     p.read_threshold += 0.01;
     assert_ne!(compile(&spec).unwrap().sha256(), base);
 }
@@ -59,6 +59,11 @@ fn patches_round_trip_and_refuse_the_wrong_base() {
 fn blocks_can_be_ablated_by_name() {
     let mut c = shipped("memory-read").unwrap();
     assert_eq!(c.blocks(), vec!["attend", "decode", "select", "support", "verify"]);
+    // Every Phase 6 operator has its own block in the reach circuit.
+    let reach = shipped("relation-reach").unwrap();
+    for op in zerolm_wsp::circuits::relational::OPERATORS {
+        assert!(reach.blocks().iter().any(|b| b == op), "{op}");
+    }
     c.ablate_block("verify").unwrap();
     assert!(c.tensors.iter().filter(|t| t.block == "verify").all(|t| t.data.iter().all(|x| *x == 0.0)));
     assert!(c.tensors.iter().any(|t| t.block == "attend" && t.data.iter().any(|x| *x != 0.0)));

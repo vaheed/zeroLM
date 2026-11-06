@@ -84,8 +84,8 @@ pub fn run(p: &Program, b: Bindings<'_>) -> Result<Outputs, IsaError> {
         }
         for d in decls {
             let Some((_, r, c)) = got.iter().find(|g| g.0 == d.name) else { return err(format!("{}: {kind} '{}' not bound", p.name, d.name)) };
-            if *c != d.cols || d.rows.map(|dr| dr != *r).unwrap_or(false) {
-                return err(format!("{}: {kind} '{}' is {r}x{c}, declared {:?}x{}", p.name, d.name, d.rows, d.cols));
+            if d.cols.map(|dc| dc != *c).unwrap_or(false) || d.rows.map(|dr| dr != *r).unwrap_or(false) {
+                return err(format!("{}: {kind} '{}' is {r}x{c}, declared {:?}x{:?}", p.name, d.name, d.rows, d.cols));
             }
         }
         Ok(())
@@ -143,7 +143,10 @@ fn scalar(v: View<'_>) -> Result<f32, IsaError> {
 fn eval<'i>(ins: &'i Instr, env: &Env<'_>) -> Result<Vec<(&'i str, Buf)>, IsaError> {
     Ok(match ins {
         Instr::Matvec { w, x, out, transpose } => vec![(out.as_str(), matvec(env.get(w)?, env.get(x)?, *transpose)?)],
-        Instr::Matmul { a, b, out } => vec![(out.as_str(), matmul(env.get(a)?, env.get(b)?)?)],
+        Instr::Matmul { a, b, out, ab } => {
+            let r = if *ab { matmul_ab(env.get(a)?, env.get(b)?)? } else { matmul(env.get(a)?, env.get(b)?)? };
+            vec![(out.as_str(), r)]
+        }
         Instr::Gate { f, a, b, out } => {
             let a = env.get(a)?;
             let r = match (f.is_binary(), b) {
@@ -174,6 +177,16 @@ fn eval<'i>(ins: &'i Instr, env: &Env<'_>) -> Result<Vec<(&'i str, Buf)>, IsaErr
                 return err(format!("reshape {}x{} to {rows}x{cols}", x.rows, x.cols));
             }
             vec![(out.as_str(), Buf::new(*rows, *cols, x.data.to_vec()))]
+        }
+        Instr::Transpose { x, out } => {
+            let x = env.get(x)?;
+            let mut d = Vec::with_capacity(x.data.len());
+            for c in 0..x.cols {
+                for r in 0..x.rows {
+                    d.push(x.at(r, c));
+                }
+            }
+            vec![(out.as_str(), Buf::new(x.cols, x.rows, d))]
         }
         Instr::Scan { x, out, exclusive } => vec![(out.as_str(), scan(env.get(x)?, *exclusive))],
         Instr::Step { .. } | Instr::DeltaWrite { .. } => unreachable!("handled by exec"),
@@ -219,20 +232,53 @@ fn matmul(a: View<'_>, b: View<'_>) -> Result<Buf, IsaError> {
     if a.cols != b.cols {
         return err(format!("matmul: {}x{} by ({}x{})^T", a.rows, a.cols, b.rows, b.cols));
     }
-    let k = a.cols;
-    let mut out = Vec::with_capacity(a.rows * b.rows);
+    // out[i][j] = sum over k (in order) of a[i][k] * b[j][k]. Looping i, k, j
+    // keeps that per-element order, so skipping a[i][k] == 0 is exact for
+    // finite b (the same argument as the transposed matvec); provenance and
+    // gather matrices are mostly zero.
+    let (k, n) = (a.cols, b.rows);
+    // b^T laid out contiguously (data movement only; arithmetic unchanged).
+    let mut bt = vec![0.0f32; k * n];
+    for j in 0..n {
+        for kk in 0..k {
+            bt[kk * n + j] = b.data[j * k + kk];
+        }
+    }
+    let mut out = vec![0.0f32; a.rows * n];
     for i in 0..a.rows {
-        let ar = &a.data[i * k..(i + 1) * k];
-        for j in 0..b.rows {
-            let br = &b.data[j * k..(j + 1) * k];
-            let mut s = 0.0f32;
-            for (x, y) in ar.iter().zip(br) {
-                s += x * y;
+        let o = &mut out[i * n..(i + 1) * n];
+        for (kk, &x) in a.data[i * k..(i + 1) * k].iter().enumerate() {
+            if x == 0.0 {
+                continue;
             }
-            out.push(s);
+            for (oj, bv) in o.iter_mut().zip(&bt[kk * n..(kk + 1) * n]) {
+                *oj += x * bv;
+            }
         }
     }
     Ok(Buf::new(a.rows, b.rows, out))
+}
+
+/// out = A B: out[i][j] = sum over k (in order) of a[i][k] * b[k][j]. Rows of
+/// b are contiguous, and zero a[i][k] are skipped (exact for finite b).
+fn matmul_ab(a: View<'_>, b: View<'_>) -> Result<Buf, IsaError> {
+    if a.cols != b.rows {
+        return err(format!("matmul: {}x{} by {}x{}", a.rows, a.cols, b.rows, b.cols));
+    }
+    let n = b.cols;
+    let mut out = vec![0.0f32; a.rows * n];
+    for i in 0..a.rows {
+        let o = &mut out[i * n..(i + 1) * n];
+        for (kk, &x) in a.data[i * a.cols..(i + 1) * a.cols].iter().enumerate() {
+            if x == 0.0 {
+                continue;
+            }
+            for (oj, bv) in o.iter_mut().zip(&b.data[kk * n..(kk + 1) * n]) {
+                *oj += x * bv;
+            }
+        }
+    }
+    Ok(Buf::new(a.rows, n, out))
 }
 
 fn bdim(a: usize, b: usize, what: &str) -> Result<usize, IsaError> {
@@ -246,6 +292,40 @@ fn bdim(a: usize, b: usize, what: &str) -> Result<usize, IsaError> {
 fn binary(f: GateFn, a: View<'_>, b: View<'_>) -> Result<Buf, IsaError> {
     let rows = bdim(a.rows, b.rows, "rows")?;
     let cols = bdim(a.cols, b.cols, "cols")?;
+    let op = |x: f32, y: f32| match f {
+        GateFn::Add => x + y,
+        GateFn::Sub => x - y,
+        GateFn::Mul => x * y,
+        GateFn::Max => x.max(y),
+        GateFn::Min => x.min(y),
+        GateFn::Ge => (x >= y) as u8 as f32,
+        _ => unreachable!("binary gate"),
+    };
+    // Fast paths (same per-element arithmetic, fewer index computations).
+    if a.rows == rows && a.cols == cols {
+        if b.rows == rows && b.cols == cols {
+            return Ok(Buf::new(rows, cols, a.data.iter().zip(b.data).map(|(&x, &y)| op(x, y)).collect()));
+        }
+        if b.data.len() == 1 {
+            let y = b.data[0];
+            return Ok(Buf::new(rows, cols, a.data.iter().map(|&x| op(x, y)).collect()));
+        }
+        if b.rows == 1 {
+            let mut out = Vec::with_capacity(rows * cols);
+            for r in 0..rows {
+                out.extend(a.data[r * cols..(r + 1) * cols].iter().zip(b.data).map(|(&x, &y)| op(x, y)));
+            }
+            return Ok(Buf::new(rows, cols, out));
+        }
+        if b.cols == 1 {
+            let mut out = Vec::with_capacity(rows * cols);
+            for r in 0..rows {
+                let y = b.data[r];
+                out.extend(a.data[r * cols..(r + 1) * cols].iter().map(|&x| op(x, y)));
+            }
+            return Ok(Buf::new(rows, cols, out));
+        }
+    }
     let at = |v: &View<'_>, r: usize, c: usize| v.at(if v.rows == 1 { 0 } else { r }, if v.cols == 1 { 0 } else { c });
     let mut out = Vec::with_capacity(rows * cols);
     for r in 0..rows {
@@ -344,19 +424,22 @@ fn topk(x: View<'_>, k: usize) -> Result<(Buf, Buf, Buf), IsaError> {
         return err(format!("topk: k={k} for {} columns", x.cols));
     }
     let (mut idx, mut val, mut mask) = (Vec::new(), Vec::new(), vec![0.0f32; x.data.len()]);
+    let mut taken = vec![false; x.cols];
     for r in 0..x.rows {
-        let mut taken = vec![false; x.cols];
+        let row = &x.data[r * x.cols..(r + 1) * x.cols];
+        taken.iter_mut().for_each(|t| *t = false);
         for _ in 0..k {
-            let mut best: Option<usize> = None;
-            for (c, &t) in taken.iter().enumerate() {
-                if !t && best.map(|b| x.at(r, c) > x.at(r, b)).unwrap_or(true) {
-                    best = Some(c);
+            // First untaken column with the strictly largest value.
+            let mut best: Option<(usize, f32)> = None;
+            for (c, (&t, &v)) in taken.iter().zip(row).enumerate() {
+                if !t && best.map(|b| v > b.1).unwrap_or(true) {
+                    best = Some((c, v));
                 }
             }
-            let c = best.expect("k <= cols");
+            let (c, v) = best.expect("k <= cols");
             taken[c] = true;
             idx.push(c as f32);
-            val.push(x.at(r, c));
+            val.push(v);
             mask[r * x.cols + c] = 1.0;
         }
     }

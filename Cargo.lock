@@ -163,6 +163,7 @@ dependencies = [
  "zerolm-engine",
  "zerolm-memory",
  "zerolm-tensor",
+ "zerolm-wsp",
 ]
 
 [[package]]

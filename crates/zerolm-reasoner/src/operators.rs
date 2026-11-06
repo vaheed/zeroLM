@@ -35,8 +35,7 @@ impl Proof {
     }
 }
 
-/// Reached symbol -> premise slots of the shortest path to it.
-type Reach = BTreeMap<usize, Vec<usize>>;
+use crate::circuits::Reach;
 
 impl Reasoner {
     /// (target symbol, slot) for every stored edge `from --rel--> target` with `polarity`.
@@ -46,39 +45,6 @@ impl Reasoner {
             .filter(|&s| self.slot_meta(s, field::POLARITY) == polarity)
             .filter_map(|s| self.cleanup(&self.unbind_slot(s, OBJ)).map(|t| (t, s)))
             .collect()
-    }
-
-    /// Breadth-first reach over positive `rel` edges, up to `depth` steps.
-    fn reach(&self, from: usize, rel: &Hv, depth: usize) -> Reach {
-        let mut seen: Reach = BTreeMap::new();
-        let mut frontier = vec![(from, Vec::new())];
-        let mut visited = BTreeSet::from([from]);
-        for _ in 0..depth {
-            let mut next = Vec::new();
-            for (a, path) in &frontier {
-                for (t, s) in self.edges(*a, rel, 1.0) {
-                    if visited.insert(t) {
-                        let mut p: Vec<usize> = path.clone();
-                        p.push(s);
-                        seen.insert(t, p.clone());
-                        next.push((t, p));
-                    }
-                }
-            }
-            if next.is_empty() {
-                break;
-            }
-            frontier = next;
-        }
-        seen
-    }
-
-    fn depth(&self, enabled: bool) -> usize {
-        if enabled {
-            self.cfg.max_depth
-        } else {
-            1
-        }
     }
 
     fn finish(&self, verdict: Verdict, proof: Option<Proof>) -> Answer {
@@ -138,7 +104,7 @@ impl Reasoner {
             Pred::Isa(c) => {
                 let Some(y) = self.known(c) else { return self.unknown() };
                 let isa = self.rel("isa").clone();
-                let anc = self.reach(x, &isa, self.depth(ops.class_inclusion));
+                let anc = self.reach(x, &isa, "class_inclusion");
                 let tag = |p: &Vec<usize>| if p.len() > 1 { "class_inclusion" } else { "direct" };
                 let pos = anc.get(&y).map(|p| Proof::of(p.clone(), tag(p)));
                 let neg = if ops.negation {
@@ -146,7 +112,7 @@ impl Reasoner {
                     let mut targets: Reach = BTreeMap::from([(y, Vec::new())]);
                     if ops.class_inclusion {
                         sources.extend(anc.iter().map(|(k, v)| (*k, v.clone())));
-                        targets.extend(self.reach(y, &isa, self.cfg.max_depth));
+                        targets.extend(self.reach(y, &isa, "class_inclusion"));
                     }
                     let mut best: Option<Proof> = None;
                     for (a, pa) in &sources {
@@ -218,7 +184,7 @@ impl Reasoner {
                 let Some(y) = self.known(y) else { return self.unknown() };
                 let rel = self.rel("in").clone();
                 let tag = |p: &Vec<usize>| if p.len() > 1 { "transitivity" } else { "direct" };
-                let pos = self.reach(x, &rel, self.depth(ops.transitivity)).get(&y).map(|p| Proof::of(p.clone(), tag(p)));
+                let pos = self.reach(x, &rel, "transitivity").get(&y).map(|p| Proof::of(p.clone(), tag(p)));
                 let neg = if ops.negation {
                     self.edges(x, &rel, -1.0).into_iter().find(|(t, _)| *t == y).map(|(_, s)| Proof::of(vec![s], "negation"))
                 } else {
@@ -254,8 +220,8 @@ impl Reasoner {
     fn order(&self, a: usize, other: &str, rel: &Hv, enabled: bool, op: &'static str) -> Answer {
         let Some(b) = self.known(other) else { return self.unknown() };
         let tag = |p: &Vec<usize>| if p.len() > 1 { op } else { "direct" };
-        let pos = self.reach(a, rel, self.depth(enabled)).get(&b).map(|p| Proof::of(p.clone(), tag(p)));
-        let neg = if enabled { self.reach(b, rel, self.cfg.max_depth).get(&a).map(|p| Proof::of(p.clone(), op)) } else { None };
+        let pos = self.reach(a, rel, op).get(&b).map(|p| Proof::of(p.clone(), tag(p)));
+        let neg = if enabled { self.reach(b, rel, op).get(&a).map(|p| Proof::of(p.clone(), op)) } else { None };
         self.decide(pos, neg)
     }
 

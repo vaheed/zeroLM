@@ -78,11 +78,17 @@ impl<'a> View<'a> {
 pub struct Decl {
     pub name: String,
     pub rows: Option<usize>,
-    pub cols: usize,
+    /// `None`: the caller fixes the column count at run time.
+    pub cols: Option<usize>,
 }
 
 impl Decl {
     pub fn new(name: &str, rows: Option<usize>, cols: usize) -> Self {
+        Decl { name: name.into(), rows, cols: Some(cols) }
+    }
+
+    /// A tensor whose rows and/or columns are fixed by the caller.
+    pub fn dynamic(name: &str, rows: Option<usize>, cols: Option<usize>) -> Self {
         Decl { name: name.into(), rows, cols }
     }
 }
@@ -149,8 +155,15 @@ pub enum Instr {
         #[serde(default)]
         transpose: bool,
     },
-    /// out = A B^T: (M x K) and (N x K) give M x N.
-    Matmul { a: String, b: String, out: String },
+    /// out = A B^T: (M x K) and (N x K) give M x N; with `ab`, out = A B:
+    /// (M x K) and (K x N) give M x N.
+    Matmul {
+        a: String,
+        b: String,
+        out: String,
+        #[serde(default, skip_serializing_if = "is_false")]
+        ab: bool,
+    },
     Gate {
         f: GateFn,
         a: String,
@@ -192,6 +205,8 @@ pub enum Instr {
     /// (1 x C) and value `v` (1 x R); `lr`, `decay`, `eps` are 1 x 1 tensors.
     DeltaWrite { m: String, k: String, v: String, lr: String, decay: String, eps: String },
     Reshape { x: String, rows: usize, cols: usize, out: String },
+    /// out[c][r] = x[r][c].
+    Transpose { x: String, out: String },
     /// Row-wise prefix product (`exclusive`: out[0] = 1, out[j] = prod x[..j]).
     Scan {
         x: String,
@@ -208,7 +223,7 @@ impl Instr {
     pub fn family(&self) -> &'static str {
         match self {
             Instr::Matvec { .. } | Instr::Matmul { .. } => "matvec",
-            Instr::Gate { .. } | Instr::Reduce { .. } | Instr::Softmax { .. } | Instr::Scan { .. } | Instr::Reshape { .. } => "gate",
+            Instr::Gate { .. } | Instr::Reduce { .. } | Instr::Softmax { .. } | Instr::Scan { .. } | Instr::Reshape { .. } | Instr::Transpose { .. } => "gate",
             Instr::Norm { .. } => "norm",
             Instr::Bind { .. } => "bind",
             Instr::Topk { .. } => "topk",
@@ -223,7 +238,7 @@ impl Instr {
             Instr::Matvec { w, x, .. } => vec![w, x],
             Instr::Matmul { a, b, .. } => vec![a, b],
             Instr::Gate { a, b, .. } => std::iter::once(a.as_str()).chain(b.as_deref()).collect(),
-            Instr::Reduce { x, .. } | Instr::Softmax { x, .. } | Instr::Reshape { x, .. } | Instr::Scan { x, .. } | Instr::Topk { x, .. } => vec![x],
+            Instr::Reduce { x, .. } | Instr::Softmax { x, .. } | Instr::Reshape { x, .. } | Instr::Transpose { x, .. } | Instr::Scan { x, .. } | Instr::Topk { x, .. } => vec![x],
             Instr::Norm { x, eps, .. } => vec![x, eps],
             Instr::Bind { a, b, .. } => vec![a, b],
             Instr::HashRows { bytes, table, .. } => vec![bytes, table],
@@ -243,6 +258,7 @@ impl Instr {
             | Instr::Bind { out, .. }
             | Instr::HashRows { out, .. }
             | Instr::Reshape { out, .. }
+            | Instr::Transpose { out, .. }
             | Instr::Scan { out, .. } => vec![out],
             Instr::Topk { idx, val, mask, .. } => [idx, val, mask].into_iter().flatten().map(String::as_str).collect(),
             Instr::DeltaWrite { .. } | Instr::Step { .. } => vec![],
@@ -273,6 +289,10 @@ impl std::fmt::Display for IsaError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "isa: {}", self.0)
     }
+}
+
+fn is_false(b: &bool) -> bool {
+    !*b
 }
 
 pub(crate) fn err<T>(msg: impl Into<String>) -> Result<T, IsaError> {

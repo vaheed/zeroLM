@@ -161,3 +161,16 @@ fn every_tensor_belongs_to_a_declared_weight_group() {
         assert!(ids.contains(&t.group.as_str()), "{} uses undeclared group {}", t.name, t.group);
     }
 }
+
+#[test]
+fn default_config_compiles_to_the_shipped_pinned_circuits() {
+    use zerolm_reasoner::circuits::{graph_spec, reach_spec, GRAPH_ID, REACH_ID};
+    let cfg = ReasonerConfig::default();
+    for (spec, id) in [(graph_spec(&cfg), GRAPH_ID), (reach_spec(&cfg), REACH_ID)] {
+        let built = zerolm_wsp::compile(&spec).unwrap();
+        assert_eq!(built.sha256(), zerolm_wsp::shipped(id).unwrap().sha256(), "{id}: ReasonerConfig::default() must compile to model/prog/{id}.json");
+    }
+    let r = Reasoner::new(cfg).unwrap();
+    let prog: Vec<_> = r.tensors().into_iter().filter(|t| t.name.starts_with("prog.")).collect();
+    assert!(!prog.is_empty() && prog.iter().all(|t| t.group == "w_prog"));
+}
