@@ -32,9 +32,9 @@
     {
       "id": 4,
       "name": "First true online neural language model",
-      "status": "planned",
-      "command": null,
-      "report_schema": null
+      "status": "complete",
+      "command": "cargo test -p zerolm-learning -p zerolm-eval && cargo run --release -p zerolm-eval --bin zerolm-online-lm",
+      "report_schema": "research/schemas/phase4-report.schema.json"
     },
     {
       "id": 5,

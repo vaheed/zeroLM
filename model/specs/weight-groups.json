@@ -3,7 +3,7 @@
   "groups": [
     {
       "id": "byte_embed",
-      "description": "Byte to vector embedding.",
+      "description": "Byte to vector embedding. Frozen in Phase 4 (no rule updates it yet).",
       "init_source": "seeded_prng",
       "update_path": "local_plasticity"
     },
@@ -33,8 +33,8 @@
     },
     {
       "id": "readout_head",
-      "description": "Next-byte prediction head.",
-      "init_source": "delta-rule-constants",
+      "description": "Next-byte readout (readout.weight, readout.bias) over [GRU hidden ; last-byte embedding]. Starts at zero (uniform prediction); updated online by the delta or Hebbian rule with constants from model/specs/online-learning.json.",
+      "init_source": "zeros",
       "update_path": "local_plasticity"
     },
     {

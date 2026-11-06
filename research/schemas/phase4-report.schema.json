@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM Phase 4 online-learning report (reports/online-learning/summary.json)",
+  "type": "object",
+  "required": ["phase", "mode", "passed", "failures", "protocol", "stream_spec_id", "stream_spec_sha256", "seeds", "runs", "baselines", "gates", "verdicts", "recurrence_ablation_delta_bpb", "bptt_control", "scope_note"],
+  "properties": {
+    "phase": {"const": "phase-4"},
+    "mode": {"enum": ["main", "pilot"]},
+    "passed": {"type": "boolean"},
+    "failures": {"type": "array", "items": {"type": "string"}},
+    "protocol": {"type": "object", "required": ["main_seeds", "pilot_seeds", "primary_rule", "improvement_floor_bpb", "constants"]},
+    "stream_spec_id": {"type": "string"},
+    "stream_spec_sha256": {"$ref": "#/$defs/sha256"},
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["seed", "exposure_bytes", "exposure_sha256", "heldout_sha256", "novel_sha256", "contamination"],
+        "properties": {
+          "seed": {"type": "integer"},
+          "exposure_sha256": {"$ref": "#/$defs/sha256"},
+          "heldout_sha256": {"$ref": "#/$defs/sha256"},
+          "novel_sha256": {"$ref": "#/$defs/sha256"},
+          "contamination": {
+            "type": "object",
+            "required": ["heldout_sentences_in_exposure", "novel_sentences_in_exposure", "exposure_sentences_with_held_out_combination"]
+          }
+        }
+      }
+    },
+    "runs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["seed", "arm", "rule", "initial_sha256", "final_sha256", "update_events", "checkpoints", "online_bpb", "heldout", "novel", "exposure_replay", "curve", "log_failures", "us_per_event"],
+        "properties": {
+          "arm": {"enum": ["frozen", "delta", "hebbian", "delta_no_recurrence"]},
+          "rule": {"enum": ["frozen", "delta", "hebbian"]},
+          "initial_sha256": {"$ref": "#/$defs/sha256"},
+          "final_sha256": {"$ref": "#/$defs/sha256"},
+          "heldout": {"$ref": "#/$defs/metrics"},
+          "novel": {"$ref": "#/$defs/metrics"},
+          "exposure_replay": {"$ref": "#/$defs/metrics"},
+          "curve": {
+            "type": "array",
+            "items": {"type": "object", "required": ["events", "heldout", "novel"], "properties": {"heldout": {"$ref": "#/$defs/metrics"}, "novel": {"$ref": "#/$defs/metrics"}}}
+          },
+          "log_failures": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "baselines": {"type": "array", "items": {"type": "object", "required": ["seed", "name", "order", "heldout_bpb", "novel_bpb"]}},
+    "gates": {"type": "array", "items": {"type": "object", "required": ["rule", "set", "improvement_per_seed", "improvement", "floor", "passed"]}},
+    "verdicts": {"type": "array", "items": {"type": "object", "required": ["rule", "acquisition", "heldout_bpb", "novel_bpb", "generalization_gap_bpb"]}},
+    "recurrence_ablation_delta_bpb": {"type": "number"},
+    "bptt_control": {"type": "object", "required": ["status", "reason"]},
+    "scope_note": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "metrics": {"type": "object", "required": ["bytes", "bpb", "accuracy", "ece"], "properties": {"bpb": {"type": "number", "minimum": 0}, "accuracy": {"type": "number", "minimum": 0, "maximum": 1}, "ece": {"type": "number", "minimum": 0}}}
+  }
+}

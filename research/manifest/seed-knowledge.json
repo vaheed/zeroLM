@@ -26,8 +26,8 @@
     {
       "id": "delta-rule-constants",
       "kind": "protocol_constant",
-      "description": "Initial learning-rate and decay constants for the normalized delta rule.",
-      "source": "docs/RESEARCH_CONSTITUTION.md#learning-rules",
+      "description": "Learning-rate, bias-rate, epsilon, update-norm bound (delta rule) and rate, decay, trace, gain (Hebbian rule). Chosen on pilot seeds only and frozen before the main Phase 4 run.",
+      "source": "model/specs/online-learning.json",
       "derived_from_corpus": false
     },
     {

@@ -95,3 +95,23 @@ jobs:
           path: reports/phase-3/
           if-no-files-found: warn
           retention-days: 30
+  online-learning:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Online-learning invariants (hash change, exact event log, no future leak, disabled = no update)
+        run: cargo test -p zerolm-learning -p zerolm-eval --test online
+      - name: Phase 4 acquisition gate (3 seeds, frozen floor; fails if the primary local rule does not clear it)
+        run: cargo run --release -p zerolm-eval --bin zerolm-online-lm -- --out reports/online-learning
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -s reports/online-learning/summary.md ]; then cat reports/online-learning/summary.md >> "$GITHUB_STEP_SUMMARY"; else echo "Phase 4 report: **not produced** (phase incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-phase-4-${{ github.sha }}
+          path: reports/online-learning/
+          if-no-files-found: warn
+          retention-days: 30
