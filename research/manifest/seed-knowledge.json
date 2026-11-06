@@ -36,6 +36,20 @@
       "description": "Six teaching/control commands (teach, ask, correct, confirm, forget, repeat), the ' => ' delimiter, and control IDs BOS/EOS/PAD. Full list in model/bootstrap/seed.json.",
       "source": "model/bootstrap/seed.json",
       "derived_from_corpus": false
+    },
+    {
+      "id": "phasor-binding-init",
+      "kind": "init_formula",
+      "description": "Symbols, roles, and relation atoms are unit complex phasors with angles from SplitMix64 streams tagged by namespace and name; numbers use fractional-power encoding exp(i n theta) with a seeded base. Binding is elementwise complex multiplication.",
+      "source": "crates/zerolm-engine/src/binding.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "reasoning-grammar",
+      "kind": "protocol_constant",
+      "description": "Bounded statement/question grammar: about 45 function words, 8 comparatives (4 dimensions), number words zero-twenty, verb normalizations, and the pronoun 'it'. Content words are open. Operator semantics (class inclusion, transitivity, inheritance, comparison, arithmetic, temporal order, negation, conditionals) are programmed.",
+      "source": "crates/zerolm-engine/src/semantic_state.rs",
+      "derived_from_corpus": false
     }
   ]
 }

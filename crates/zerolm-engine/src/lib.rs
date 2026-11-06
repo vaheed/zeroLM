@@ -1,7 +1,9 @@
 //! Forward pass only. Weights are programmed/seeded, never trained here.
 //! Session state is a fixed-size vector; nothing grows with stream length.
 
+pub mod binding;
 pub mod bootstrap;
+pub mod semantic_state;
 
 use zerolm_nn::{build_with_budget, state, Cell, Kind, Trace};
 use zerolm_tensor::sha256::Sha256;
