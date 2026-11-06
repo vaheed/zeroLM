@@ -105,7 +105,8 @@ pub fn compile(id: &str, p: &Params) -> Result<Compiled, IsaError> {
     b.gate(Sub, "have2", "one", "have2_m1");
     b.gate(Mul, "second", "have2", "second_h");
     b.gate(Add, "second_h", "have2_m1", "runner_up");
-    b.matvec("meta", "best_mask", "best_meta", true);
+    b.matvec("meta", "best_mask", "best_meta_raw", true);
+    b.gate(Mul, "best_meta_raw", "have", "best_meta");
 
     // Coverage: min over the best slot's stored key words of the best cosine
     // with any query word.

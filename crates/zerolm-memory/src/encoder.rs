@@ -87,21 +87,6 @@ impl KeyEncoder {
     }
 }
 
-/// Late-interaction coverage: for every stored key word, the best cosine with
-/// any query word; the minimum over key words. 1.0 means every key word is
-/// present in the query; a missing or different key word pulls it down.
-pub fn coverage(key_words: &[f32], n_words: usize, query_words: &[Vec<f32>]) -> f32 {
-    if n_words == 0 || query_words.is_empty() {
-        return 0.0;
-    }
-    let d = query_words[0].len();
-    key_words
-        .chunks_exact(d)
-        .take(n_words)
-        .map(|kw| query_words.iter().map(|q| zerolm_tensor::dot(kw, q)).fold(f32::NEG_INFINITY, f32::max))
-        .fold(f32::INFINITY, f32::min)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -117,9 +102,5 @@ mod tests {
         assert!(e.encode("?? !!").is_none());
         let other = e.encode("blixo home").unwrap();
         assert!(dot(&a, &other).abs() < 0.4);
-        let kw: Vec<f32> = e.encode_words("zorvan color").concat();
-        assert!(coverage(&kw, 2, &e.encode_words("what is the color of zorvan?")) > 0.99);
-        assert!(coverage(&kw, 2, &e.encode_words("zorvan size")) < 0.5);
-        assert!(coverage(&kw, 2, &e.encode_words("zorvan")) < 0.5);
     }
 }

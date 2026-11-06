@@ -13,8 +13,9 @@
 //! Integers are stored as f32 in 24-bit pieces, which f32 represents exactly.
 
 use crate::checkpoint::{self, CheckpointError, Fault, LoadSource, Tensor};
-use crate::encoder::{self, coverage, KeyEncoder};
+use crate::encoder::{self, KeyEncoder};
 use crate::fast_weights::{self, FastWeights};
+use crate::read_circuit;
 use crate::retrieval::{self, Decoded};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -23,6 +24,7 @@ use zerolm_engine::bootstrap::default_model;
 use zerolm_engine::Model;
 use zerolm_tensor::sha256::Sha256;
 use zerolm_tensor::{fnv1a, shuffle, Matrix};
+use zerolm_wsp::Compiled;
 
 pub const KEYS: &str = "memory.semantic.keys";
 pub const KEY_WORDS: &str = "memory.semantic.key_words";
@@ -317,6 +319,8 @@ pub struct MemoryStore {
     ep_meta: Matrix,
     fast: FastWeights,
     separator: Matrix,
+    /// The compiled read circuit (`W_PROG`, `prog.memory-read.*`).
+    read: Compiled,
     clock: u64,
     ep_count: u64,
     events: Vec<MemoryEvent>,
@@ -368,6 +372,7 @@ impl MemoryStore {
             ep_meta: Matrix::zeros(cfg.episodic_capacity, ep_field::COUNT),
             fast: FastWeights::new(cfg.positions() * e, cfg.fast_expansion, cfg.fast_decay, cfg.fast_lr),
             separator: Matrix::uniform(cfg.fast_expansion, cfg.key_dim, cfg.seed, fast_weights::SEPARATOR, 1.0),
+            read: read_circuit::build(&cfg, core.embed.rows, e),
             core,
             cfg,
             clock: 0,
@@ -455,14 +460,11 @@ impl MemoryStore {
         retrieval::decode(self.values.row(slot), &self.core.embed).bytes
     }
 
-    /// Active slot whose key is the same fact key (cosine >= same_key_threshold).
+    /// Active slot whose key is the same fact key: the read circuit's best
+    /// slot when its score reaches `same_key_threshold`.
     fn find_same(&self, k: &[f32]) -> Option<usize> {
-        let slots = self.active_slots();
-        let a = retrieval::attend(&self.keys, &slots, k, self.cfg.beta);
-        match a.best {
-            Some(s) if a.score >= self.cfg.same_key_threshold => Some(s),
-            _ => None,
-        }
+        let a = self.query_key(k, &[k.to_vec()]);
+        a.slot.filter(|_| a.score >= self.cfg.same_key_threshold)
     }
 
     fn tick(&mut self) -> u64 {
@@ -677,49 +679,64 @@ impl MemoryStore {
         Ok(Outcome::Forgotten { slots: chain })
     }
 
-    /// Retrieval: attention over active slots, soft value read, cleanup.
+    /// Retrieval through the compiled read circuit.
     pub fn query(&self, text: &str) -> Result<Answer, MemoryError> {
-        let words = self.encoder.encode_words(text);
-        let q = self.encoder.pool(&words).ok_or(MemoryError::EmptyKey)?;
+        let (q, words) = self.query_inputs(text)?;
         Ok(self.query_key(&q, &words))
     }
 
+    /// Run the compiled read circuit. The host only formats its outputs.
     pub fn query_key(&self, q: &[f32], words: &[Vec<f32>]) -> Answer {
-        let slots = self.active_slots();
-        let a = retrieval::attend(&self.keys, &slots, q, self.cfg.beta);
-        let Some(best) = a.best else {
-            return Answer {
-                value: None,
-                decoded: String::new(),
-                slot: None,
-                score: -1.0,
-                runner_up: -1.0,
-                coverage: 0.0,
-                weight: 0.0,
-                margin: 0.0,
-                confidence: 0.0,
-                contradictions: 0,
-                created_seq: 0,
-            };
-        };
-        let r = retrieval::read(&self.values, &a.weights);
-        let Decoded { bytes, margin } = retrieval::decode(&r, &self.core.embed);
-        let decoded = String::from_utf8_lossy(&bytes).into_owned();
-        let cov = coverage(self.key_words.row(best), self.m(best, field::KEY_WORDS) as usize, words);
-        let accept = a.score >= self.cfg.read_threshold && cov >= self.cfg.coverage_threshold && !bytes.is_empty();
+        let o = self.read_outputs(q, words).expect("the compiled read circuit runs on its own store");
+        let have = o.scalar("have") == 1.0;
+        let meta = &o.get("best_meta").data;
+        let value = read_circuit::bytes(o.get("value"));
         Answer {
-            value: if accept { Some(decoded.clone()) } else { None },
-            decoded,
-            slot: Some(best),
-            score: a.score,
-            runner_up: a.runner_up,
-            coverage: cov,
-            weight: a.weight,
-            margin,
-            confidence: self.m(best, field::CONFIDENCE),
-            contradictions: self.m(best, field::CONTRADICTIONS) as u32,
-            created_seq: join48(self.m(best, field::CREATED_LO), self.m(best, field::CREATED_HI)),
+            value: (!value.is_empty()).then(|| String::from_utf8_lossy(&value).into_owned()),
+            decoded: String::from_utf8_lossy(&read_circuit::bytes(o.get("decoded"))).into_owned(),
+            slot: have.then(|| o.scalar("best") as usize),
+            score: o.scalar("score"),
+            runner_up: o.scalar("runner_up"),
+            coverage: o.scalar("coverage"),
+            weight: o.scalar("weight"),
+            margin: o.scalar("margin"),
+            confidence: meta[field::CONFIDENCE],
+            contradictions: meta[field::CONTRADICTIONS] as u32,
+            created_seq: join48(meta[field::CREATED_LO], meta[field::CREATED_HI]),
         }
+    }
+
+    fn external(&self) -> read_circuit::External<'_> {
+        fn v(m: &Matrix) -> zerolm_engine::isa::View<'_> {
+            zerolm_engine::isa::View::new(m.rows, m.cols, &m.data)
+        }
+        read_circuit::External { keys: v(&self.keys), key_words: v(&self.key_words), values: v(&self.values), meta: v(&self.meta), codes: v(&self.core.embed) }
+    }
+
+    /// Raw outputs of the read circuit for a query key and its word vectors.
+    pub fn read_outputs(&self, q: &[f32], words: &[Vec<f32>]) -> Result<zerolm_engine::isa::Outputs, zerolm_engine::isa::IsaError> {
+        read_circuit::run(&self.read, &self.external(), q, words)
+    }
+
+    /// Pooled key and word vectors of a query text (the circuit's inputs).
+    pub fn query_inputs(&self, text: &str) -> Result<(Vec<f32>, Vec<Vec<f32>>), MemoryError> {
+        let words = self.encoder.encode_words(text);
+        let q = self.encoder.pool(&words).ok_or(MemoryError::EmptyKey)?;
+        Ok((q, words))
+    }
+
+    /// The read program and every tensor it reads, as a program bundle.
+    pub fn read_bundle(&self) -> Vec<u8> {
+        read_circuit::export(&self.read, &self.external())
+    }
+
+    pub fn read_circuit(&self) -> &Compiled {
+        &self.read
+    }
+
+    /// Zero one block of the read circuit (causal ablation; evaluation only).
+    pub fn ablate_circuit(&mut self, block: &str) -> Result<(), zerolm_engine::isa::IsaError> {
+        self.read.ablate_block(block)
     }
 
     /// Episodic records whose key is this fact key, oldest first.
@@ -840,7 +857,7 @@ impl MemoryStore {
 
     // ---- Checkpoint ----
 
-    fn core_tensors(core: &Model, encoder: &KeyEncoder, separator: &Matrix) -> Vec<Tensor> {
+    fn core_tensors(core: &Model, encoder: &KeyEncoder, separator: &Matrix, read: &Compiled) -> Vec<Tensor> {
         let mut t = vec![Tensor::new(EMBED, "byte_embed", core.embed.rows, core.embed.cols, core.embed.data.clone())];
         for (name, data) in core.cell.groups() {
             t.push(Tensor::new(&format!("{CELL_PREFIX}{name}"), "recurrent_core", 1, data.len(), data.to_vec()));
@@ -848,12 +865,15 @@ impl MemoryStore {
         let e = &encoder.table;
         t.push(Tensor::new(encoder::TENSOR, "memory_encoder", e.rows, e.cols, e.data.clone()));
         t.push(Tensor::new(fast_weights::SEPARATOR, "memory_encoder", separator.rows, separator.cols, separator.data.clone()));
+        for c in &read.tensors {
+            t.push(Tensor::new(&read.qualified(&c.name), zerolm_wsp::compiler::GROUP, c.rows, c.cols, c.data.clone()));
+        }
         t
     }
 
     /// Every tensor of the checkpoint, with its weight group.
     pub fn tensors(&self) -> Vec<Tensor> {
-        let mut t = Self::core_tensors(&self.core, &self.encoder, &self.separator);
+        let mut t = Self::core_tensors(&self.core, &self.encoder, &self.separator, &self.read);
         let mat = |name: &str, group: &str, m: &Matrix| Tensor::new(name, group, m.rows, m.cols, m.data.clone());
         t.push(mat(KEYS, "memory_keys", &self.keys));
         t.push(mat(KEY_WORDS, "memory_keys", &self.key_words));
@@ -923,7 +943,7 @@ impl MemoryStore {
             if got.name != want.name || got.group != want.group || got.rows != want.rows || got.cols != want.cols {
                 return Err(MemoryError::Format(format!("tensor '{}' does not match expected '{}' {}x{}", got.name, want.name, want.rows, want.cols)));
             }
-            if got.name.starts_with("core.") {
+            if got.name.starts_with("core.") || got.name.starts_with("prog.") {
                 if got.data.iter().zip(&want.data).any(|(a, b)| a.to_bits() != b.to_bits()) {
                     return Err(MemoryError::CoreMismatch(got.name));
                 }

@@ -1,4 +1,4 @@
-//! Reference interpreter for the neural ISA (constitution invariant 11).
+//! Reference interpreter for the neural ISA (constitution invariant 10).
 //!
 //! Written separately from `zerolm_engine::isa` and deliberately minimal:
 //! it parses a program bundle from raw bytes with `serde_json::Value`, keeps

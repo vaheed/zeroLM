@@ -307,6 +307,13 @@ fn a_tampered_core_tensor_is_rejected() {
     let bytes = checkpoint::encode(&serde_json::json!({ "config": m.config() }), &t);
     let (meta, tensors) = checkpoint::decode(&bytes).unwrap();
     assert!(matches!(MemoryStore::from_checkpoint(&meta, tensors), Err(MemoryError::CoreMismatch(n)) if n == "core.embed"));
+    // Compiled W_PROG constants are frozen the same way.
+    let mut t = m.tensors();
+    let i = t.iter().position(|t| t.name == "prog.memory-read.read_threshold").unwrap();
+    t[i].data[0] = 0.0;
+    let bytes = checkpoint::encode(&serde_json::json!({ "config": m.config() }), &t);
+    let (meta, tensors) = checkpoint::decode(&bytes).unwrap();
+    assert!(matches!(MemoryStore::from_checkpoint(&meta, tensors), Err(MemoryError::CoreMismatch(n)) if n == "prog.memory-read.read_threshold"));
 }
 
 #[test]
@@ -359,4 +366,19 @@ fn fast_weights_recall_recent_associations_and_are_short_lived() {
     }
     assert_ne!(m.recall_fast("door code").unwrap().bytes, b"amber", "decayed after 400 later writes");
     assert_eq!(answer(&m, "door code"), None, "fast associations are not semantic beliefs");
+}
+
+#[test]
+fn the_default_read_circuit_is_the_shipped_pinned_spec() {
+    use zerolm_memory::read_circuit;
+    let shipped = zerolm_wsp::shipped(read_circuit::ID).unwrap();
+    let cfg = zerolm_memory::MemoryConfig::default();
+    let built = read_circuit::build(&cfg, 256, zerolm_engine::bootstrap::EMBED_DIM);
+    assert_eq!(built.sha256(), shipped.sha256(), "MemoryConfig::default() must compile to model/prog/memory-read.json");
+    let store = zerolm_memory::MemoryStore::new(cfg).unwrap();
+    assert_eq!(store.read_circuit().sha256(), shipped.sha256());
+    // W_PROG constants are checkpoint tensors in their own group.
+    let prog: Vec<_> = store.tensors().into_iter().filter(|t| t.name.starts_with("prog.memory-read.")).collect();
+    assert_eq!(prog.len(), shipped.tensors.len());
+    assert!(prog.iter().all(|t| t.group == "w_prog"));
 }

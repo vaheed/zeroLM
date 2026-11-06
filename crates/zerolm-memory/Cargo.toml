@@ -9,4 +9,5 @@ license.workspace = true
 zerolm-tensor = { path = "../zerolm-tensor" }
 zerolm-engine = { path = "../zerolm-engine" }
 serde.workspace = true
+zerolm-wsp = { path = "../zerolm-wsp" }
 serde_json.workspace = true

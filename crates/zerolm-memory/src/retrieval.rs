@@ -1,67 +1,14 @@
-//! The model's retrieval computation over memory tensors.
+//! Value encoding into byte-code rows and nearest-code decoding.
 //!
-//! Read: scores s_i = q . K_i over active slots (keys are unit norm, so these
-//! are cosines); weights w = softmax(beta * s); read vector r = sum_i w_i V_i.
-//! Decode: each value position is cleaned up to the nearest row of the core
-//! byte embedding (`core.embed`); NUL's row terminates the value.
-//! Nothing here looks up a string: the answer is reconstructed from tensors.
+//! Semantic queries are answered by the compiled read circuit
+//! (`read_circuit`), which does its own cleanup. `decode` remains a host
+//! helper for write-time value comparison and `W_FAST` recall; moving those
+//! onto the engine is Phase 7 work still open.
 
-use zerolm_tensor::{dot, Matrix};
+use zerolm_tensor::Matrix;
 
-/// Weights below this are skipped in the value read (deterministically).
+/// Read weights below this are dropped from the value read (a circuit parameter).
 pub const MIN_WEIGHT: f32 = 1e-7;
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Attention {
-    /// Highest-scoring slot.
-    pub best: Option<usize>,
-    pub score: f32,
-    /// Second-highest score (or -1 when fewer than two slots).
-    pub runner_up: f32,
-    /// Softmax weight of the best slot.
-    pub weight: f32,
-    /// (slot, weight) for every slot with weight >= MIN_WEIGHT.
-    pub weights: Vec<(usize, f32)>,
-}
-
-/// Attention over the given candidate slots.
-pub fn attend(keys: &Matrix, slots: &[usize], q: &[f32], beta: f32) -> Attention {
-    let scores: Vec<f32> = slots.iter().map(|&i| dot(keys.row(i), q)).collect();
-    let mut best = None;
-    let (mut top, mut second) = (f32::NEG_INFINITY, f32::NEG_INFINITY);
-    for (j, &s) in scores.iter().enumerate() {
-        if s > top {
-            second = top;
-            top = s;
-            best = Some(j);
-        } else if s > second {
-            second = s;
-        }
-    }
-    let Some(bj) = best else {
-        return Attention { best: None, score: -1.0, runner_up: -1.0, weight: 0.0, weights: Vec::new() };
-    };
-    let exps: Vec<f32> = scores.iter().map(|s| (beta * (s - top)).exp()).collect();
-    let z: f32 = exps.iter().sum();
-    let weights: Vec<(usize, f32)> =
-        slots.iter().zip(&exps).map(|(&i, e)| (i, e / z)).filter(|(_, w)| *w >= MIN_WEIGHT).collect();
-    Attention {
-        best: Some(slots[bj]),
-        score: top,
-        runner_up: if second.is_finite() { second } else { -1.0 },
-        weight: exps[bj] / z,
-        weights,
-    }
-}
-
-/// r = sum_i w_i V_i
-pub fn read(values: &Matrix, weights: &[(usize, f32)]) -> Vec<f32> {
-    let mut r = vec![0.0f32; values.cols];
-    for &(i, w) in weights {
-        r.iter_mut().zip(values.row(i)).for_each(|(a, v)| *a += w * v);
-    }
-    r
-}
 
 /// Value bytes -> concatenated code rows, NUL-padded to `positions`.
 /// The caller guarantees `bytes.len() < positions` and no NUL bytes.
@@ -118,21 +65,7 @@ mod tests {
         let a = encode_value(b"blue", &codes, 8);
         let b = encode_value(b"green", &codes, 8);
         assert_eq!(decode(&a, &codes).bytes, b"blue");
-        let mut values = Matrix::zeros(2, a.len());
-        values.data[..a.len()].copy_from_slice(&a);
-        values.data[a.len()..].copy_from_slice(&b);
-        let r = read(&values, &[(0, 0.9), (1, 0.1)]);
+        let r: Vec<f32> = a.iter().zip(&b).map(|(x, y)| 0.9 * x + 0.1 * y).collect();
         assert_eq!(decode(&r, &codes).bytes, b"blue");
-    }
-
-    #[test]
-    fn attention_picks_the_most_similar_key() {
-        let mut keys = Matrix::zeros(3, 2);
-        keys.data = vec![1.0, 0.0, 0.0, 1.0, 0.6, 0.8];
-        let a = attend(&keys, &[0, 1, 2], &[0.0, 1.0], 32.0);
-        assert_eq!(a.best, Some(1));
-        assert!((a.score - 1.0).abs() < 1e-6 && (a.runner_up - 0.8).abs() < 1e-6);
-        assert!(a.weight > 0.99);
-        assert_eq!(attend(&keys, &[], &[0.0, 1.0], 32.0).best, None);
     }
 }

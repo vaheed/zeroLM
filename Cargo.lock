@@ -136,6 +136,7 @@ dependencies = [
  "serde_json",
  "zerolm-engine",
  "zerolm-tensor",
+ "zerolm-wsp",
 ]
 
 [[package]]

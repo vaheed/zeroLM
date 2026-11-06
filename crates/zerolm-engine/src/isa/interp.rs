@@ -198,9 +198,15 @@ fn matvec(w: View<'_>, x: View<'_>, transpose: bool) -> Result<Buf, IsaError> {
             .collect();
         return Ok(Buf::row(out));
     }
-    // out[c] = sum over r (in order) of w[r][c] * x[r].
+    // out[c] = sum over r (in order) of w[r][c] * x[r]. A row with x[r] == 0
+    // adds +-0 to an accumulator that starts at +0 and so can never be -0;
+    // skipping it is exact for finite weights (a bound-weight precondition,
+    // docs/NEURAL_ISA.md). Attention reads and one-hot gathers are mostly zero.
     let mut out = vec![0.0f32; w.cols];
     for (r, &xr) in x.data.iter().enumerate() {
+        if xr == 0.0 {
+            continue;
+        }
         let row = &w.data[r * w.cols..(r + 1) * w.cols];
         for (o, a) in out.iter_mut().zip(row) {
             *o += a * xr;

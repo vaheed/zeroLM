@@ -231,9 +231,6 @@ impl QueryRecord {
         self.pooled_ok && self.coverage >= tau && !self.decoded.is_empty()
     }
 
-    fn hit_at(&self, tau: f32) -> bool {
-        self.accepted_at(tau) && self.expected.as_deref() == Some(self.decoded.as_str())
-    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Serialize)]
@@ -248,16 +245,27 @@ pub struct Score {
     pub false_accept_rate: f64,
 }
 
+/// Scores with the decision re-applied at coverage threshold `tau` (for sweeps).
 pub fn score(records: &[&QueryRecord], tau: f32) -> Score {
+    score_by(records, |r| r.accepted_at(tau))
+}
+
+/// Scores with the circuit's own accept decision.
+pub fn score_circuit(records: &[&QueryRecord]) -> Score {
+    score_by(records, |r| r.accepted)
+}
+
+fn score_by(records: &[&QueryRecord], accepted: impl Fn(&QueryRecord) -> bool) -> Score {
     let n = records.len();
     if n == 0 {
         return Score::default();
     }
-    let acc = records.iter().filter(|r| r.accepted_at(tau)).count();
+    let hit = |r: &QueryRecord| accepted(r) && r.expected.as_deref() == Some(r.decoded.as_str());
+    let acc = records.iter().filter(|r| accepted(r)).count();
     let pos: Vec<_> = records.iter().filter(|r| r.expected.is_some()).collect();
     let neg = n - pos.len();
-    let hits = pos.iter().filter(|r| r.hit_at(tau)).count();
-    let pos_acc = pos.iter().filter(|r| r.accepted_at(tau)).count();
+    let hits = pos.iter().filter(|r| hit(r)).count();
+    let pos_acc = pos.iter().filter(|r| accepted(r)).count();
     let neg_acc = acc - pos_acc;
     Score {
         queries: n,
@@ -358,9 +366,29 @@ pub struct SeedResult {
     pub sweep: Vec<SweepPoint>,
     pub fast_capacity: Vec<FastPoint>,
     pub ablations: Vec<(String, Score)>,
+    /// Each block of the compiled read circuit zeroed in turn.
+    pub circuit_ablations: Vec<CircuitAblation>,
+    pub reference_parity: Parity,
     pub latency: Latency,
     pub checks: Vec<Check>,
     pub update_events: usize,
+}
+
+/// The independent reference interpreter rerun on every evaluated query.
+#[derive(Debug, Clone, Serialize)]
+pub struct Parity {
+    pub queries: usize,
+    /// Queries where any output differs in any bit.
+    pub mismatches: usize,
+    pub bundle_sha256: String,
+    pub circuit_sha256: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct CircuitAblation {
+    pub block: String,
+    pub exact: Score,
+    pub negatives: Score,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -517,6 +545,31 @@ fn curve_point(m: &MemoryStore, set: &FactSet, expected: &dyn Fn(&Fact) -> Optio
     }
 }
 
+/// Rerun every evaluated query on the reference interpreter from the exported
+/// read bundle and compare every output bit for bit with the engine.
+fn reference_parity(m: &MemoryStore, ev: &Eval<'_>) -> Result<Parity, String> {
+    use crate::isa_ref::{self, T};
+    let bundle = m.read_bundle();
+    let (mut queries, mut mismatches) = (0, 0);
+    for (_, q, _) in ev.queries() {
+        let (k, words) = m.query_inputs(&q).map_err(|e| e.to_string())?;
+        let engine = m.read_outputs(&k, &words).map_err(|e| e.to_string())?;
+        let inputs = [("q", T { r: 1, c: k.len(), d: k.clone() }), ("qw", T { r: words.len(), c: k.len(), d: words.concat() })];
+        let reference = isa_ref::run(&bundle, &inputs)?;
+        let same = engine.values.iter().all(|(n, b)| {
+            reference.get(n).map(|t| t.r == b.rows && t.c == b.cols && t.d.iter().zip(&b.data).all(|(x, y)| x.to_bits() == y.to_bits())).unwrap_or(false)
+        });
+        queries += 1;
+        mismatches += !same as usize;
+    }
+    Ok(Parity {
+        queries,
+        mismatches,
+        bundle_sha256: zerolm_engine::isa::bundle::sha256(&bundle),
+        circuit_sha256: m.read_circuit().sha256(),
+    })
+}
+
 fn check(checks: &mut Vec<Check>, name: &'static str, passed: bool, detail: impl Into<String>) {
     checks.push(Check { name, passed, detail: detail.into() });
 }
@@ -650,6 +703,13 @@ pub fn run_seed(spec: &Spec, seed: u64, work: &Path) -> Result<SeedResult, Strin
     let mut query_us = Vec::new();
     let records = ev.run(&m, Some(&mut query_us));
     check(&mut checks, "restart_identical_answers", records == before_restart, "every answer and score bit-identical before and after restart");
+    let reference_parity = reference_parity(&m, &ev)?;
+    check(
+        &mut checks,
+        "reference_interpreter_parity",
+        reference_parity.mismatches == 0 && reference_parity.queries == records.len(),
+        format!("{}/{} queries reproduced bit for bit by the reference interpreter from the exported bundle", reference_parity.queries - reference_parity.mismatches, reference_parity.queries),
+    );
     let core1 = m.digest("core.");
     check(
         &mut checks,
@@ -696,7 +756,10 @@ pub fn run_seed(spec: &Spec, seed: u64, work: &Path) -> Result<SeedResult, Strin
     }
     check(&mut checks, "deleted_values_erased", erased == stats_before.deleted && erased >= forget.len(), format!("{erased} deleted slots, all value rows zero"));
 
-    // 5. Scores at the frozen threshold.
+    // 5. Scores at the frozen threshold. The sweep re-applies the decision in
+    // the evaluator; at the frozen threshold it must equal the circuit's.
+    let same_decision = records.iter().all(|r| r.accepted == r.accepted_at(tau));
+    check(&mut checks, "evaluator_matches_circuit_decision", same_decision, "re-applied accept decision equals the circuit's accept output on every query");
     let cats = categories(&records, tau);
     let exact = score(&by_kind(&records, "exact"), tau);
     let paraphrase = score(&by_kind(&records, "paraphrase"), tau);
@@ -737,6 +800,25 @@ pub fn run_seed(spec: &Spec, seed: u64, work: &Path) -> Result<SeedResult, Strin
         let s = score(&r.iter().collect::<Vec<_>>(), tau);
         check(&mut checks, "ablation_damages_recall", s.recall <= spec.gates.ablation_recall_max, format!("{name}: exact recall {:.4}", s.recall));
         ablations.push((name.to_string(), s));
+    }
+
+    // 6b. Circuit-block ablations: verification is what makes the memory
+    // abstain, so zeroing it must keep exact answers and accept negatives;
+    // every other block carries the answers themselves.
+    let mut circuit_ablations = Vec::new();
+    let blocks = m.read_circuit().blocks();
+    for block in blocks.iter().filter(|b| *b != "support") {
+        let (mut x, _) = MemoryStore::load(&dir).map_err(me)?;
+        x.ablate_circuit(block).map_err(|e| e.to_string())?;
+        let r = ev.run(&x, None);
+        let (ex, ng) = (score_circuit(&by_kind(&r, "exact")), score_circuit(&by_kind(&r, "negative")));
+        let ok = if block == "verify" {
+            ex.recall >= exact.recall && ng.false_accept_rate > spec.gates.negative_false_accept_max
+        } else {
+            ex.recall <= spec.gates.ablation_recall_max
+        };
+        check(&mut checks, "circuit_block_ablation", ok, format!("{block}: exact recall {:.4} (intact {:.4}), negative false accepts {:.4}", ex.recall, exact.recall, ng.false_accept_rate));
+        circuit_ablations.push(CircuitAblation { block: block.clone(), exact: ex, negatives: ng });
     }
 
     // 7. Compaction preserves answers and frees superseded/deleted slots.
@@ -855,6 +937,8 @@ pub fn run_seed(spec: &Spec, seed: u64, work: &Path) -> Result<SeedResult, Strin
         sweep,
         fast_capacity,
         ablations,
+        circuit_ablations,
+        reference_parity,
         latency,
         checks,
         update_events,

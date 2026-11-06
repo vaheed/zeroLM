@@ -48,6 +48,8 @@ jobs:
       # Lint against the declared rust-version (1.75), the same toolchain used
       # locally, so lint results are reproducible and fixes stay MSRV-compatible.
       - run: cargo +1.75.0 clippy --workspace --all-targets -- -D warnings
+      - name: Phase 7 compiled circuits match their pinned hashes
+        run: cargo run -q -p zerolm-wsp -- check
       - name: Phase 0 audit
         run: |
           mkdir -p reports/phase-0

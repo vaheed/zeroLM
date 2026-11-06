@@ -4,7 +4,7 @@
 //! A circuit encodes an algorithm (selection, attention, verification,
 //! cleanup), never language data: no vocabulary, word list, fact, or corpus
 //! statistic may appear in a spec or in its compiled tensors (constitution
-//! invariant 12). Compilation is deterministic; the SHA-256 of the output is
+//! invariant 11). Compilation is deterministic; the SHA-256 of the output is
 //! pinned in `model/prog/pinned.json`.
 
 use crate::circuits;

@@ -53,7 +53,7 @@
     {
       "id": 7,
       "name": "Uniform neural engine and WSP compiler",
-      "status": "planned",
+      "status": "in_progress",
       "command": null,
       "report_schema": null
     },
