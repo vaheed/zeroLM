@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM Phase 0 audit report",
+  "type": "object",
+  "required": ["phase", "passed", "checks_run", "violations"],
+  "properties": {
+    "phase": {"const": "phase-0"},
+    "passed": {"type": "boolean"},
+    "checks_run": {"type": "array", "items": {"type": "string"}},
+    "violations": {"type": "array", "items": {"type": "object", "required": ["check", "detail"], "properties": {"check": {"type": "string"}, "detail": {"type": "string"}}}}
+  }
+}

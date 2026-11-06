@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "phases": [
+    {
+      "id": 0,
+      "name": "Research constitution and scope freeze",
+      "status": "complete",
+      "command": "cargo run -p zerolm-policy --bin zerolm-audit -- --json",
+      "report_schema": "research/schemas/phase0-report.schema.json"
+    },
+    {
+      "id": 1,
+      "name": "Freeze and audit the existing baseline",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 2,
+      "name": "Neural compute engine and architecture bake-off",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 3,
+      "name": "Bootstrap language interface and deterministic initialization",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 4,
+      "name": "First true online neural language model",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 5,
+      "name": "Weight-resident associative memory",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 6,
+      "name": "Concepts, relations, and compositional reasoning",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 7,
+      "name": "Grounded learning and interaction",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 8,
+      "name": "Natural-language generation and multi-turn dialogue",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 9,
+      "name": "Controlled self-modification and internal WSP",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 10,
+      "name": "Developmental capability evaluation",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    },
+    {
+      "id": 11,
+      "name": "CPU deployment, checkpoint durability, and 1.0 release",
+      "status": "planned",
+      "command": null,
+      "report_schema": null
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "groups": [
+    {"id": "byte_embed", "description": "Byte to vector embedding.", "init_source": "seeded_prng", "update_path": "local_plasticity"},
+    {"id": "recurrent_core", "description": "Gated linear-recurrent state transition (slow weights).", "init_source": "recurrent-state-shape", "update_path": "none"},
+    {"id": "fast_weights", "description": "Fast associative weights updated by the delta rule.", "init_source": "zeros", "update_path": "local_plasticity"},
+    {"id": "memory_keys", "description": "Persistent associative memory keys.", "init_source": "orthogonal-key-init", "update_path": "memory_write"},
+    {"id": "memory_values", "description": "Persistent associative memory values.", "init_source": "zeros", "update_path": "memory_write"},
+    {"id": "readout_head", "description": "Next-byte prediction head.", "init_source": "delta-rule-constants", "update_path": "local_plasticity"},
+    {"id": "wsp_skills", "description": "Skill-level weight edits, accepted only via validated patches.", "init_source": "zeros", "update_path": "wsp_patch"}
+  ]
+}

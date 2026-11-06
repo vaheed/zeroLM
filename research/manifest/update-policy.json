@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "online_backprop_in_mainline": false,
+  "allowed_signals": ["observed_next_byte", "user_correction", "environment_outcome", "independently_validated_signal"],
+  "forbidden_signals": ["model_generated_output", "hidden_evaluation_label", "pretrained_model_output"],
+  "update_paths": ["none", "local_plasticity", "memory_write", "wsp_patch"],
+  "required_event_fields": ["input_stream", "signal", "rule", "changed_tensors", "checkpoint_sha256"],
+  "forbidden": {
+    "extensions": [".safetensors", ".gguf", ".onnx", ".pt", ".pth", ".ckpt", ".h5", ".npz", ".tflite"],
+    "substrings": ["from_pretrained", "huggingface.co", "hf_hub_download", "torch.hub", "download_model"],
+    "exempt_prefixes": ["docs/", "research/manifest/", "AGENTS.md", ".claude/", "crates/zerolm-policy/tests/"]
+  }
+}
