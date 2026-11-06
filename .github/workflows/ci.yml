@@ -40,9 +40,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - run: rustup toolchain install stable --profile minimal --component clippy
+      - run: rustup toolchain install stable --profile minimal
+      - run: rustup toolchain install 1.75.0 --profile minimal --component clippy
       - run: cargo test --workspace
-      - run: cargo clippy --workspace --all-targets -- -D warnings
+      # Lint against the declared rust-version (1.75), the same toolchain used
+      # locally, so lint results are reproducible and fixes stay MSRV-compatible.
+      - run: cargo +1.75.0 clippy --workspace --all-targets -- -D warnings
       - name: Phase 0 audit
         run: |
           mkdir -p reports/phase-0
