@@ -13,7 +13,8 @@ Session state is one fixed-size `f32` vector per cell. Nothing grows with stream
 | `zerolm-nn` | `Cell` trait, four cells, trace hooks, ablation hooks, state serialization. No backpropagation exists. |
 | `zerolm-tokenizer` | Bytes 0..255 as IDs, control IDs BOS/EOS/PAD, offsets. No vocabulary. |
 | `zerolm-engine` | `Model`: embed, cell, head; `feed`, `bits_per_byte`, save/load state. |
-| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary. |
+| `zerolm-learning` | Phase 4 online predictor (plastic readout over frozen GRU features), local rules, generated streams, byte n-gram baselines. See `docs/ONLINE_LEARNING.md`. |
+| `zerolm-eval` | Bake-off metrics and the `zerolm-bakeoff` binary; the Phase 4 `zerolm-online-lm` benchmark. |
 
 ## Candidates (equal parameter budget, within 5%)
 1. `gru`: compact GRU, update-gate biases spread over timescales.

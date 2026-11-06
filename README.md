@@ -8,7 +8,7 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 
 ## Status
 
-**Phases 0-3 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), and a byte-level bootstrap with a teaching protocol and CLI.** The model still has no learning rule. No language model exists yet, and nothing here claims any language ability.
+**Phases 0-4 are done: research constitution, provenance baseline, a CPU neural engine (GRU core), a byte-level bootstrap with a teaching protocol and CLI, and a first online learner.** A local delta rule on the readout gets held-out text from 8.0 to about 2.3 bits/byte after one chronological pass (byte-frequency baseline: 4.2; a byte trigram is still better at 1.2). See [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md). No claim of English understanding is made.
 
 | Phase | Topic | Status |
 |---|---|---|
@@ -16,7 +16,7 @@ It is **not** a small Transformer with the KV cache removed. The target is a rec
 | 1 | Freeze and audit the baseline | complete |
 | 2 | Neural compute engine and architecture bake-off | complete |
 | 3 | Byte bootstrap and deterministic initialization | complete |
-| 4 | First true online language model (**stop/go gate**) | planned |
+| 4 | First true online language model (**stop/go gate**) | complete (go, weak learner) |
 | 5 | Weight-resident associative memory | planned |
 | 6 | Concepts, relations, composition | planned |
 | 7 | Grounded learning and interaction | planned |
@@ -67,6 +67,7 @@ cargo run -p zerolm-policy --bin zerolm-baseline -- generate   # then: check
 cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json   # Phase 2 gate
 cargo run -p zerolm-runtime -- info     # Phase 3: pinned init hash
 printf 'teach sky => blue\nask sky\n' | cargo run -p zerolm-runtime -- run
+cargo run --release -p zerolm-eval --bin zerolm-online-lm   # Phase 4 gate (3 seeds)
 ```
 
 The audit checks the update policy and seed-knowledge manifests, that every weight group declares an init source and update path, that no phase is marked complete without a command and schema, and that the tree contains no pretrained weight files or model downloads.
@@ -78,6 +79,7 @@ crates/zerolm-policy/     Phase 0-1 auditor and baseline tools
 crates/zerolm-tensor/     f32 kernels, deterministic RNG and init
 crates/zerolm-nn/         GRU, SSM, fast-weight, hybrid cells
 crates/zerolm-tokenizer/  byte tokenizer
+crates/zerolm-learning/   online predictor, local rules, streams, n-gram baselines
 crates/zerolm-engine/     model forward pass, exact state resume
 crates/zerolm-eval/       architecture bake-off
 crates/zerolm-runtime/    `zerolm` CLI (info, run)

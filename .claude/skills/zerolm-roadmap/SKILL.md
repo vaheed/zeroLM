@@ -99,6 +99,8 @@ Invariants: see `AGENTS.md` and `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Phase 4 — First true online neural language model
 
+> **Implemented:** `crates/zerolm-learning` (online predictor; frozen/delta/hebbian rules; streams; n-gram baselines), `research/streams/compositional-v1.json`, frozen protocol `model/specs/online-learning.json`, benchmark `zerolm-online-lm` (Rust, not `language_modeling.py`: the project has no Python), `docs/ONLINE_LEARNING.md`. Only the readout learns; BPTT control not run. Tune only on pilot seeds; keep the gate green.
+
 **Goal:** Demonstrate online language acquisition rather than phrase lookup or fixed answers.
 
 **Deliverables**

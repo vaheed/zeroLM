@@ -3,8 +3,9 @@
 ZeroLM: a CPU-first, Rust, online-learning neural language system with **zero offline pretraining**. Full plan: `docs/ROADMAP.md`. Rules: `docs/RESEARCH_CONSTITUTION.md`.
 
 ## Layout
-- `crates/` - Rust workspace. Today: `zerolm-policy` (audit + baseline tools), `zerolm-tensor`, `zerolm-nn`, `zerolm-tokenizer`, `zerolm-engine` (incl. `bootstrap`), `zerolm-eval`, `zerolm-runtime` (CLI `zerolm`). Planned: learning, memory, reasoner, world, wsp (roadmap sec. 9). `model/bootstrap/seed.json` pins the init hash; changing initialization requires deliberately re-pinning it. The protocol ledger is scaffolding, never evidence of memory or learning. Selected core: GRU (`model/specs/architecture.json`); the bake-off check fails on selection drift.
+- `crates/` - Rust workspace. Today: `zerolm-policy` (audit + baseline tools), `zerolm-tensor`, `zerolm-nn`, `zerolm-tokenizer`, `zerolm-engine` (incl. `bootstrap`), `zerolm-learning` (online predictor), `zerolm-eval` (bake-off, online-LM benchmark), `zerolm-runtime` (CLI `zerolm`). Planned: memory, reasoner, world, wsp (roadmap sec. 9). `model/bootstrap/seed.json` pins the init hash; changing initialization requires deliberately re-pinning it. The protocol ledger is scaffolding, never evidence of memory or learning. Selected core: GRU (`model/specs/architecture.json`); the bake-off check fails on selection drift. Phase 4 rule constants, seeds, and the improvement floor are frozen in `model/specs/online-learning.json` (tune only on pilot seeds).
 - `research/manifest/` - `seed-knowledge.json`, `update-policy.json` (the contract).
+- `research/streams/` - generated exposure/held-out/novel stream specs.
 - `research/phases.json` - phase status; `complete` requires `command` + `report_schema`.
 - `model/specs/weight-groups.json` - every weight group's `init_source` and `update_path`.
 - `reports/<phase>/` - generated evidence (git-ignored).
@@ -17,6 +18,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo run -p zerolm-policy --bin zerolm-audit -- --json   # Phase 0 gate
 cargo run -p zerolm-policy --bin zerolm-baseline -- generate && cargo run -p zerolm-policy --bin zerolm-baseline -- check   # Phase 1 gate (needs a clean tree)
 cargo run --release -p zerolm-eval --bin zerolm-bakeoff -- --check model/specs/architecture.json   # Phase 2 gate (~2 min)
+cargo run --release -p zerolm-eval --bin zerolm-online-lm   # Phase 4 gate (~15 s)
 ```
 All of these must pass before every commit.
 
