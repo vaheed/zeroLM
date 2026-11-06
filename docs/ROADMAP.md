@@ -49,9 +49,9 @@ An assessment after Phase 6 found that the system is neural in its **storage** b
 
 Revision 2 makes four changes.
 
-1. **One neural engine (uniform execution).** Every content-dependent decision in the model is computed by a small fixed set of tensor operations (the neural ISA, section 3.7). Host code only loads programs, schedules fixed-shape steps, and moves bytes. A capability is a weight program, not Rust control flow. This is tested: an independent minimal interpreter that knows nothing about language must reproduce the model's outputs from the weights alone.
-2. **WSP compiles algorithms; learning supplies knowledge.** Weight-space programming is used as a compiler. It writes algorithmic priors into weights: hashing contexts, counting, copying from earlier context, segmenting, binding, retrieval, and inference. It never writes vocabulary, grammar of a natural language, facts, or corpus statistics. Local online rules then fill those circuits from the stream. This is the breakthrough bet: **compiled algorithms plus local learning can reach in about 10^9 bytes, without backpropagation, what a randomly initialized network needs backpropagation and far more data to discover.** It is tested against an online-backpropagation control at equal data and compute.
-3. **Real data and real baselines.** From Phase 8 on, exposure is licensed human-written text (no model-generated text). Evaluation uses external benchmarks (held-out BPB, BLiMP, LAMBADA, read-then-answer) and is compared against PPM/Kneser-Ney, published online compressors, and the backpropagation control. Generated toy languages remain unit tests only.
+1. **One neural engine (uniform execution).** Every content-dependent decision in the model is computed by a small fixed set of tensor operations, the neural ISA (instruction set architecture, by analogy with the fixed instruction set of a CPU; section 3.7). Host code only loads programs, schedules fixed-shape steps, and moves bytes. A capability is a weight program, not Rust control flow. This is tested: an independent minimal interpreter that knows nothing about language must reproduce the model's outputs from the weights alone.
+2. **WSP (weight-space programming) compiles algorithms; learning supplies knowledge.** Weight-space programming is used as a compiler. It writes algorithmic priors into weights: hashing contexts, counting, copying from earlier context, segmenting, binding, retrieval, and inference. It never writes vocabulary, grammar of a natural language, facts, or corpus statistics. Local online rules then fill those circuits from the stream. This is the breakthrough bet: **compiled algorithms plus local learning can reach in about 10^9 bytes, without backpropagation, what a randomly initialized network needs backpropagation and far more data to discover.** It is tested against an online-backpropagation control at equal data and compute.
+3. **Real data and real baselines.** From Phase 8 on, exposure is licensed human-written text (no model-generated text). Evaluation uses external benchmarks (held-out bits per byte (BPB); BLiMP, the Benchmark of Linguistic Minimal Pairs; LAMBADA, last-word prediction in context; read-then-answer) and is compared against PPM (prediction by partial matching), Kneser-Ney n-gram models, published online compressors, and the backpropagation control. Generated toy languages remain unit tests only.
 4. **A pre-registered decision on backpropagation.** The mainline stays free of backpropagation. If Gate B (Phase 10) shows that local learning cannot learn generalizing representations, the project lead must choose in writing, before continuing: either (a) amend the constitution to allow single-pass online gradient updates (still zero offline pretraining and fully logged, the NNCP route in section 2.6), or (b) continue as a local-learning research project and limit claims to Level L1. Either choice is legitimate; continuing silently is not.
 
 The reasoning, memory, and online-learning work from Phases 4-6 is not discarded. In Phase 7 it is recompiled onto the uniform engine, and its frozen gates become regression tests.
@@ -274,7 +274,7 @@ This is engineered prior structure, not learned language knowledge. The bootstra
 
 ### 3.7 Revision 2: the uniform neural engine
 
-**Neural ISA.** The model is a set of weight tensors plus a fixed-shape program graph over a small operation set:
+**Neural ISA.** ISA stands for *instruction set architecture*: in a CPU, the fixed list of instructions every program is built from. The neural ISA is this project's analogue for a neural network (the term is coined here; it is not an external standard). The model is a set of weight tensors plus a fixed-shape program graph over a small operation set. Implementation and exact semantics: `docs/NEURAL_ISA.md`.
 
 | Op | Meaning |
 |---|---|
@@ -469,7 +469,7 @@ crates/
   1. frozen recurrent baseline;
   2. fast-weight / normalized delta-rule update;
   3. local Hebbian/eligibility-trace variant;
-  4. optional research-only online truncated-BPTT control, clearly marked as gradient-based online learning.
+  4. optional research-only online truncated-BPTT (backpropagation through time) control, clearly marked as gradient-based online learning.
 - Do not feed an entire corpus through an offline training loop. The experiment runner must expose the stream chronologically, one event at a time, and record each update.
 - Use generated compositional text streams first. Add pinned, licensed child-directed-language streams later as optional exposure experiments; never initialize weights from them.
 - Report bits-per-byte (BPB), next-byte accuracy, calibration, and learning curves. Include a simple byte n-gram baseline.

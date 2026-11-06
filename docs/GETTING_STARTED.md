@@ -139,7 +139,7 @@ The reasoning language is bounded. It accepts sentences such as `x is a y`, `eve
 | Phase 0 audit | no pretrained artifacts or downloads; manifests valid | stdout JSON |
 | Tests and clippy | all tests pass; no warnings | stdout |
 | Phase 2 bake-off | architecture selection reproduces `model/specs/architecture.json` | `reports/phase-2/` |
-| Phase 4 online learning | held-out BPB clears the frozen floor (about 2.3 BPB vs 8.0 untrained, 3 seeds) | `reports/online-learning/` |
+| Phase 4 online learning | held-out BPB (bits per byte) clears the frozen floor (about 2.3 BPB vs 8.0 untrained, 3 seeds) | `reports/online-learning/` |
 | Phase 5 memory | recall, paraphrase, and restart gates (exact recall 1.000) | `reports/memory/` |
 | Phase 6 reasoning | agreement with the symbolic reference, counterfactuals, ablations | `reports/reasoning/` |
 

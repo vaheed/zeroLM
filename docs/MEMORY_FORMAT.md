@@ -1,6 +1,8 @@
 # Weight-resident memory (Phase 5)
 
-Phase 5 gives the model memory that persists across processes without transcript replay or an external database. Every stored fact lives only as `f32` tensors in the model checkpoint. Every answer is computed from those tensors by the retrieval code in `crates/zerolm-memory/src/retrieval.rs`.
+Phase 5 gives the model memory that persists across processes without transcript replay or an external database. Every stored fact lives only as `f32` tensors in the model checkpoint. Since Phase 7, every answer is computed from those tensors by the compiled `memory-read` circuit: a program for the neural ISA (instruction set architecture, the fixed list of tensor operations the model may use; see [NEURAL_ISA.md](NEURAL_ISA.md)), whose constants are the `W_PROG` tensors `prog.memory-read.*`.
+
+Abbreviations used below: W_FAST = the fast associative weight matrix, W_MEMORY = persistent memory tensors, W_PROG = compiled circuit constants, kWTA = k-winners-take-all, FNV-1a = Fowler-Noll-Vo hash variant 1a, SHA-256 = Secure Hash Algorithm (256-bit). Glossary: [MATH.md](MATH.md).
 
 ## Checkpoint file
 
@@ -50,7 +52,7 @@ Semantic and episodic memory are kept separate. The semantic bank holds what is 
 ## Computation
 
 - **Key encoder.** This is programmed, not learned. ASCII text is lower-cased, and any non-alphanumeric ASCII character separates words. Each word becomes the normalized sum of hashed byte-trigram rows of `core.memory_encoder`. The key is the normalized sum of the word vectors.
-- **Read.** The read computes `s_i = q . K_i` over active slots, then `w = softmax(32 s)`, then `r = sum_i w_i V_i`. Each value position of `r` is cleaned up to the nearest row of `core.embed`.
+- **Read.** The `memory-read` circuit computes `s_i = q . K_i` over active slots, then `w = softmax(32 s)`, then `r = sum_i w_i V_i`. Each value position of `r` is cleaned up to the nearest row of `core.embed`. Equations below; the program is in [NEURAL_ISA.md](NEURAL_ISA.md#the-memory-read-circuit).
 - **Accept or abstain.** The memory answers only if two conditions hold. The pooled score of the best slot must be at least 0.3. Its late-interaction coverage must be at least 0.5: for each stored key word, take the best cosine with any query word, then take the minimum over key words. Without coverage, a query that shares one of two words with a stored key cannot be told apart from a question-form paraphrase; see "Design history" below.
 - **Write.** A key whose cosine with an active slot is at least 0.95 addresses that slot.
   - `teach` never overwrites a different value. It records a contradiction and returns `conflict`.
@@ -60,6 +62,70 @@ Semantic and episodic memory are kept separate. The semantic bank holds what is 
   - `compact` reclaims superseded and deleted slots and remaps links.
   - A write to a full memory is refused with `CapacityFull` and leaves memory unchanged.
 - **W_FAST.** The key passes through a frozen k-winners-take-all expansion: the top 32 of 1024 units of `core.fast_separator * k`. The matrix is then updated by a normalized delta rule with a decay of 0.99 per write. W_FAST holds short-lived associations only and never answers `ask`.
+
+## Mathematics
+
+### Key encoder (`encoder.rs`)
+
+Text is split into words $\omega_1, \dots, \omega_n$: ASCII letters are lower-cased, and any ASCII non-alphanumeric character separates words. Each word is padded to `#word#`, and its byte trigrams $g$ select rows of the frozen table $T \in \mathbb{R}^{4096 \times 128}$, $T_{ij} \sim \mathcal{U}(-1, 1)$:
+
+$$\tilde w(\omega) = \sum_{g \in \text{trigrams}(\#\omega\#)} T\big[\operatorname{FNV1a}(g) \bmod 4096\big], \qquad w(\omega) = \frac{\tilde w}{\lVert \tilde w\rVert}, \qquad k = \frac{\sum_{j=1}^n w(\omega_j)}{\big\lVert \sum_{j} w(\omega_j)\big\rVert}$$
+
+**Why this separates keys.** Rows of $T$ are independent random vectors in 128 dimensions, so the word vectors of two words with no trigram in common have cosine of mean 0 and standard deviation about $1/\sqrt{128} \approx 0.09$. Treat word vectors as orthonormal. A key of $n$ words and a query of $n'$ words that share $m$ of them then have
+
+$$\cos(k, q) \approx \frac{m}{\sqrt{n\, n'}}.$$
+
+This explains the design history below. `zorvan size` against a stored `zorvan color` ($m = 1$, $n = n' = 2$) scores about $1/2$. The genuine paraphrase `what is the color of zorvan` ($m = 2$, $n = 2$, $n' = 6$) scores about $2/\sqrt{12} \approx 0.58$. The pooled cosine alone cannot separate the two, which is why coverage was added.
+
+### Coverage (late interaction)
+
+For the best slot's stored word vectors $\kappa_1..\kappa_n$ and the query's word vectors $u_1..u_{n'}$:
+
+$$\text{cov} = \min_{j \le n}\ \max_{i \le n'}\ \langle \kappa_j, u_i \rangle$$
+
+A key word present in the query contributes $\approx 1$. A missing one contributes the best of $n'$ near-random cosines, typically below 0.3. One missing key word is therefore enough to pull the minimum under the threshold 0.5, however many other words match.
+
+### Attention read
+
+Over active slots $i \in A$ with unit keys $K_i$:
+
+$$s_i = \langle q, K_i\rangle, \qquad \alpha_i = \frac{e^{\beta s_i}}{\sum_{j \in A} e^{\beta s_j}}, \quad \beta = 32, \qquad r = \sum_{i \in A} \alpha_i\, [\![\alpha_i \ge 10^{-7}]\!]\; V_i$$
+
+With $\beta = 32$, a runner-up whose score is $g$ below the best gets relative weight $e^{-32 g}$. That is $1.4\cdot 10^{-5}$ at the typical margin $g = 0.35$, and the $10^{-7}$ cutoff drops every slot more than $\ln(10^7)/32 \approx 0.5$ below the best. The read is soft but sharp.
+
+### Values and cleanup
+
+A value of bytes $v_1..v_m$ ($m \le 47$) is stored as 48 code rows, $V = [E[v_1]; \dots; E[v_m]; E[0]; \dots]$, where $E$ = `core.embed` (256 x 16). Each read position $x \in \mathbb{R}^{16}$ is decoded to the nearest code:
+
+$$\hat b = \arg\min_b \lVert x - E_b\rVert^2 = \arg\max_b \big(2\langle x, E_b\rangle - \lVert E_b\rVert^2\big)$$
+
+The two forms are equal because $\lVert x\rVert^2$ does not depend on $b$; the circuit uses the second, a matmul plus a bias. Decoding stops at the first $\hat b = 0$ (NUL). The **margin** is the smallest gap, over decoded positions, between the best and second-best score: how far the read is from flipping a byte.
+
+### Accept rule
+
+$$\text{answer} \iff s_{\text{best}} \ge 0.3 \;\wedge\; \text{cov} \ge 0.5 \;\wedge\; \hat b_1 \ne 0 \;\wedge\; |A| \ge 1$$
+
+In the circuit this is the product of four $\{0, 1\}$ gates, multiplied into the decoded bytes, so a rejected read outputs an empty value.
+
+**Writes** address an existing slot when $s_{\text{best}} \ge 0.95$ (same fact key). That uses the circuit's `best` and `score` outputs, queried with the write key as its only word.
+
+### W_FAST: sparse keys and the delta rule (`fast_weights.rs`)
+
+The pooled key $k$ is expanded and sparsified by a frozen projection $P \in \mathbb{R}^{1024 \times 128}$, $P_{ij} \sim \mathcal{U}(-1,1)$:
+
+$$\sigma(k)_i = \frac{1}{\sqrt{a}}\, [\![\, i \in \operatorname{top}_a(P k) \,]\!], \qquad a = 32, \qquad \lVert \sigma(k) \rVert = 1$$
+
+Two codes overlap by $\langle \sigma(k), \sigma(k')\rangle = |\operatorname{top}_a(Pk) \cap \operatorname{top}_a(Pk')| / a$. This is much smaller than $\cos(k, k')$ for correlated keys, which is the point of pattern separation. Each write with value $v$ (768 = 48 x 16 code values) applies
+
+$$M \leftarrow \gamma M, \qquad M \leftarrow M + \eta\, \frac{(v - M\sigma)\,\sigma^\top}{\sigma^\top\sigma + \epsilon}, \qquad \gamma = 0.99,\ \eta = 1,\ \epsilon = 10^{-6}$$
+
+Since $\sigma^\top\sigma = 1$, right after the write $M\sigma = v$ up to $\epsilon$: the newest association is stored exactly. An older association $j$ is read back as $M\sigma_j$. Its own contribution has decayed by $\gamma$ per later write, and every later write $t$ corrupted it in proportion to the code overlap $\langle\sigma_t, \sigma_j\rangle$. That is why recall falls with load (measured below).
+
+### Integers in `f32` tensors
+
+An `f32` has a 24-bit significand, so every integer $0 \le x < 2^{24}$ is exact. Clocks are stored as $x = \text{lo} + 2^{24}\, \text{hi}$, two exact pieces covering 48 bits. The 64-bit provenance hash is split into 22-, 22-, and 20-bit pieces. No metadata value is ever rounded.
+
+### Logging
 
 Every update logs `input_stream`, `signal`, `rule`, `changed_tensors`, and a hash of the written rows. Its `checkpoint_sha256` is filled in when the next save commits it.
 
@@ -82,7 +148,7 @@ Command: `cargo run --release -p zerolm-eval --bin zerolm-memory`. Spec: `model/
 - **Interference and capacity.** Exact recall stays 1.0 from 100 facts to a full memory of 2,048. Paraphrase recall on a fixed probe of 100 facts goes from 0.983 to 0.973, and the mean best-minus-runner-up margin falls from 0.42 to 0.35. When all 2,048 slots are full, a further write is refused.
 - **Ablations.** Zeroing the value tensor, zeroing the keys, or permuting key rows among slots each drops exact recall to 0.000. The answers depend on these tensors.
 - **W_FAST recall by load.** 8 associations: 1.00. 16: 0.94-1.00. 32: 0.72-0.78. 64: 0.50-0.58. 256: about 0.13. Capacity is small, and older associations fade.
-- **Latency and size** (release build, 3 seeds in parallel on a 32-core Xeon). Query p50 is about 215 µs and p95 is 320-710 µs at 1,100 facts. Write p50 is about 300 µs. The checkpoint is 24 MB. A full save takes 0.9-1.2 s, and a load takes 0.8-1.0 s.
+- **Latency and size** (release build, 3 seeds in parallel on a 32-core Xeon). Query p50 (median) is about 0.9 ms and p95 (95th percentile) about 1.4-1.6 ms at 1,100 facts through the compiled circuit; the earlier Rust read path took about 215 µs. Write p50 is about 300 µs before Phase 7 (writes now also run the circuit for same-key detection). The checkpoint is 24 MB. A full save takes 0.9-1.2 s, and a load takes 0.8-1.0 s.
 
 Curves are in `reports/memory/`: `interference-capacity.csv`, `precision-recall.csv` (a sweep over the coverage threshold), and `fast-weights.csv`. The report schema is `research/schemas/phase5-report.schema.json`.
 

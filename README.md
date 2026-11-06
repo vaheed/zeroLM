@@ -30,7 +30,7 @@ Add `--verbose` to `zerolm run`, `memory`, or `reason` (on by default in Docker)
 | 4 | First true online language model (**stop/go gate**) | complete (go, weak learner) |
 | 5 | Weight-resident associative memory | complete |
 | 6 | Concepts, relations, composition | complete |
-| 7 | Uniform neural engine and WSP compiler | next |
+| 7 | Uniform neural engine and WSP (weight-space programming) compiler | next |
 | 8 | Real-text exposure streams and reference baselines | planned |
 | 9 | Scalable core with compiled seed circuits (Gate A) | planned |
 | 10 | Deep representation learning without backpropagation (Gate B) | planned |
@@ -129,6 +129,11 @@ AGENTS.md                 rules and workflow for contributors and AI agents
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): engine, candidates, bake-off results and caveats
 - [docs/BOOTSTRAP.md](docs/BOOTSTRAP.md): byte interface, teaching protocol, what is not claimed
 - [docs/BASELINE.md](docs/BASELINE.md): baseline and reproduction
+- [docs/ONLINE_LEARNING.md](docs/ONLINE_LEARNING.md): Phase 4 online learner, update rules, results
+- [docs/MEMORY_FORMAT.md](docs/MEMORY_FORMAT.md): Phase 5 weight-resident memory, checkpoint format, retrieval math
+- [docs/REASONING.md](docs/REASONING.md): Phase 6 vector binding (FHRR) and inference operators
+- [docs/NEURAL_ISA.md](docs/NEURAL_ISA.md): Phase 7 neural ISA (instruction set architecture: the fixed tensor-operation set), compiled circuits
+- [docs/MATH.md](docs/MATH.md): notation, glossary of every abbreviation, and an index of all formulas
 - [AGENTS.md](AGENTS.md): working rules
 
 ## License

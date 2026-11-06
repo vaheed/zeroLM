@@ -15,7 +15,7 @@ question -> operators                (probe -> unbind -> cleanup -> next probe /
 
 ### Vectors (`crates/zerolm-engine/src/binding.rs`)
 
-Every symbol, role, and relation is a 512-dimensional complex unit phasor, seeded from its name. The operations:
+Every symbol, role, and relation is a 512-dimensional vector of complex unit phasors (numbers $e^{i\theta}$ of modulus 1), seeded from its name. This algebra is FHRR (Fourier holographic reduced representations), one kind of VSA (vector-symbolic architecture); the math is in [Mathematics](#mathematics). The operations:
 
 - **Bind:** elementwise complex product.
 - **Unbind:** product with the conjugate.
@@ -64,6 +64,84 @@ A **probe** with k role-filler pairs matches a slot when `Re<probe, slot>/d >= k
 | conditionals | `if something is p then it is q`, and per-entity rules: modus ponens over property chains |
 
 Both a positive and a negative proof means **contradiction**. No proof means **unknown**, so the reasoner abstains. A derived answer lists its premise slots and the operators used. Its confidence is the product of its premises' confidences: 1.0 for named statements and 0.9 for a fact whose subject was resolved from "it".
+
+## Mathematics
+
+Abbreviations: FHRR = Fourier holographic reduced representations, a vector-symbolic algebra whose vectors are complex unit phasors; VSA = vector-symbolic architecture; phasor = a complex number $e^{i\theta}$ of modulus 1. Glossary: [MATH.md](MATH.md).
+
+### The vector algebra (`binding.rs`)
+
+A vector is $a \in \mathbb{C}^d$, $d = 512$, stored as $[\operatorname{Re} a; \operatorname{Im} a]$ (1024 floats). An atom (symbol, role, or relation) is a unit phasor with seeded angles, $a_k = e^{i\theta_k}$, $\theta_k \sim \mathcal{U}[0, 2\pi)$, drawn from the stream tagged `binding.<namespace>:<name>`.
+
+| Operation | Definition | Property |
+|---|---|---|
+| bind | $(a \circledast b)_k = a_k b_k$ | commutative, associative; a bound pair resembles neither part |
+| unbind | $(a \oslash b)_k = a_k \overline{b_k}$ | $(a \circledast b) \oslash b = a$ exactly, since $\lvert b_k\rvert = 1$ |
+| bundle | $a + b$ | the sum stays similar to each term |
+| similarity | $\operatorname{sim}(a, b) = \frac{1}{d}\operatorname{Re}\sum_k a_k \overline{b_k} = \frac{1}{d}\sum_k \cos(\theta^a_k - \theta^b_k)$ | $\operatorname{sim}(a, a) = 1$ for an atom |
+
+**Random atoms are quasi-orthogonal.** For independent atoms, each term $\cos(\theta^a_k - \theta^b_k)$ has mean 0 and variance $\tfrac12$, so
+
+$$\mathbb{E}\,\operatorname{sim}(a,b) = 0, \qquad \operatorname{sd}\,\operatorname{sim}(a,b) = \frac{1}{\sqrt{2d}} = 0.031.$$
+
+Binding an atom with anything gives another such random-looking unit phasor, so distinct role-filler pairs are quasi-orthogonal too.
+
+### Encoding a statement
+
+A statement with role-filler pairs $(\rho_j, f_j)$ is the bundle
+
+$$m = \sum_{j=1}^{n} \rho_j \circledast f_j, \qquad \text{e.g. } \ \text{subj} \circledast \textit{rex} + \text{rel} \circledast \textit{isa} + \text{obj} \circledast \textit{dog}.$$
+
+A comparative's relation filler is itself bound, $\textit{gt} \circledast \textit{height}$, and counts use $\text{rel} \circledast (\textit{has} \circledast \textit{apple})$, so each dimension or counted thing gets its own relation vector.
+
+### Probes: thresholded matching
+
+A probe $p = \sum_{i=1}^{k} \rho_i \circledast f_i$ (for example "subject is rex, relation is isa") is compared with every slot. If the slot contains $m$ of the probe's pairs:
+
+$$\operatorname{sim}(p, m_\text{slot}) = m + \sum_{\text{non-matching pairs}} \operatorname{sim}(\cdot,\cdot) \approx m \pm \frac{\sqrt{kn - m}}{\sqrt{2d}}$$
+
+The match rule is $\operatorname{sim} \ge k - \tfrac12$: all $k$ pairs present. For a 2-pair probe against 3-pair slots, the noise standard deviation is about $\sqrt{4}/32 \approx 0.06$. A full match (about 2) and a one-pair partial match (about 1) are each roughly 8 standard deviations from the threshold 1.5.
+
+### Unbinding and cleanup
+
+Unbinding role $\rho_r$ from a slot gives the wanted filler plus noise:
+
+$$m \oslash \rho_r = f_r + \sum_{j \ne r} (\rho_j \circledast f_j) \oslash \rho_r$$
+
+The noise terms are $n - 1$ quasi-orthogonal unit phasors, so $\cos(m \oslash \rho_r, f_r) \approx 1/\sqrt n$: 0.58 for 3 pairs, 0.50 for 4. **Cleanup** returns the codebook row with the highest cosine, provided it is at least 0.3. Against $N_s = 2048$ unrelated codebook rows the best spurious cosine is about $0.031\sqrt{2\ln N_s} \approx 0.12$, well under both 0.3 and the true $\ge 0.5$.
+
+### Numbers by fractional-power encoding
+
+With a seeded base $\phi_k \sim \mathcal{U}(-\pi, \pi)$:
+
+$$\operatorname{num}(n)_k = e^{i n \phi_k}, \qquad \operatorname{num}(a) \circledast \operatorname{num}(b) = \operatorname{num}(a + b), \qquad \operatorname{num}(a) \oslash \operatorname{num}(b) = \operatorname{num}(a - b)$$
+
+So addition **is** binding. For integers $a \ne b$, $\mathbb{E}\cos((a-b)\phi_k) = 0$ over the uniform base, so distinct integers are quasi-orthogonal (sd 0.031). Decoding picks $\hat n = \arg\max_{|n| \le 1000} \operatorname{sim}(v, \operatorname{num}(n))$. The scan never calls trigonometric functions per candidate: it steps a phasor, $\operatorname{num}(n+1) = \operatorname{num}(n) \circledast \operatorname{num}(1)$, in `f64`. Among 2,001 candidates the largest spurious similarity is about 0.12 against 1 for the true value.
+
+### Discourse state ("it")
+
+$$c_t = 0.5\, c_{t-1} + s_t \quad \Rightarrow \quad c_t = \sum_{j \ge 0} 0.5^j\, s_{t-j}$$
+
+$s_t$ is the subject vector of statement $t$. With distinct subjects, $\lVert c\rVert^2 \approx d \sum_j 0.25^j = \tfrac43 d$, so the latest subject has cosine $1/\sqrt{4/3} = 0.87$ with $c$, the one before it 0.43, and the one before that 0.22. "it" resolves to the codebook entry with the largest cosine, if that cosine is at least 0.4; in practice this is the most recent subject. With the state ablated, $c = 0$ and nothing resolves.
+
+### Operator semantics
+
+Let $E^{\pm}_R$ be the positive and negative edges of relation $R$ recovered by probe, unbind, and cleanup. Let $\operatorname{reach}^D_R(x)$ be the nodes reachable from $x$ over at most $D = 8$ positive $R$ edges.
+
+| Operator | Answers "yes" when | Answers "no" when |
+|---|---|---|
+| class inclusion | $y \in \operatorname{reach}^8_{isa}(x)$ | $\exists\, a \in \{x\} \cup \operatorname{reach}_{isa}(x),\ z \in \{y\} \cup \operatorname{reach}_{isa}(y)$ with $(a, z) \in E^-_{isa}$ (if $x \subseteq a$, $a \cap z = \emptyset$, and $y \subseteq z$, then $x \notin y$) |
+| transitivity (in) | $y \in \operatorname{reach}^8_{in}(x)$ | $(x, y) \in E^-_{in}$ |
+| attribute inheritance | at the nearest isa level $\ell$ (breadth-first from $x$) where some node has a can or cannot edge to $v$: a can edge exists | at that level a cannot edge exists |
+| comparison, temporal order | $b \in \operatorname{reach}^8_{R}(a)$ | $a \in \operatorname{reach}^8_{R}(b)$ (strict order is antisymmetric) |
+| conditionals | $\operatorname{prop}(x, p)$ is stated, or a rule $q \Rightarrow p$ with scope "something" or $x$ exists and $\operatorname{prop}(x, q)$ holds recursively (depth at most 8, no cycles) | $\neg\operatorname{prop}(x, p)$ is stated |
+| arithmetic | $\operatorname{counts}(x) = \{n : \text{has}(x, n)\} \cup \{c + \delta : \text{more}(x, \delta, o),\ c \in \operatorname{counts}(o)\}$ has exactly one value | (more than one value is a contradiction) |
+
+Yes and no together give **contradiction**; neither gives **unknown**. The premises are the slots on the shortest proof path, and
+
+$$\text{confidence} = \prod_{s \in \text{premises}} \text{conf}(s), \qquad \text{conf} = 1.0 \text{ (named subject)},\ 0.9 \text{ (subject resolved from "it")}.$$
+
+Note that these semantics are programmed control flow (breadth-first search in Rust). Phase 7 will recompile them into fixed-step recurrent circuits ([NEURAL_ISA.md](NEURAL_ISA.md)).
 
 ## Evaluation
 
