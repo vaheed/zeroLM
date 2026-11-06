@@ -74,3 +74,24 @@ jobs:
             reports/baseline/
           if-no-files-found: warn
           retention-days: 30
+  bootstrap-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Run the teaching protocol on a clean model
+        run: |
+          mkdir -p reports/phase-3
+          cargo run -q -p zerolm-runtime -- info | tee reports/phase-3/info.txt
+          printf 'teach sky => blue\nask sky\nconfirm sky\nforget sky\nask sky\n' | cargo run -q -p zerolm-runtime -- run --trace reports/phase-3/trace.jsonl | tee reports/phase-3/output.txt
+      - name: Job summary
+        if: always()
+        run: |
+          if [ -s reports/phase-3/trace.jsonl ]; then { echo "## Phase 3 bootstrap"; echo '```'; cat reports/phase-3/info.txt reports/phase-3/output.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"; else echo "Phase 3 trace: **not produced** (phase incomplete)" >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-phase-3-${{ github.sha }}
+          path: reports/phase-3/
+          if-no-files-found: warn
+          retention-days: 30
