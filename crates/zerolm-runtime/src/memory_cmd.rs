@@ -5,6 +5,7 @@
 //! each line that changes memory is committed atomically before the reply,
 //! so a later process answers from the same facts.
 
+use crate::verbose::{short, View};
 use serde::Serialize;
 use std::io::{BufRead, Write};
 use std::path::Path;
@@ -28,7 +29,7 @@ struct Event<'a> {
     checkpoint_sha256: Option<String>,
 }
 
-pub fn run(dir: &Path, seed: Option<u64>, trace: Option<String>, stream: &str) -> ExitCode {
+pub fn run(dir: &Path, seed: Option<u64>, trace: Option<String>, stream: &str, view: &View) -> ExitCode {
     let mut cfg = MemoryConfig::default();
     if let Some(s) = seed {
         cfg.seed = s;
@@ -45,6 +46,7 @@ pub fn run(dir: &Path, seed: Option<u64>, trace: Option<String>, stream: &str) -
         None => eprintln!("memory: no checkpoint in {}; starting from the clean model", dir.display()),
     }
     let core_before = store.digest("core.");
+    view.note("core", format!("frozen core tensors digest {}", short(&core_before)));
     let mut sink = match trace.map(std::fs::File::create).transpose() {
         Ok(s) => s,
         Err(e) => {
@@ -66,11 +68,26 @@ pub fn run(dir: &Path, seed: Option<u64>, trace: Option<String>, stream: &str) -
             Ok(r) => r,
             Err(e) => ("error".to_string(), format!("error: {e}"), "none", None, None, false),
         };
+        if view.on() {
+            view.input(seq, text);
+            view.note("command", command);
+            view.note("outcome", format!("{outcome} (answer source: {source})"));
+            if let (Some(s), Some(c)) = (score, coverage) {
+                view.note("retrieval", format!("attention score {s:.3}, word coverage {c:.3}"));
+            }
+            for ev in &store.events()[n_events..] {
+                view.note("update", format!("{} rule={} signal={} slot={}", ev.op, ev.rule, ev.signal, ev.slot.map_or("-".to_string(), |s| s.to_string())));
+                view.note("changed", format!("{} (rows sha256 {})", ev.changed_tensors.join(", "), short(&ev.rows_sha256)));
+            }
+        }
         let mut checkpoint_sha256 = None;
         let mut response = response;
         if changed {
             match store.save(dir) {
-                Ok(sha) => checkpoint_sha256 = Some(sha),
+                Ok(sha) => {
+                    view.note("checkpoint", format!("{} saved atomically to {}", short(&sha), dir.display()));
+                    checkpoint_sha256 = Some(sha)
+                }
                 Err(e) => {
                     response = format!("error: not saved ({e}); the last valid checkpoint is unchanged");
                     failed = true;

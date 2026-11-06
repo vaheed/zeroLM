@@ -122,3 +122,57 @@ fn reason_answers_derived_questions_with_provenance_across_processes() {
     let out = reason(b"is rex in kennel?\nis rex a fish?\ntom has 3 apples\nann has 2 more apples than tom\nhow many apples does ann have?\n");
     assert_eq!(out.lines().collect::<Vec<_>>(), ["yes", "unknown", "noted", "noted", "5 (derived: arithmetic, direct; 2 premises; confidence 1.00)"]);
 }
+
+fn with_env(args: &[&str], env: &[(&str, &str)], input: &[u8]) -> (String, String, bool) {
+    let mut c = Command::new(bin()).args(args).envs(env.iter().copied()).stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped()).spawn().unwrap();
+    c.stdin.take().unwrap().write_all(input).unwrap();
+    let o = c.wait_with_output().unwrap();
+    (String::from_utf8_lossy(&o.stdout).into(), String::from_utf8_lossy(&o.stderr).into(), o.status.success())
+}
+
+#[test]
+fn verbose_shows_internals_on_stderr_and_leaves_replies_unchanged() {
+    let input = b"rex is a dog\nevery dog is an animal\nis rex an animal?\nblorp\n";
+    let (plain, plain_err, ok) = with_env(&["reason"], &[], input);
+    assert!(ok, "{plain_err}");
+    assert!(!plain_err.contains("premise"));
+    let (out, err, ok) = with_env(&["reason", "--verbose"], &[], input);
+    assert!(ok, "{err}");
+    assert_eq!(out, plain, "verbose must not change stdout");
+    assert!(err.contains("[0] > rex is a dog"), "{err}");
+    assert!(err.contains("relation_write") && err.contains("memory.relations.slots"), "{err}");
+    assert!(err.contains("class_inclusion"), "{err}");
+    assert!(err.contains("premise     slot 0 <- \"rex is a dog\""), "{err}");
+    assert!(err.contains("no match in the bounded grammar"), "{err}");
+    // The environment variable turns it on too.
+    let (out, err, ok) = with_env(&["reason"], &[("ZEROLM_VERBOSE", "1")], input);
+    assert!(ok && out == plain && err.contains("premise"), "{err}");
+}
+
+#[test]
+fn verbose_memory_reports_tensor_writes_and_retrieval_scores() {
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("zerolm-cli-verbose-memory");
+    let _ = std::fs::remove_dir_all(&dir);
+    let (out, err, ok) = with_env(&["memory", "--dir", dir.to_str().unwrap(), "-v"], &[], b"teach sky => blue\nask sky\n");
+    assert!(ok, "{err}");
+    assert_eq!(out.lines().collect::<Vec<_>>(), ["noted sky (unconfirmed)", "sky => blue (unconfirmed)"]);
+    assert!(err.contains("rule=memory_write") && err.contains("memory.semantic.keys"), "{err}");
+    assert!(err.contains("saved atomically") && err.contains("attention score"), "{err}");
+}
+
+#[test]
+fn documented_examples_give_the_documented_answers() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../examples");
+    let read = |f: &str| std::fs::read(root.join(f)).unwrap();
+    let (out, err, ok) = with_env(&["reason"], &[], &read("reasoning-more.txt"));
+    assert!(ok, "{err}");
+    let answers: Vec<&str> = out.lines().filter(|l| *l != "noted").collect();
+    assert_eq!(answers.len(), 6, "{out}");
+    for (got, want) in answers.iter().zip(["yes", "no", "yes", "cal", "yes", "yes"]) {
+        assert!(got.starts_with(want), "{got} vs {want}\n{out}");
+    }
+    let (out, _, ok) = with_env(&["reason"], &[], &read("reasoning.txt"));
+    assert!(ok && out.contains("5 (derived: arithmetic"), "{out}");
+    let (out, _, ok) = with_env(&["run"], &[], &read("protocol.txt"));
+    assert!(ok && out.lines().last() == Some("unknown sky"), "{out}");
+}
