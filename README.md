@@ -87,8 +87,8 @@ The 1.0 goal is a genuine small language model that has learned English from a s
 | Online learning, weight-resident memory, compositional reasoning | done |
 | One neural engine: everything compiled into weights and verified | in progress |
 | Real human-written text streams and reference baselines | planned |
-| Scalable core with compiled circuits (Gate A) | planned |
-| Deep representation learning without backpropagation (Gate B, a pre-registered decision) | planned |
+| Can local learning build useful representations from real text? (Gate A, a pre-registered decision: pass, pivot, or inconclusive) | planned |
+| Scalable core with compiled circuits and the selected learning rule (Gate B) | planned |
 | Scaling and forgetting (Gate C) | planned |
 | Reading into memory, generation, dialogue, self-proposed weight patches | planned |
 | Capability evaluation and the 1.0 release | planned |

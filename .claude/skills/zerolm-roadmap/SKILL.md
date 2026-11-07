@@ -174,14 +174,14 @@ Invariants: see `AGENTS.md` and `docs/research-constitution.md`.
 
 ## Revision 2 (phases 7-16) — read docs/roadmap.md sec. 0.3, 3.7, 5, 7.1 first
 
-Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language data) into program weights; local online rules learn from licensed human-written text; 1.0 = Level L3 small LLM. New invariants 10-13 in the constitution: uniform execution (reference-interpreter test), byte-permutation test for circuits, corpus manifest / no LM-generated text, Gate B is the only way to change the no-backprop rule.
+Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language data) into program weights; local online rules learn from licensed human-written text; 1.0 = Level L3 small LLM. New invariants 10-13 in the constitution: uniform execution (reference-interpreter test), byte-permutation test for circuits, corpus manifest / no LM-generated text, the Gate A decision is the only way to change the no-backprop rule. Revision 3 (roadmap sec. 0.5): Gate A is the early representation-learning decision (Phase 9); the old Phases 9-10 merge into Phase 10 (Gate B).
 
 | Phase | Goal | Exit gate |
 |---|---|---|
 | 7 Uniform engine + WSP compiler | ISA interpreter, `zerolm-wsp` compiler/patches, recompile Phase 5-6 into weights, delete Rust control flow | Phase 5-6 gates pass through compiled programs; independent interpreter reproduces outputs |
 | 8 Real-text streams + baselines | `zerolm-data`, corpus manifest, contamination check, PPM/KN-5, online-backprop CONTROL, BLiMP/LAMBADA/BPB harnesses | Reproducible pipeline; `model/specs/levels.json` frozen |
-| 9 Scalable core + seed circuits | Bake-off at scale (GRU vs gated delta rule), circuits C1-C4, C7 | **Gate A / L1:** BPB <= PPM/KN-5 at 1e8 bytes; >= 1,650 bytes/s |
-| 10 Deep local representations | Online unit embeddings, layer-local predictive learning | **Gate B:** BPB gain δ, BLiMP >= 65%, gap to backprop control <= 15%; on (i)/(ii) failure write decision in `research/decisions/` |
+| 9 Representation feasibility | Arms on one GRU init and 1e7 real-text bytes: random features (readout only), local rule (e-prop + feedback alignment on embedding/core), matched perturbation, online-BPTT CONTROL; representation probe ΔR, headroom ρ, novel-context BPB, retention κ | **Gate A (decision):** validity V1-V4 (else INCONCLUSIVE); PASS needs P1-P5 with thresholds frozen from pilots in `model/specs/representation.json`; FAIL / PIVOT needs a written decision in `research/decisions/` before Phase 10 |
+| 10 Scalable core + seed circuits + selected rule | Bake-off at scale, circuits C1-C4, C7, Gate A's rule on the ISA, unit embeddings, consolidation | **Gate B / L1:** BPB <= PPM/KN-5 at 1e8 bytes; learned blocks still contribute; >= 1,650 bytes/s |
 | 11 Scaling + forgetting | 1e8-1e9 bytes, 2-3 sizes, scaling curves | **Gate C / L2**; stop on plateau |
 | 12 Read into memory + reasoning | Learned write gate, learned text-to-bindings, C5/C6 driven by network | Read-then-answer beats LM alone and lookup; ablation removes gain |
 | 13 Generation + dialogue | Decoding, human-written dialogue exposure, abstention | Non-template generation, blind ratings, calibrated |
@@ -189,4 +189,4 @@ Thesis: one neural engine (neural ISA); WSP compiles algorithms (never language 
 | 15 Evaluation + levels | Revision-1 Phase 10 framed by L1-L4 | Published level profile, 3 seeds, hidden sets |
 | 16 Release 1.0 | Revision-1 Phase 11 | Requires L3 |
 
-Track G (grounded world, revision-1 Phase 7) is optional and parallel from Phase 9. Revision-1 phase texts are in ROADMAP Appendix A.
+Track G (grounded world, revision-1 Phase 7) is optional and parallel from Phase 10. Revision-1 phase texts are in ROADMAP Appendix A.

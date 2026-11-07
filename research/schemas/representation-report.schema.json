@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM representation-feasibility report (reports/representation/summary.json), Gate A",
+  "description": "Design contract for roadmap Phase 9. The milestone is planned: no code produces this report yet. 'smoke' is the only outcome a regular CI run may report; only a main run on hidden data may report pass, fail_pivot, or inconclusive.",
+  "type": "object",
+  "required": ["report", "mode", "outcome", "deciding_criteria", "spec_sha256", "data", "arms", "baselines", "validity", "criteria", "attempts", "resources", "scope_note"],
+  "properties": {
+    "report": {"const": "representation"},
+    "mode": {"enum": ["smoke", "pilot", "main"]},
+    "outcome": {"enum": ["smoke", "pilot", "pass", "fail_pivot", "inconclusive"]},
+    "deciding_criteria": {"type": "array", "items": {"type": "string"}, "description": "IDs (V1-V4, P1-P5) of the criteria that determined the outcome"},
+    "decision_record": {"type": ["string", "null"], "description": "research/decisions/ file required for pass and fail_pivot"},
+    "spec_sha256": {"type": "string", "description": "SHA-256 of model/specs/representation.json (frozen thresholds and constants)"},
+    "data": {
+      "type": "object",
+      "required": ["manifest_sha256", "splits", "contamination_passed"],
+      "properties": {
+        "manifest_sha256": {"type": "string"},
+        "splits": {"type": "array", "items": {"type": "object", "required": ["role", "bytes", "sha256"], "properties": {"role": {"enum": ["exposure_1", "exposure_2", "probe", "development", "hidden", "retention"]}}}},
+        "contamination_passed": {"type": "boolean"}
+      }
+    },
+    "arms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "control", "changed_tensors", "per_seed"],
+        "properties": {
+          "id": {"enum": ["frozen", "random_features", "local", "local_perturbed", "bptt_control"]},
+          "control": {"type": "boolean", "description": "true only for bptt_control; controls are excluded from strict results"},
+          "changed_tensors": {"type": "array", "items": {"type": "string"}},
+          "per_seed": {"type": "array", "items": {"type": "object", "required": ["seed", "prequential_bpb", "heldout_bpb", "probe_bpb", "delta_r", "novel_context_bpb", "ece", "retention", "curve"]}}
+        }
+      }
+    },
+    "baselines": {"type": "array", "items": {"type": "object", "required": ["name", "heldout_bpb", "novel_context_bpb"]}},
+    "validity": {"type": "array", "items": {"type": "object", "required": ["id", "passed", "detail"]}},
+    "criteria": {"type": "array", "items": {"type": "object", "required": ["id", "passed", "value", "threshold", "detail"]}},
+    "attempts": {"type": "array", "description": "every pilot configuration and earlier attempt, including failures", "items": {"type": "object", "required": ["id", "mode", "rule", "outcome"]}},
+    "resources": {"type": "array", "items": {"type": "object", "required": ["arm", "bytes", "bytes_per_s", "macs_per_byte", "peak_rss_bytes", "wall_s"]}},
+    "scope_note": {"type": "string"}
+  }
+}

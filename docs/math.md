@@ -37,7 +37,9 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 | **MSRV** | Minimum supported Rust version | 1.75 for this workspace. |
 | **CI** | Continuous integration | The GitHub Actions jobs in `.github/workflows/ci.yml`. |
 | **L0-L4** | Language-model levels | Capability levels defined in roadmap section 7.1; the system is at L0. |
-| **Gate A / B / C** | | Pre-registered pass/fail tests for the scalable-core, local-representation, and scaling milestones (roadmap section 5). |
+| **Gate A / B / C** | | Pre-registered tests for the representation-feasibility (a decision gate: PASS, FAIL / PIVOT, or INCONCLUSIVE), scalable-core, and scaling milestones (roadmap section 5). |
+| **Representation probe** | | Freeze a core, train a fresh delta-rule readout on a probe split, and score hidden text; $\Delta R_x = \mathrm{BPB}^{\text{probe}}_{\text{random}} - \mathrm{BPB}^{\text{probe}}_x$ is how much better core $x$'s features are than random features (roadmap Phase 9). |
+| **e-prop** | Eligibility propagation | An online, local-in-time rule for recurrent networks: per-weight eligibility traces times a broadcast learning signal (roadmap section 2.7). |
 
 ## Notation
 

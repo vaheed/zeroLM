@@ -92,7 +92,7 @@ It is a filing cabinet, not compressed knowledge.
 **How much could the same size hold?** Studies of trained language models measured a knowledge capacity of about **2 bits per parameter** (Allen-Zhu and Li, *Physics of Language Models, Part 3.3: Knowledge Capacity Scaling Laws*, 2024). At 4 bytes per parameter, 25 MB is about 6 million parameters. That gives roughly 12 million bits, or **about 1.5 MB of pure facts**: about fifteen times what we store now. Reaching it means storing knowledge *distributed* across weights, as trained models do. It is then approximate: facts can blur and interfere, and they are hard to delete cleanly.
 
 **What this means for the plan:** the current memory is deliberately the exact, inspectable kind. A real small language model, the 1.0 goal, also needs the distributed kind. The roadmap plans it in three steps:
-- learn from real text (the real-text and scalable-core milestones);
+- learn from real text (the real-text milestone), after first testing whether local learning can build representations from it at all (the representation-feasibility milestone);
 - compare model sizes (the scaling milestone);
 - keep the exact slot memory alongside, for facts you teach it directly.
 

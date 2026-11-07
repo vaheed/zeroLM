@@ -1,7 +1,7 @@
 # ZeroLM: Research and Engineering Roadmap
 
-**Document status:** Revision 2 (phases 0-6 complete; phases 7-16 replace the earlier phases 7-11)  
-**Date:** 2026-11-06  
+**Document status:** Revision 3 (phases 0-6 complete; phases 7-16 replace the earlier phases 7-11; revision 3 moves the representation-learning decision to Phase 9, section 0.5)  
+**Date:** 2026-11-07  
 **Repository baseline:** `vaheed/zeroLM`, default branch `main`  
 **Primary objective:** Build a CPU-first neural language model with no offline pretraining, whose computation is one neural engine and whose parameters and persistent memory develop from a recorded, single-pass, chronological stream of human-written text, feedback, and interaction.  
 **1.0 target:** a genuine small LLM (Level L3, section 7.1), not a toy-language demo.
@@ -40,7 +40,7 @@ The default research track should first test local, non-backpropagated plasticit
 **Not promised:**
 - Frontier or ChatGPT-class ability. Frontier models use on the order of 10^24 training FLOPs and trillions of tokens. One 32-core CPU running for a week delivers roughly 10^17-10^18 FLOPs and can read about 10^9 bytes. That is six or more orders of magnitude less. A small LLM is an honest target; a frontier model is not.
 - Language without data. No known method produces a language model that has not read a lot of language. "Zero offline pretraining" means the model reads its corpus online, once, in order, with every update logged. It does not mean it reads nothing.
-- That local learning will work. No published result shows non-backpropagation learning reaching the language-modeling quality of backpropagation at scale. This is the central research bet. Phase 10 is a pre-registered decision gate for it (section 0.3).
+- That local learning will work. No published result shows non-backpropagation learning reaching the language-modeling quality of backpropagation at scale. This is the central research bet. Phase 9 (Gate A) is a pre-registered decision gate for it, placed before any scaling work (sections 0.3 and 0.5).
 - Human-age equivalence. "Seven-year-old" and "twenty-year-old" remain aspiration labels only.
 
 ### 0.3 Revision 2: what changed and why
@@ -52,13 +52,32 @@ Revision 2 makes four changes.
 1. **One neural engine (uniform execution).** Every content-dependent decision in the model is computed by a small fixed set of tensor operations, the neural ISA (instruction set architecture, by analogy with the fixed instruction set of a CPU; section 3.7). Host code only loads programs, schedules fixed-shape steps, and moves bytes. A capability is a weight program, not Rust control flow. This is tested: an independent minimal interpreter that knows nothing about language must reproduce the model's outputs from the weights alone.
 2. **WSP (weight-space programming) compiles algorithms; learning supplies knowledge.** Weight-space programming is used as a compiler. It writes algorithmic priors into weights: hashing contexts, counting, copying from earlier context, segmenting, binding, retrieval, and inference. It never writes vocabulary, grammar of a natural language, facts, or corpus statistics. Local online rules then fill those circuits from the stream. This is the breakthrough bet: **compiled algorithms plus local learning can reach in about 10^9 bytes, without backpropagation, what a randomly initialized network needs backpropagation and far more data to discover.** It is tested against an online-backpropagation control at equal data and compute.
 3. **Real data and real baselines.** From Phase 8 on, exposure is licensed human-written text (no model-generated text). Evaluation uses external benchmarks (held-out bits per byte (BPB); BLiMP, the Benchmark of Linguistic Minimal Pairs; LAMBADA, last-word prediction in context; read-then-answer) and is compared against PPM (prediction by partial matching), Kneser-Ney n-gram models, published online compressors, and the backpropagation control. Generated toy languages remain unit tests only.
-4. **A pre-registered decision on backpropagation.** The mainline stays free of backpropagation. If Gate B (Phase 10) shows that local learning cannot learn generalizing representations, the project lead must choose in writing, before continuing: either (a) amend the constitution to allow single-pass online gradient updates (still zero offline pretraining and fully logged, the NNCP route in section 2.6), or (b) continue as a local-learning research project and limit claims to Level L1. Either choice is legitimate; continuing silently is not.
+4. **A pre-registered decision on backpropagation.** The mainline stays free of backpropagation. If Gate A (Phase 9, revision 3) shows that local learning cannot learn useful representations, the project lead must choose in writing, before continuing: either (a) amend the constitution to allow single-pass online gradient updates (still zero offline pretraining and fully logged, the NNCP route in section 2.6), (b) continue as a local-learning research project and limit claims to Level L1, or (c) discontinue the track. Phase 9 maps each kind of evidence to the recommended choice. Any of these is legitimate; continuing silently is not.
 
 The reasoning, memory, and online-learning work from Phases 4-6 is not discarded. In Phase 7 it is recompiled onto the uniform engine, and its frozen gates become regression tests.
 
 ### 0.4 Original scope note (revision 1)
 
 This plan does **not** guarantee a seven-year-old level of cognition, much less a twenty-year-old level. No known research result establishes that an initially untrained neural network can acquire broad human language and world knowledge through a small CPU-only online stream. The roadmap is designed to test that hypothesis in falsifiable steps. A successful parser, memory demo, or low perplexity on a tiny synthetic language is not evidence of human-level understanding.
+
+### 0.5 Revision 3: an early representation-learning decision gate
+
+A review after the first uniform-engine work found that the project's central hypothesis had never been tested, and that the roadmap tested it too late.
+
+- **Nothing in the model learns a representation yet.** In the online-learning milestone only the readout (23k parameters) learns, on top of a frozen, randomly initialized GRU (74 hidden units) and a frozen byte embedding. The embedding's declared update path is `local_plasticity`, but no code updates it; the recurrent core's update path is `none`. The measured gains are those of a linear readout on fixed random features.
+- **The old Gate B came after the most expensive work.** It ran only after Gate A (the scalable core with compiled count circuits, profiled for a 10^8-byte run). If local learning cannot build representations, that investment would have been made around a mechanism that does not work.
+- **The old Gate B was confounded and not pilot-based.** It measured gains against the Gate A system, where compiled count circuits dominate BPB, so a representation effect could be hidden by them or mimicked by them. Its thresholds (BLiMP at least 65%, a gap of at most 15% to the backpropagation control) were written before any measurement.
+
+Revision 3 therefore moves the decision forward and consolidates it:
+
+| Revision 2 | Revision 3 |
+|---|---|
+| Phase 9, scalable core with compiled circuits (Gate A, L1) | Phase 10, scalable core with compiled circuits and the learning rule selected by Phase 9 (**Gate B**, L1) |
+| Phase 10, deep representation learning without backpropagation (Gate B, decision) | Split. The decision question becomes the new Phase 9; the integration work (online unit embeddings, layer-local learning at scale, consolidation) moves into Phase 10. No milestone is duplicated. |
+| (none) | Phase 9, representation-learning feasibility (**Gate A**, decision gate) on small cores and 10^7 bytes of real text |
+| Gate C, scaling | unchanged (Phase 11) |
+
+Gate letters follow roadmap order: A is now the representation decision, B the scalable core, C scaling. Phase numbers 11-16 are unchanged.
 
 ---
 
@@ -141,13 +160,15 @@ Context-mixing compressors (PAQ, cmix) and NNCP read their input once, in order,
 
 Unbounded n-gram models backed by suffix arrays (infini-gram) also show that pure count statistics remain useful next to neural models at large scale. [Liu et al. 2024, arXiv:2401.17377](https://arxiv.org/abs/2401.17377).
 
-**Implication for ZeroLM:** strong next-byte prediction from a single pass with no pretraining is already proven, so Gate A (Phase 9) is a realistic first milestone, and these systems are the correct baselines. Compressors do not, however, show fluent long-range generation, generalization across synonyms, or question answering. Those require learned distributed representations, which is the open part of the bet (Phase 10).
+**Implication for ZeroLM:** strong next-byte prediction from a single pass with no pretraining is already proven, so a compressor-grade core (Gate B, Phase 10) is realistic, and these systems are the correct baselines. Compressors do not, however, show fluent long-range generation, generalization across synonyms, or question answering. Those require learned distributed representations, which is the open part of the bet; Phase 9 (Gate A) tests it first.
 
 ### 2.7 Learning without backpropagation
 
 - **Forward-Forward** trains each layer with its own local objective and no backward pass. It works on small vision tasks and has not been shown to match backpropagation on language modeling. [Hinton 2022, arXiv:2212.13345](https://arxiv.org/abs/2212.13345).
 - **Predictive coding** networks with only local Hebbian-like updates can approximate backpropagation's weight changes under specific conditions. [Whittington and Bogacz 2017, Neural Computation](https://doi.org/10.1162/NECO_a_00949).
 - **Random indexing** builds useful distributional word vectors with incremental, local, count-like updates and no gradient. Sahlgren, *An Introduction to Random Indexing* (2005).
+- **Eligibility propagation (e-prop)** trains recurrent networks online with a per-weight eligibility trace, local in time, combined with a broadcast learning signal; it approximates backpropagation through time without propagating errors backward in time. [Bellec et al. 2020, Nature Communications 11:3625](https://doi.org/10.1038/s41467-020-17236-y).
+- **Feedback alignment** sends the output error to hidden units through a fixed random matrix instead of the transposed forward weights, so no weight transport is needed, and the forward weights come to align with the feedback. [Lillicrap et al. 2016, Nature Communications 7:13276](https://doi.org/10.1038/ncomms13276).
 - **Delta-rule recurrences** (DeltaNet, Gated DeltaNet, RWKV-7) use the delta rule as their state update at inference time, so fast-weight learning happens inside every forward step. Their slow projections are still trained with backpropagation. [Yang et al. 2025, arXiv:2412.06464](https://arxiv.org/abs/2412.06464).
 
 **Implication for ZeroLM:** each of these pieces is local, but none of them alone is known to produce a competitive language model. ZeroLM combines them: compiled projections instead of backpropagation-trained ones (section 2.8), delta-rule fast state, distributional embeddings learned online, and layer-local predictive objectives. Any claim must beat the online-backpropagation control on an equal budget, or report the gap.
@@ -339,7 +360,7 @@ Host code may load programs and tensors, read and write bytes, and run `step` a 
 
 Each phase adds an executable test suite. A phase is complete only when its tests run in GitHub Actions, its evidence is uploaded, and its job summary is generated even on failure.
 
-> **Revision 2 note.** Phases 0-6 below are complete and unchanged. Phases 7-16 replace the earlier phases 7-11. The earlier Phase 7 (grounded interaction) became the optional Track G at the end of this section. The earlier phases 8-11 became Phases 13-16. Gate letters A-C mark the pre-registered research gates.
+> **Revision 2 note.** Phases 0-6 below are complete and unchanged. Phases 7-16 replace the earlier phases 7-11. Revision 3 (section 0.5) inserts the representation-learning decision gate as Phase 9 and merges the former Phases 9 and 10 into Phase 10. The earlier Phase 7 (grounded interaction) became the optional Track G at the end of this section. The earlier phases 8-11 became Phases 13-16. Gate letters A-C mark the pre-registered research gates.
 
 ### Phase 0 — Research constitution and scope freeze
 
@@ -601,8 +622,9 @@ crates/
 - Create `crates/zerolm-data`: a corpus manifest (source, license, SHA-256 per shard, order), a fetch-and-verify tool, a deterministic stream reader, and splits by whole document (held-out books and articles).
 - Candidate sources, each checked for license before use: CHILDES transcripts (child-directed, early in the curriculum), Simple English Wikipedia, English Wikipedia (CC BY-SA), and Project Gutenberg public-domain books. Excluded: any LM-generated or synthetic text (for example TinyStories), and any benchmark data.
 - Contamination check: long n-gram overlap (for example 13-grams) between exposure shards and every evaluation set.
-- Baselines in `zerolm-eval`, run on the same stream: byte frequency, online PPM and Kneser-Ney order-5, the Phase 4 learner, and an **online-backpropagation control** (small LSTM, single pass, same bytes, labelled CONTROL and excluded from strict results). Published compressor results are recorded as reference points, not rerun.
+- Baselines in `zerolm-eval`, run on the same stream: byte frequency, online PPM and Kneser-Ney order-5, the Phase 4 learner, and an **online-backpropagation control**: the selected GRU core from the same seeded initialization, trained by truncated BPTT (backpropagation through time) in a single pass over the same bytes, labelled CONTROL and excluded from strict results. Phase 9 reuses it unchanged. Published compressor results are recorded as reference points, not rerun.
 - Evaluation harnesses: held-out BPB, BLiMP (log-probability of minimal pairs), LAMBADA (last-word accuracy). All are evaluation-only, hashed, and never in exposure.
+- Provide the data roles Phase 9 needs: whole-document exposure, probe, development, and hidden splits, and a two-source exposure order (for example public-domain books, then Simple English Wikipedia) for the retention test.
 - Freeze the numeric thresholds of Levels L1-L3 (section 7.1) from these measurements before Phase 9 starts.
 
 **Deliverables**
@@ -620,46 +642,117 @@ crates/
 **Exit gate**
 - A reproducible real-text pipeline and baseline table exist, and the level thresholds are frozen.
 
-### Phase 9 — Scalable core with compiled seed circuits (Gate A)
+### Phase 9 — Representation-learning feasibility (Gate A, decision gate)
 
-**Goal:** Beat strong count-based baselines on real text with one engine, using only compiled circuits and local rules.
+**Question.** Can a network that starts from random weights build useful internal representations from a single chronological pass over real human-written text, using local learning only? "Useful" means: features that let a fresh readout predict held-out text better than the same network's random features do. Lower training loss, a changed checkpoint, or successful memory retrieval is not evidence.
+
+**Why here.** This is the project's central hypothesis (section 0.2). Every later milestone (a scalable core, scaling, reading into memory, generation) assumes that it holds. It is cheap to test on small cores and 10^7 bytes. It is expensive to discover that it fails after Phase 10. See section 0.5.
+
+**Arms.** Every arm uses the selected GRU core (`model/specs/architecture.json`) from the same seeded initialization, the same exposure bytes in the same order, and one pass.
+
+| Arm | What changes during exposure | Role |
+|---|---|---|
+| A0 frozen | nothing | sanity: the untrained model (8 BPB) |
+| A1 random features | readout only (the online-learning milestone's delta rule) | the current system; the bar a representation must beat |
+| A2 local representation learning | embedding, recurrent core, and readout, by the candidate local rule | the hypothesis |
+| A3 online backpropagation, CONTROL | the same tensors, by truncated BPTT (Phase 8's control) | what this architecture and budget allow with a stronger learner; never part of the mainline |
+| A2-perturbed | none during exposure; afterwards the initial core plus a seeded random-direction change with the same per-tensor Frobenius norm as A2's change | validity: rules out gains from weight scale or statistics alone |
+
+Baselines on the same stream (Phase 8): byte frequency, Witten-Bell n-grams of orders 3 and 5, online PPM (prediction by partial matching), and Kneser-Ney order 5.
+
+**Candidate local rule.** The primary candidate is e-prop (eligibility propagation, section 2.7) with feedback alignment. It is the established local rule for recurrent networks, and it changes exactly what A1 keeps frozen. For each weight $W_{ij}$ of the embedding and the GRU, an eligibility trace keeps only the local, diagonal part of the recurrent dependence:
+
+$$\varepsilon_t^{ij} = (1 - z_{t,i})\,\varepsilon_{t-1}^{ij} + \left.\frac{\partial h_{t,i}}{\partial W_{ij}}\right|_{h_{t-1}\ \text{fixed}}, \qquad \ell_t = B\,(\mathbf{1}_{y_t} - p_t), \qquad \Delta W_{ij} = \eta\, \ell_{t,i}\, \varepsilon_t^{ij}$$
+
+Here $z_t$ is the GRU update gate, $p_t$ the readout's predicted distribution, $y_t$ the observed next byte (the only learning signal), and $B \in \mathbb{R}^{d \times 256}$ a fixed, seeded random feedback matrix. No error flows backward through time or through the transposed readout. Update norms are bounded as in the online-learning milestone, and every update is logged under the existing event contract. At most one more rule may be pre-registered, before any pilot run, if the primary candidate's pilots capture none of the backpropagation headroom: an error-free, layer-local predictive rule (the recurrent state predicts the next input embedding and adapts only from that local error). It tests whether a failure is specific to error broadcast. No other rule is tried at this gate.
+
+**The decisive test: a representation probe.** After exposure, freeze an arm's embedding and core and discard its readout. Train a fresh readout with the online-learning milestone's frozen delta rule and constants, in one pass over the probe split $P$ (whole documents not in exposure). Then measure BPB on the hidden split $H$:
+
+$$\mathrm{BPB}^{\text{probe}}_x = \mathrm{BPB}_H\big(\text{fresh readout on } P \mid \text{core of arm } x\big), \qquad \Delta R_x = \mathrm{BPB}^{\text{probe}}_{A1} - \mathrm{BPB}^{\text{probe}}_x$$
+
+$\Delta R_x > 0$ means the core of arm $x$ is a better feature extractor than random features, with the readout's capacity and rule held fixed. The headroom ratio $\rho = \Delta R_{A2} / \Delta R_{A3}$ is the fraction of the available representation gain that local learning captures.
+
+**Other measurements** (all on hidden data, 3 main seeds, reported per seed with mean and standard deviation):
+- *Prequential* BPB (each byte scored before it is learned) and held-out BPB at exposure milestones $10^5$, $10^6$, $10^7$ bytes for every arm. Knowledge from early exposure must help later, unseen text; this is transfer forward in the stream.
+- *Novel-context generalization:* BPB on positions of $H$ whose preceding $k$ bytes never occur in the exposure stream, where counts can only back off. $k$ is fixed from the development split and frozen with the spec. This is the real-text form of "unseen combinations".
+- *Retention:* exposure in two source segments $E_1$ then $E_2$. The probe gain on held-out $E_1$-source text is measured after $E_1$ and again after $E_2$: retention $\kappa = \Delta R^{(E_1)}_\text{after } E_2 / \Delta R^{(E_1)}_\text{after } E_1$, for A2 and A3.
+- *Which tensors carry the gain:* re-probe with only the embedding, or only the recurrent weights, taken from A2.
+- *Stability and calibration:* no non-finite values, bounded weight norms, the worst late window of prequential BPB against the best, ECE (expected calibration error).
+- *Resources:* bytes/s including updates, multiply-adds per byte, peak RSS (resident set size), and wall time per arm, at equal bytes. A3 normally costs more compute; the report states both.
+- *Diagnostic only, not a criterion:* nearest-neighbour part-of-speech purity of word-final states against an evaluation-only, licensed tagged corpus (for example Universal Dependencies English, CC BY-SA 4.0), and BLiMP. At 10^7 bytes these are expected to be weak; they are reported, not gated.
+
+**Setup and iteration discipline.**
+- Cores: the selected budget (20,000 cell parameters, $d = 74$) and one larger width (about 200,000 cell parameters). The pilot keeps one for the main run, the smallest that shows backpropagation headroom within budget, and freezes it.
+- Data: 10^7 exposure bytes in whole-document order from the Phase 8 manifest, a probe split of about 10^6 bytes, a development split for pilots, and a hidden split that is read only by the main evaluation. Every split is hashed, and the contamination check covers $P$ and $H$.
+- Pilots use pilot seeds and the development split only. The number of rule configurations each candidate may try is fixed in the spec before pilots start, and every configuration tried is reported, including failures.
+- From the pilot results, freeze in `model/specs/representation.json`, with a dated rationale: the rule constants, the core size, $k$, and the thresholds named below ($h$, $r$, $\rho_\min$, $\kappa_\min$, $s$). Each threshold sits between the measured seed noise and the measured pilot effect, as for the frozen floors of the online-learning and memory milestones. Thresholds are never changed after the main run starts.
+- Main run: 3 fresh seeds and the hidden split, once. A rerun after INCONCLUSIVE uses new seeds and a new hidden split. A second attempt after FAIL needs a newly pre-registered rule (a new spec version), and the report keeps every attempt.
+
+**Decision criteria.** All are evaluated on the main seeds and the hidden split. "Significant" means mean minus two standard deviations above the bound, across seeds.
+
+*Validity* (any failure gives INCONCLUSIVE):
+- V1 pipeline: manifest hashes, contamination check, determinism (a rerun reproduces every report number), the event log, the no-future-leak test, and "disabled means no update" all pass.
+- V2 headroom: $\Delta R_{A3}$ is significant and at least $h$. Without a backpropagation gain the experiment cannot discriminate.
+- V3 probe validity: $\Delta R_{\text{A2-perturbed}}$ is not significantly positive.
+- V4 baselines reproduce Phase 8's table on the same stream.
+
+*PASS* (all of):
+- P1 $\Delta R_{A2}$ is significant and at least $r$, and exceeds $\Delta R_{\text{A2-perturbed}}$.
+- P2 $\rho \ge \rho_\min$.
+- P3 A2's own end-to-end BPB on novel-context positions is significantly better than A1's.
+- P4 $\kappa_{A2} \ge \kappa_\min$.
+- P5 stability holds: no non-finite value, and the late-window degradation is at most $s$.
+
+*FAIL / PIVOT:* validity holds and any of P1-P5 fails. The project lead then records in `research/decisions/`, before Phase 10 starts, which of these the evidence supports:
+
+| Evidence | Recommended decision |
+|---|---|
+| P1 fails while A3 shows clear headroom | The central hypothesis is not supported at this scale. Choose (a) amend constitution invariant 4 to allow single-pass online gradient updates in the mainline (still no offline pretraining, every update logged; the NNCP route of section 2.6), then rerun this gate with A3's rule as the mainline arm; or (b) narrow the objective to a compressor-grade system (Level L1) with compiled circuits and readout learning, and drop the LLM milestones; or (c) discontinue the track. |
+| P1 holds, P2 fails | Local learning learns something but captures too little of what is learnable. Revise the rule once (the second pre-registered candidate) or choose (a). |
+| P1-P3 hold, P4 fails | The rule learns but forgets. Revise it (slower plasticity, consolidation) before scaling; do not proceed to Phase 10. |
+| V2 fails at the largest affordable core and stream | Even backpropagation cannot build representations within the CPU budget: narrow the objective (b) or discontinue (c). This is a FAIL / PIVOT, not an indefinite INCONCLUSIVE. |
+
+*INCONCLUSIVE:* any validity failure at a setup that is not yet the largest affordable. It is an engineering result. It is never reported as evidence for or against the hypothesis, and Phase 10 does not start until a valid rerun.
+
+A PASS also gets a decision record: the rule, core size, and constants that Phase 10 adopts.
+
+**Deliverables**
+- `crates/zerolm-learning`: a plastic copy of the embedding and GRU with eligibility traces and the seeded feedback matrix, under a weight group declared in `model/specs/weight-groups.json` before first use (the memory milestone's frozen `core.*` tensors stay frozen and byte-identical).
+- `zerolm-eval`: the probe harness, the perturbation control, novel-context and retention measurements, and the `zerolm-representation` benchmark with `--smoke`, `--pilot`, and `--main` modes.
+- `model/specs/representation.json` (frozen after pilots), `research/schemas/representation-report.schema.json` (outcome `pass`, `fail_pivot`, `inconclusive`, or `smoke`), `reports/representation/`, a decision record in `research/decisions/`, and `docs/representation-learning.md`.
+
+These arms are research code, as in the online-learning milestone. The rule that passes is ported onto the neural ISA in Phase 10.
+
+**CI tests**
+- Every push (`representation-feasibility` job): the rule's invariants. Eligibility traces match a direct per-weight evaluation of the stated recursion, and on a tiny GRU their cosine alignment with exact RTRL (real-time recurrent learning) gradients is reported (the diagonal recursion drops gate cross-terms, so it is an approximation by design). The BPTT control's gradients match finite differences. Updates are seeded and deterministic, there is no future leak, nothing updates when learning is disabled, and the event log is exact. Then a smoke run (about 2·10^5 bytes of the pinned CI sample, small core, all arms) checks that the report validates against its schema. The smoke outcome is always `smoke`, never a decision. The job fails if the sample or the script is missing.
+- `workflow_dispatch` and scheduled (`representation-gate` job): fetch the manifest's shards and verify their hashes, then run pilot or main mode, upload the report, and write a summary. The summary gives the arms, the baselines, $\Delta R$ per arm, $\rho$, $\kappa$, novel-context BPB, resources, the outcome, and the criteria that decided it. The estimated cost of a main run is under a day on the reference machine; the run measures and reports it.
+
+**Exit gate (Gate A).** A valid main run with outcome PASS, or FAIL / PIVOT with a written decision. Phase 10 is planned from that decision. Designing the experiment, or a smoke run, never completes the milestone.
+
+### Phase 10 — Scalable core with compiled seed circuits and the selected learning rule (Gate B)
+
+**Goal:** Beat strong count-based baselines on real text with one engine, using compiled circuits plus the learning rule selected at Gate A, while the learned representations still contribute.
 
 **Work**
-- Re-run the architecture bake-off for scale on real text: the incumbent GRU against a chunk-parallel gated delta-rule recurrence. The Phase 2 selection measured initialization-time capacity, not learning at scale or throughput.
-- Compile circuits C1-C4 and C7 into the selected core. Learning is local only (count and delta-rule writes, mixer updates).
+- Re-run the architecture bake-off for scale on real text: the incumbent GRU against a chunk-parallel gated delta-rule recurrence. The Phase 2 selection measured initialization-time capacity, not learning at scale or throughput. Gate A's rule must be implementable in both; if it is not, the bake-off records why.
+- Compile circuits C1-C4 and C7 into the selected core.
+- Port Gate A's rule onto the neural ISA, adding ISA operations if needed (for example an outer-product trace update), with reference-interpreter parity.
+- From the former representation phase, as Gate A's decision directs: online unit embeddings from the segmenter (C4), layer-local learning in deeper blocks, and consolidation from fast weights to slow weights using only memory tensors. Re-reading raw exposure text is not allowed unless the constitution is amended.
 - Profile and optimize for the reference machine: 32 cores, 15 GB RAM.
 
 **CI tests**
 - BPB learning curves against the Phase 8 baselines, 3 seeds.
 - Byte-permutation test for every circuit.
 - Circuit ablations: removing each circuit costs held-out BPB.
+- Representation contribution: resetting the learned (plastic) blocks to their initialization and re-probing costs held-out BPB, by at least the margin frozen from Gate A's $r$.
+- BLiMP and LAMBADA against the Gate A arms and the online-backpropagation control at equal bytes, 3 seeds (reported).
 - Throughput and RSS reported. Updates are logged under the existing event contract.
 
-**Exit gate (Gate A, Level L1)**
+**Exit gate (Gate B, Level L1)**
 - Held-out BPB is at or below online PPM / Kneser-Ney order-5 at equal exposure (10^8 bytes), on 3 seeds.
+- The representation-contribution test passes. If the count circuits beat the baselines while the learned blocks no longer contribute, the core is a compressor, not the base for an LLM: stop and apply Gate A's decision table to this evidence.
 - Sustained throughput is at least 1,650 bytes/s including updates, so that 10^9 bytes fit in 7 days on the reference machine.
-- Gate A shows a good online compressor. It does not show an LLM.
-
-### Phase 10 — Deep representation learning without backpropagation (Gate B, decision gate)
-
-**Goal:** Learn distributed representations that generalize ("cat" and "dog" behave alike), which count circuits cannot do.
-
-**Work**
-- Grow unit embeddings online from the segmenter (C4); learn them with distributional, random-indexing-style updates.
-- Add layer-local predictive learning: each block predicts the next step of its own input representation and updates only from its own error (predictive coding or delta rule). There is no gradient across layers or time.
-- Consolidate from fast weights to slow weights using only memory tensors. Re-reading raw exposure text is not allowed unless the constitution is amended.
-
-**CI tests**
-- Embedding structure emerges: nearest-neighbour purity against an evaluation-only part-of-speech labelled set.
-- BPB, BLiMP, and LAMBADA against the Gate A system and the online-backpropagation control, at equal bytes and compute, 3 seeds.
-- Ablation: freezing the learned representations removes the gain.
-
-**Exit gate (Gate B), pre-registered**
-- (i) Held-out BPB improves on the Gate A system by the frozen margin δ.
-- (ii) BLiMP accuracy is at least 65%.
-- (iii) The BPB gap to the online-backpropagation control is at most 15% at equal bytes.
-- (i) and (ii) pass but (iii) fails: continue, and report the gap in every later claim.
-- (i) or (ii) fails: **stop and decide.** The project lead records in `research/decisions/` either (a) a constitution amendment allowing single-pass online gradient updates in the mainline, after which Phases 10-11 rerun under the new rule, or (b) continuing with local learning only and claims limited to Level L1.
+- Gate B shows a good online compressor with learned representations. It does not show an LLM.
 
 ### Phase 11 — Scaling run and forgetting (Gate C, Level L2)
 
@@ -732,7 +825,7 @@ This is revision-1 Phase 11 (Appendix A), unchanged in scope. In addition, the r
 
 ### Track G — Grounded interaction (optional, parallel)
 
-Revision-1 Phase 7 (Appendix A; a deterministic text-and-world simulator, prediction before observation, interventions, transfer to new objects) continues as an optional research track. It may start after Phase 9 and is not required for the 1.0 LLM claim. Its earlier deliverables, tests, and exit gate still apply.
+Revision-1 Phase 7 (Appendix A; a deterministic text-and-world simulator, prediction before observation, interventions, transfer to new objects) continues as an optional research track. It may start after Phase 10 and is not required for the 1.0 LLM claim. Its earlier deliverables, tests, and exit gate still apply.
 
 ---
 
@@ -754,6 +847,8 @@ Recommended jobs:
 | `reasoning-and-grounding` | PR/push and scheduled full run | Composition, counterfactuals, environment learning |
 | `wsp-safety` | every PR/push | Patch validation, sandbox, acceptance, rollback |
 | `cpu-profile` | PR/push and scheduled full run | Runtime, memory, checkpoint, update cost |
+| `representation-feasibility` | every PR/push (smoke) | Phase 9 rule invariants and a small pinned-sample run that validates the pipeline and report schema; never a decision |
+| `representation-gate` | `workflow_dispatch` and scheduled | Phase 9 full run (pilot or main mode) on fetched, hash-verified corpus shards; the only job that can report PASS, FAIL / PIVOT, or INCONCLUSIVE |
 | `research-summary` | `always()` | Consolidated Markdown summary and artifacts |
 
 Use required status checks for all fast PR gates. Run longer multi-seed developmental suites on `main`, `workflow_dispatch`, and a scheduled weekly workflow. CI must never silently skip a phase because its script is missing: a phase marked implemented must have an executable command.
@@ -855,7 +950,7 @@ Every capability claim names a level. Thresholds marked "frozen in Phase 8" are 
 | Level | Name | Requires (all of) |
 |---|---|---|
 | L0 | Toy | Learning on generated languages only (Phases 4-6 today) |
-| L1 | Compressor-grade | Held-out real-text BPB at or below online PPM / Kneser-Ney order-5 at equal exposure (Gate A) |
+| L1 | Compressor-grade | Held-out real-text BPB at or below online PPM / Kneser-Ney order-5 at equal exposure (Gate B) |
 | L2 | Fluent | BLiMP at least 75%; held-out Wikipedia BPB at or below a threshold frozen in Phase 8 (indicatively about 1.5); blind raters judge generated sentences locally grammatical |
 | L3 | Small LLM (1.0 target) | BLiMP at least 80%; LAMBADA accuracy at least 35%; held-out BPB at or below a threshold frozen in Phase 8 (indicatively about 1.2); read-then-answer at the frozen threshold; coherent multi-sentence generation under blind rating |
 | L4 | Assistant | L3 plus instruction following and multi-turn dialogue on hidden human-written prompts, with calibrated abstention |
@@ -881,7 +976,8 @@ The reference machine is 32 CPU cores and 15 GB RAM. One main run reads at most 
 | External LLM dependency | An external pretrained model doing the reasoning would invalidate the self-developing claim | External model may assist development only; runtime self-modification must eventually work without it |
 | CPU limits | Larger recurrent state and associative memory can still be expensive | Profile every phase on named CPU targets and cap dimensions by measured budgets |
 | “Age equivalence” overclaim | Child development is multidimensional and grounded | Publish capability-specific results; no age-equivalent claim without independent normed evaluation |
-| Local learning cannot learn representations | Count circuits alone plateau at a compressor, not an LLM | Gate B (Phase 10) is pre-registered. On failure, the project lead decides in writing between allowing online gradients and limiting claims to L1 |
+| Local learning cannot learn representations | Count circuits alone plateau at a compressor, not an LLM | Gate A (Phase 9) tests it on small cores before any scaling work, against random features, a matched perturbation, and the online-backpropagation control. On FAIL / PIVOT the project lead decides in writing (section 5, Phase 9) |
+| The feasibility experiment cannot discriminate | A core too small or a stream too short shows no gain even with backpropagation, which says nothing about local learning | Gate A's headroom condition: without a backpropagation gain the result is INCONCLUSIVE, never FAIL; at the largest affordable setup it becomes a decision to narrow the objective |
 | Compiled circuits smuggle in English | Hand-written "algorithms" could secretly encode language knowledge | Byte-permutation test for every circuit; seed entry and hash for every circuit |
 | Host code does the real work | Rust control flow could again stand in for the network | Uniform-execution invariant; independent reference interpreter must reproduce outputs from weights |
 | Data licensing or contamination | Unlicensed text or leaked benchmarks invalidate results | Corpus manifest with licenses and hashes; long n-gram contamination check |
@@ -889,7 +985,7 @@ The reference machine is 32 CPU cores and 15 GB RAM. One main run reads at most 
 
 **Stop/go rule (revision 1, still in force):** if Phase 4 cannot show measurable held-out acquisition from chronological input, do not proceed to claims about a self-developing language model. Continue only as a research project on learning rules and small task-specific networks until the core acquisition hypothesis is supported.
 
-**Revision 2 stop/go rules:** Gate A failing means the compiled-circuit core is not viable; redesign before Phase 10. Gate B failing triggers the written decision in section 0.3. Gate C failing (plateau) stops scaling. None of these failures may be reported as success at a lower bar.
+**Revision 3 stop/go rules:** Gate A (Phase 9) FAIL / PIVOT triggers the written decision in Phase 9 before any work on Phase 10; INCONCLUSIVE blocks Phase 10 until a valid rerun. Gate B failing means the scalable core is not viable; redesign before Phase 11. Gate C failing (plateau) stops scaling. None of these failures may be reported as success at a lower bar.
 
 ---
 
@@ -919,7 +1015,7 @@ zeroLM/
     checkpoints/                 # release/checkpoint format; never commit personal checkpoints
   research/
     corpus/                      # Phase 8: corpus manifest (sources, licenses, hashes); data itself is not committed
-    decisions/                   # written decisions, e.g. the Gate B outcome
+    decisions/                   # written decisions, e.g. the Gate A outcome
     streams/                     # deterministic synthetic exposure streams + manifests
     environments/
     benchmark/
@@ -934,6 +1030,7 @@ zeroLM/
   reports/
     baseline/
     online-learning/
+    representation/              # Phase 9 (Gate A) reports
     memory/
     reasoning/
     wsp/
@@ -971,8 +1068,8 @@ The revision-1 legacy code (v0.2, ZeroLM Next) has already been removed and live
 1. Phases 0-6: complete. Keep their gates green as regressions.
 2. Phase 7: uniform neural engine and WSP compiler. Recompile Phases 5-6 and pass the reference-interpreter test.
 3. Phase 8: real-text corpus, contamination checks, baselines, online-backpropagation control, frozen level thresholds.
-4. Phase 9: scalable core with compiled circuits. **Gate A (L1).**
-5. Phase 10: deep local representation learning. **Gate B, the backpropagation decision.**
+4. Phase 9: representation-learning feasibility. **Gate A, the decision gate** (PASS, FAIL / PIVOT with a written decision, or INCONCLUSIVE and rerun).
+5. Phase 10: scalable core with compiled circuits and the selected learning rule. **Gate B (L1).**
 6. Phase 11: scaling run and forgetting. **Gate C (L2).**
 7. Phase 12: reading into memory and reasoning inside the network.
 8. Phase 13: generation, instruction following, dialogue.
@@ -980,7 +1077,7 @@ The revision-1 legacy code (v0.2, ZeroLM Next) has already been removed and live
 10. Phase 15: capability evaluation and level certification.
 11. Phase 16: CPU release 1.0, which requires L3.
 
-Track G (grounded interaction) may run in parallel from Phase 9 onward. Phases 8 and the reference-interpreter half of Phase 7 can overlap. Every phase still lands as small commits with tests, a report schema, a CI job, and a summary.
+Track G (grounded interaction) may run in parallel from Phase 10 onward. Phases 8 and the reference-interpreter half of Phase 7 can overlap; Phase 9 needs Phase 8's splits and control, and nothing from Phase 10 onward starts before Gate A has a valid outcome and a written decision. Every phase still lands as small commits with tests, a report schema, a CI job, and a summary.
 
 ---
 
@@ -1020,7 +1117,7 @@ The near-term claim is not "we will create a human-like mind" or a frontier assi
 
 > **We will test whether one CPU neural engine, initialized only with compiled algorithmic circuits and no offline pretraining, can become a small but genuine language model (Level L3) from a single recorded pass over human-written text, using local learning rules, weight-resident memory, and controlled weight-space programming.**
 
-The decisive milestones are Gate A (does the compiled core beat count baselines?), Gate B (does local learning produce generalizing representations, or must the project choose online gradients?), and Gate C (does capability keep scaling?). The 1.0 label is earned only at L3. If the gates fail, the result is still a published, falsified hypothesis, not a hidden one.
+The decisive milestones are Gate A (can local learning build useful representations from real text at all, or must the project change its learning rule, its constraint, or its objective?), Gate B (does the scalable core beat count baselines while its learned representations still contribute?), and Gate C (does capability keep scaling?). The 1.0 label is earned only at L3. If the gates fail, the result is still a published, falsified hypothesis, not a hidden one.
 
 ---
 

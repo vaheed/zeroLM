@@ -66,15 +66,15 @@
       "report_schema": null
     },
     {
-      "id": "scalable-core",
-      "name": "Scalable core with compiled seed circuits (Gate A)",
+      "id": "representation-feasibility",
+      "name": "Representation-learning feasibility on real text (Gate A, decision gate)",
       "status": "planned",
       "command": null,
       "report_schema": null
     },
     {
-      "id": "local-representations",
-      "name": "Deep representation learning without backpropagation (Gate B)",
+      "id": "scalable-core",
+      "name": "Scalable core with compiled seed circuits and the selected learning rule (Gate B)",
       "status": "planned",
       "command": null,
       "report_schema": null
