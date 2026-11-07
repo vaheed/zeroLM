@@ -66,6 +66,13 @@
       "derived_from_corpus": false
     },
     {
+      "id": "memory-encode-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit memory-encode (model/prog/memory-encode.json): the memory key encoder as a neural ISA program, raw text bytes to pooled key, word rows, and word mask. Constants: ASCII byte-class bounds (digits 48-57, letters 65-90 and 97-122, bytes >= 128 are word bytes), the upper-case offset 32, the '#' pad byte 35, a window gather matrix, a previous-byte selector, a prefix-sum matrix, word ranks, and norm epsilon 0. Hashed rows come from core.memory_encoder. No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/key_encode.rs",
+      "derived_from_corpus": false
+    },
+    {
       "id": "relation-graph-circuit",
       "kind": "structural_prior",
       "description": "Circuit relation-graph (model/prog/relation-graph.json, roadmap C5): decodes relation slots into a slot x symbol subject-similarity matrix, a one-hot object cleanup matrix (cosine >= 0.3), and polarity masks. Constants: role and metadata-column selectors, 1/d, 1/sqrt(d), 0.5, the cleanup threshold. No vocabulary or facts.",

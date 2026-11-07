@@ -1,0 +1,12 @@
+{
+  "id": "memory-encode",
+  "version": 1,
+  "seed_entry": "memory-encode-circuit",
+  "description": "Memory key encoder compiled to the neural ISA: raw text bytes (positions 1..=len of a 256-byte input) to a pooled unit key and per-word unit vectors, the bag of FNV-1a-hashed byte trigrams of '#word#' over core.memory_encoder (docs/memory-format.md). Byte-class gates, ASCII case folding, a window gather, hash_rows, a prefix sum of word starts, one-hot word assignment, and L2 norms. buckets and key_dim equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "key_encode",
+    "text_bytes": 256,
+    "buckets": 4096,
+    "key_dim": 128
+  }
+}

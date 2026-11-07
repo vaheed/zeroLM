@@ -1,6 +1,6 @@
 # Weight-resident memory
 
-This component gives the model memory that persists across processes without transcript replay or an external database. Every stored fact lives only as `f32` tensors in the model checkpoint. Since the uniform-engine work, every answer is computed from those tensors by the compiled `memory-read` circuit: a program for the neural ISA (instruction set architecture, the fixed list of tensor operations the model may use; see [neural-isa.md](neural-isa.md)), whose constants are the program weights tensors `prog.memory-read.*`.
+This component gives the model memory that persists across processes without transcript replay or an external database. Every stored fact lives only as `f32` tensors in the model checkpoint. Since the uniform-engine work, text is encoded by the compiled `memory-encode` circuit and every answer is computed from the tensors by the compiled `memory-read` circuit: a program for the neural ISA (instruction set architecture, the fixed list of tensor operations the model may use; see [neural-isa.md](neural-isa.md)), whose constants are the program weights tensors `prog.memory-encode.*` and `prog.memory-read.*`.
 
 Abbreviations used below: kWTA = k-winners-take-all, FNV-1a = Fowler-Noll-Vo hash variant 1a, SHA-256 = Secure Hash Algorithm (256-bit). Glossary: [math.md](math.md).
 
@@ -51,7 +51,7 @@ Semantic and episodic memory are kept separate. The semantic bank holds what is 
 
 ## Computation
 
-- **Key encoder.** This is programmed, not learned. ASCII text is lower-cased, and any non-alphanumeric ASCII character separates words. Each word becomes the normalized sum of hashed byte-trigram rows of `core.memory_encoder`. The key is the normalized sum of the word vectors.
+- **Key encoder.** This is programmed, not learned, and runs as the `memory-encode` circuit on the raw bytes ([neural-isa.md](neural-isa.md#the-memory-encode-circuit)); keys and queries are limited to 254 bytes. ASCII text is lower-cased, and any non-alphanumeric ASCII character separates words. Each word becomes the normalized sum of hashed byte-trigram rows of `core.memory_encoder`. The key is the normalized sum of the word vectors.
 - **Read.** The `memory-read` circuit computes `s_i = q . K_i` over active slots, then `w = softmax(32 s)`, then `r = sum_i w_i V_i`. Each value position of `r` is cleaned up to the nearest row of `core.embed`. Equations below; the program is in [neural-isa.md](neural-isa.md#the-memory-read-circuit).
 - **Accept or abstain.** The memory answers only if two conditions hold. The pooled score of the best slot must be at least 0.3. Its late-interaction coverage must be at least 0.5: for each stored key word, take the best cosine with any query word, then take the minimum over key words. Without coverage, a query that shares one of two words with a stored key cannot be told apart from a question-form paraphrase; see "Design history" below.
 - **Write.** A key whose cosine with an active slot is at least 0.95 addresses that slot.
@@ -65,7 +65,9 @@ Semantic and episodic memory are kept separate. The semantic bank holds what is 
 
 ## Mathematics
 
-### Key encoder (`encoder.rs`)
+### Key encoder
+
+(`memory-encode` circuit; table in `encoder.rs`.)
 
 Text is split into words $\omega_1, \dots, \omega_n$: ASCII letters are lower-cased, and any ASCII non-alphanumeric character separates words. Each word is padded to `#word#`, and its byte trigrams $g$ select rows of the frozen table $T \in \mathbb{R}^{4096 \times 128}$, $T_{ij} \sim \mathcal{U}(-1, 1)$:
 

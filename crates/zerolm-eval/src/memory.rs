@@ -277,7 +277,11 @@ fn score_by(records: &[&QueryRecord], accepted: impl Fn(&QueryRecord) -> bool) -
 }
 
 fn run_query(m: &MemoryStore, category: &'static str, text: &str, expected: Option<&str>) -> QueryRecord {
-    let a = m.query(text).expect("non-empty query");
+    let a = match m.query(text) {
+        Ok(a) => a,
+        // Only an ablated encoder can find no word in a gate query: abstain.
+        Err(_) => return QueryRecord { category, query: text.to_string(), score: -1.0, coverage: 0.0, pooled_ok: false, decoded: String::new(), accepted: false, expected: expected.map(str::to_string) },
+    };
     QueryRecord {
         category,
         query: text.to_string(),
@@ -378,10 +382,12 @@ pub struct SeedResult {
 #[derive(Debug, Clone, Serialize)]
 pub struct Parity {
     pub queries: usize,
-    /// Queries where any output differs in any bit.
+    /// Queries where any output of either program differs in any bit.
     pub mismatches: usize,
     pub bundle_sha256: String,
     pub circuit_sha256: String,
+    pub encoder_bundle_sha256: String,
+    pub encoder_circuit_sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -546,28 +552,46 @@ fn curve_point(m: &MemoryStore, set: &FactSet, expected: &dyn Fn(&Fact) -> Optio
     }
 }
 
-/// Rerun every evaluated query on the reference interpreter from the exported
-/// read bundle and compare every output bit for bit with the engine.
-fn reference_parity(m: &MemoryStore, ev: &Eval<'_>) -> Result<Parity, String> {
+/// Every engine output equals the reference output bit for bit.
+pub fn same_outputs(engine: &zerolm_engine::isa::Outputs, reference: &std::collections::BTreeMap<String, crate::isa_ref::T>) -> bool {
+    engine.values.iter().all(|(n, b)| {
+        reference.get(n).map(|t| t.r == b.rows && t.c == b.cols && t.d.iter().zip(&b.data).all(|(x, y)| x.to_bits() == y.to_bits())).unwrap_or(false)
+    })
+}
+
+/// Replay one query on the reference interpreter: the encoder from its
+/// bundle on the text bytes, then the read circuit from its bundle on the
+/// engine encoder's outputs. Returns (encoder bit-exact, read bit-exact).
+pub fn replay_query(m: &MemoryStore, encode_bundle: &[u8], read_bundle: &[u8], text: &str) -> Result<(bool, bool), String> {
     use crate::isa_ref::{self, T};
-    let bundle = m.read_bundle();
+    let t = |b: &zerolm_engine::isa::Buf| T { r: b.rows, c: b.cols, d: b.data.clone() };
+    let input = zerolm_memory::read_circuit::text_input(text).ok_or("query too long")?;
+    let encoded = m.encode_outputs(text).map_err(|e| e.to_string())?;
+    let enc_ok = same_outputs(&encoded, &isa_ref::run(encode_bundle, &[("text", t(&input))])?);
+    let inputs = zerolm_memory::read_circuit::read_inputs(&encoded);
+    let ref_inputs: Vec<(&str, T)> = zerolm_memory::read_circuit::READ_INPUTS.iter().copied().zip(inputs.iter().map(t)).collect();
+    let engine = m.read_outputs(inputs).map_err(|e| e.to_string())?;
+    let read_ok = same_outputs(&engine, &isa_ref::run(read_bundle, &ref_inputs)?);
+    Ok((enc_ok, read_ok))
+}
+
+/// Rerun every evaluated query on the reference interpreter from the exported
+/// encoder and read bundles and compare every output bit for bit with the engine.
+fn reference_parity(m: &MemoryStore, ev: &Eval<'_>) -> Result<Parity, String> {
+    let (enc, read) = (m.encode_bundle(), m.read_bundle());
     let (mut queries, mut mismatches) = (0, 0);
     for (_, q, _) in ev.queries() {
-        let (k, words) = m.query_inputs(&q).map_err(|e| e.to_string())?;
-        let engine = m.read_outputs(&k, &words).map_err(|e| e.to_string())?;
-        let inputs = [("q", T { r: 1, c: k.len(), d: k.clone() }), ("qw", T { r: words.len(), c: k.len(), d: words.concat() })];
-        let reference = isa_ref::run(&bundle, &inputs)?;
-        let same = engine.values.iter().all(|(n, b)| {
-            reference.get(n).map(|t| t.r == b.rows && t.c == b.cols && t.d.iter().zip(&b.data).all(|(x, y)| x.to_bits() == y.to_bits())).unwrap_or(false)
-        });
+        let (a, b) = replay_query(m, &enc, &read, &q)?;
         queries += 1;
-        mismatches += !same as usize;
+        mismatches += !(a && b) as usize;
     }
     Ok(Parity {
         queries,
         mismatches,
-        bundle_sha256: zerolm_engine::isa::bundle::sha256(&bundle),
+        bundle_sha256: zerolm_engine::isa::bundle::sha256(&read),
         circuit_sha256: m.read_circuit().sha256(),
+        encoder_bundle_sha256: zerolm_engine::isa::bundle::sha256(&enc),
+        encoder_circuit_sha256: m.encode_circuit().sha256(),
     })
 }
 
@@ -820,6 +844,34 @@ pub fn run_seed(spec: &Spec, seed: u64, work: &Path) -> Result<SeedResult, Strin
         };
         check(&mut checks, "circuit_block_ablation", ok, format!("{block}: exact recall {:.4} (intact {:.4}), negative false accepts {:.4}", ex.recall, exact.recall, ng.false_accept_rate));
         circuit_ablations.push(CircuitAblation { block: block.clone(), exact: ex, negatives: ng });
+    }
+    // Encoder blocks. classify, window, and segment carry every query key, so
+    // zeroing one must cut exact recall to the ablation floor. fold carries
+    // only case folding and the '#' word padding: interior trigrams of a
+    // lower-case word do not use it, so it is judged on upper-cased exact
+    // queries, which the intact encoder answers like lower-case ones.
+    let upper_exact = |x: &MemoryStore| -> Score {
+        let r: Vec<QueryRecord> = set.facts.iter().filter_map(|f| expected[&f.key()].as_ref().map(|v| run_query(x, "exact", &f.key().to_uppercase(), Some(v)))).collect();
+        score_circuit(&r.iter().collect::<Vec<_>>())
+    };
+    let upper_intact = upper_exact(&m);
+    for block in m.encode_circuit().blocks().iter().filter(|b| *b != "support") {
+        let (mut x, _) = MemoryStore::load(&dir).map_err(me)?;
+        x.ablate_encoder(block).map_err(|e| e.to_string())?;
+        let r = ev.run(&x, None);
+        let (ex, ng) = (score_circuit(&by_kind(&r, "exact")), score_circuit(&by_kind(&r, "negative")));
+        let name = format!("memory-encode:{block}");
+        let (ok, detail) = if block == "fold" {
+            let up = upper_exact(&x);
+            (
+                up.recall <= spec.gates.ablation_recall_max && upper_intact.recall >= exact.recall,
+                format!("{name}: upper-case exact recall {:.4} (intact {:.4}); lower-case exact recall {:.4} (interior trigrams need no folding)", up.recall, upper_intact.recall, ex.recall),
+            )
+        } else {
+            (ex.recall <= spec.gates.ablation_recall_max, format!("{name}: exact recall {:.4} (intact {:.4}), negative false accepts {:.4}", ex.recall, exact.recall, ng.false_accept_rate))
+        };
+        check(&mut checks, "circuit_block_ablation", ok, detail);
+        circuit_ablations.push(CircuitAblation { block: name, exact: ex, negatives: ng });
     }
 
     // 7. Compaction preserves answers and frees superseded/deleted slots.

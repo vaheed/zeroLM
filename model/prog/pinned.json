@@ -1,7 +1,8 @@
 {
   "version": 1,
   "circuits": {
-    "memory-read": "9c98cab661edf6236d99240165b10db3a33f3c5fbdc477394b46aebeaaa575a5",
+    "memory-encode": "99b405aa6bd6a3beaf5f8e87f425a24721e0817f18807408f6ffaae5a8207feb",
+    "memory-read": "05a51725faae1cf9282815f82417a3976b5034937bdf7f7ee8449104659d475d",
     "relation-graph": "efefcd319d2f39c8366a3491c1505cbfa8e05287be3293a57fca586ad668bb51",
     "relation-reach": "7f6ed8d82ffc0d10f9a63bb897b874d53c54eec33960a4c68122449a1438c6ee"
   }

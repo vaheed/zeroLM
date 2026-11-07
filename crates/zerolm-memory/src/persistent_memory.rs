@@ -183,6 +183,7 @@ impl MemoryConfig {
 pub enum MemoryError {
     EmptyKey,
     KeyTooLong { max_words: usize },
+    TextTooLong { max_bytes: usize },
     EmptyValue,
     NulInValue,
     ValueTooLong { max: usize },
@@ -198,6 +199,7 @@ impl fmt::Display for MemoryError {
         match self {
             MemoryError::EmptyKey => write!(f, "key has no word characters"),
             MemoryError::KeyTooLong { max_words } => write!(f, "key has more than {max_words} words"),
+            MemoryError::TextTooLong { max_bytes } => write!(f, "key or query longer than {max_bytes} bytes"),
             MemoryError::EmptyValue => write!(f, "value is empty"),
             MemoryError::NulInValue => write!(f, "value contains a NUL byte"),
             MemoryError::ValueTooLong { max } => write!(f, "value longer than {max} bytes"),
@@ -319,6 +321,8 @@ pub struct MemoryStore {
     ep_meta: Matrix,
     fast: FastWeights,
     separator: Matrix,
+    /// The compiled key encoder (`W_PROG`, `prog.memory-encode.*`).
+    encode: Compiled,
     /// The compiled read circuit (`W_PROG`, `prog.memory-read.*`).
     read: Compiled,
     clock: u64,
@@ -372,6 +376,7 @@ impl MemoryStore {
             ep_meta: Matrix::zeros(cfg.episodic_capacity, ep_field::COUNT),
             fast: FastWeights::new(cfg.positions() * e, cfg.fast_expansion, cfg.fast_decay, cfg.fast_lr),
             separator: Matrix::uniform(cfg.fast_expansion, cfg.key_dim, cfg.seed, fast_weights::SEPARATOR, 1.0),
+            encode: read_circuit::build_encoder(&cfg),
             read: read_circuit::build(&cfg, core.embed.rows, e),
             core,
             cfg,
@@ -394,18 +399,35 @@ impl MemoryStore {
         &self.encoder
     }
 
-    /// Pooled key and per-word vectors of a write key.
-    pub fn key(&self, text: &str) -> Result<(Vec<f32>, Vec<Vec<f32>>), MemoryError> {
-        let words = self.encoder.encode_words(text);
-        if words.len() > self.cfg.max_key_words {
+    /// Raw outputs of the compiled key encoder for a text.
+    pub fn encode_outputs(&self, text: &str) -> Result<zerolm_engine::isa::Outputs, MemoryError> {
+        let input = read_circuit::text_input(text).ok_or(MemoryError::TextTooLong { max_bytes: read_circuit::TEXT_BYTES - 2 })?;
+        Ok(read_circuit::run_encoder(&self.encode, self.encoder.view(), input).expect("the compiled encoder runs on its own table"))
+    }
+
+    /// Encoder outputs of a text with at least one word.
+    fn encoded(&self, text: &str) -> Result<zerolm_engine::isa::Outputs, MemoryError> {
+        let o = self.encode_outputs(text)?;
+        if o.scalar("n_words") == 0.0 {
+            return Err(MemoryError::EmptyKey);
+        }
+        Ok(o)
+    }
+
+    /// Pooled key and the first `max_key_words` word rows (row-major; rows
+    /// past the key's word count are zero) of a write key, and its word count.
+    pub fn key(&self, text: &str) -> Result<(Vec<f32>, Vec<f32>, usize), MemoryError> {
+        let o = self.encoded(text)?;
+        let n = o.scalar("n_words") as usize;
+        if n > self.cfg.max_key_words {
             return Err(MemoryError::KeyTooLong { max_words: self.cfg.max_key_words });
         }
-        let k = self.encoder.pool(&words).ok_or(MemoryError::EmptyKey)?;
-        Ok((k, words))
+        let words = o.get("words").data[..self.key_words.cols].to_vec();
+        Ok((o.get("key").data.clone(), words, n))
     }
 
     fn pooled(&self, text: &str) -> Result<Vec<f32>, MemoryError> {
-        self.encoder.encode(text).ok_or(MemoryError::EmptyKey)
+        Ok(self.encoded(text)?.get("key").data.clone())
     }
 
     fn m(&self, slot: usize, f: usize) -> f32 {
@@ -463,7 +485,7 @@ impl MemoryStore {
     /// Active slot whose key is the same fact key: the read circuit's best
     /// slot when its score reaches `same_key_threshold`.
     fn find_same(&self, k: &[f32]) -> Option<usize> {
-        let a = self.query_key(k, &[k.to_vec()]);
+        let a = self.answer(read_circuit::key_inputs(k));
         a.slot.filter(|_| a.score >= self.cfg.same_key_threshold)
     }
 
@@ -524,15 +546,13 @@ impl MemoryStore {
     }
 
     #[allow(clippy::too_many_arguments)]
-    fn write_slot(&mut self, slot: usize, k: &[f32], words: &[Vec<f32>], value: &str, source: Source, stream: &str, seq: u64) {
+    fn write_slot(&mut self, slot: usize, k: &[f32], words: &[f32], n_words: usize, value: &str, source: Source, stream: &str, seq: u64) {
         let v = self.encode_value(value);
         let kc = self.keys.cols;
         self.keys.data[slot * kc..(slot + 1) * kc].copy_from_slice(k);
         let wc = self.key_words.cols;
-        let row = &mut self.key_words.data[slot * wc..(slot + 1) * wc];
-        row.iter_mut().for_each(|x| *x = 0.0);
-        row[..words.len() * kc].copy_from_slice(&words.concat());
-        self.set(slot, field::KEY_WORDS, words.len() as f32);
+        self.key_words.data[slot * wc..(slot + 1) * wc].copy_from_slice(words);
+        self.set(slot, field::KEY_WORDS, n_words as f32);
         let vc = self.values.cols;
         self.values.data[slot * vc..(slot + 1) * vc].copy_from_slice(&v);
         let (lo, hi) = split48(seq);
@@ -564,7 +584,7 @@ impl MemoryStore {
 
     /// `teach`: store a new fact; never overwrites a different belief.
     pub fn teach(&mut self, key: &str, value: &str, stream: &str) -> Result<Outcome, MemoryError> {
-        let (k, words) = self.key(key)?;
+        let (k, words, n_words) = self.key(key)?;
         self.check_value(value)?;
         let src = Source::UserStatement;
         if let Some(s) = self.find_same(&k) {
@@ -582,7 +602,7 @@ impl MemoryStore {
         }
         let slot = self.free_slot().ok_or(MemoryError::CapacityFull)?;
         let seq = self.tick();
-        self.write_slot(slot, &k, &words, value, src, stream, seq);
+        self.write_slot(slot, &k, &words, n_words, value, src, stream, seq);
         let r = self.episode("add", seq, Some(&k), Some(slot), Some(src), stream);
         self.log(seq, "add", stream, src.signal(), "memory_write", vec![KEYS, KEY_WORDS, VALUES, META, EP_KEYS, EP_META], Some(slot), Some(r));
         Ok(Outcome::Stored { slot })
@@ -591,7 +611,7 @@ impl MemoryStore {
     /// `correct`: the new value supersedes the current belief (kept, marked
     /// superseded, until compaction); stores it if no belief exists.
     pub fn correct(&mut self, key: &str, value: &str, stream: &str) -> Result<Outcome, MemoryError> {
-        let (k, words) = self.key(key)?;
+        let (k, words, n_words) = self.key(key)?;
         self.check_value(value)?;
         let src = Source::UserCorrection;
         let old = self.find_same(&k);
@@ -605,7 +625,7 @@ impl MemoryStore {
         }
         let slot = self.free_slot().ok_or(MemoryError::CapacityFull)?;
         let seq = self.tick();
-        self.write_slot(slot, &k, &words, value, src, stream, seq);
+        self.write_slot(slot, &k, &words, n_words, value, src, stream, seq);
         match old {
             Some(s) => {
                 self.set(s, field::STATUS, SUPERSEDED);
@@ -679,15 +699,14 @@ impl MemoryStore {
         Ok(Outcome::Forgotten { slots: chain })
     }
 
-    /// Retrieval through the compiled read circuit.
+    /// Retrieval: the compiled encoder, then the compiled read circuit.
     pub fn query(&self, text: &str) -> Result<Answer, MemoryError> {
-        let (q, words) = self.query_inputs(text)?;
-        Ok(self.query_key(&q, &words))
+        Ok(self.answer(self.query_inputs(text)?))
     }
 
     /// Run the compiled read circuit. The host only formats its outputs.
-    pub fn query_key(&self, q: &[f32], words: &[Vec<f32>]) -> Answer {
-        let o = self.read_outputs(q, words).expect("the compiled read circuit runs on its own store");
+    pub fn answer(&self, inputs: [zerolm_engine::isa::Buf; 3]) -> Answer {
+        let o = self.read_outputs(inputs).expect("the compiled read circuit runs on its own store");
         let have = o.scalar("have") == 1.0;
         let meta = &o.get("best_meta").data;
         let value = read_circuit::bytes(o.get("value"));
@@ -713,16 +732,14 @@ impl MemoryStore {
         read_circuit::External { keys: v(&self.keys), key_words: v(&self.key_words), values: v(&self.values), meta: v(&self.meta), codes: v(&self.core.embed) }
     }
 
-    /// Raw outputs of the read circuit for a query key and its word vectors.
-    pub fn read_outputs(&self, q: &[f32], words: &[Vec<f32>]) -> Result<zerolm_engine::isa::Outputs, zerolm_engine::isa::IsaError> {
-        read_circuit::run(&self.read, &self.external(), q, words)
+    /// Raw outputs of the read circuit for its inputs (`q`, `qw`, `qmask`).
+    pub fn read_outputs(&self, inputs: [zerolm_engine::isa::Buf; 3]) -> Result<zerolm_engine::isa::Outputs, zerolm_engine::isa::IsaError> {
+        read_circuit::run(&self.read, &self.external(), inputs)
     }
 
-    /// Pooled key and word vectors of a query text (the circuit's inputs).
-    pub fn query_inputs(&self, text: &str) -> Result<(Vec<f32>, Vec<Vec<f32>>), MemoryError> {
-        let words = self.encoder.encode_words(text);
-        let q = self.encoder.pool(&words).ok_or(MemoryError::EmptyKey)?;
-        Ok((q, words))
+    /// The read circuit's inputs for a query text: the encoder's outputs.
+    pub fn query_inputs(&self, text: &str) -> Result<[zerolm_engine::isa::Buf; 3], MemoryError> {
+        Ok(read_circuit::read_inputs(&self.encoded(text)?))
     }
 
     /// The read program and every tensor it reads, as a program bundle.
@@ -730,13 +747,27 @@ impl MemoryStore {
         read_circuit::export(&self.read, &self.external())
     }
 
+    /// The encoder program and every tensor it reads, as a program bundle.
+    pub fn encode_bundle(&self) -> Vec<u8> {
+        read_circuit::export_encoder(&self.encode, self.encoder.view())
+    }
+
     pub fn read_circuit(&self) -> &Compiled {
         &self.read
+    }
+
+    pub fn encode_circuit(&self) -> &Compiled {
+        &self.encode
     }
 
     /// Zero one block of the read circuit (causal ablation; evaluation only).
     pub fn ablate_circuit(&mut self, block: &str) -> Result<(), zerolm_engine::isa::IsaError> {
         self.read.ablate_block(block)
+    }
+
+    /// Zero one block of the key encoder circuit (causal ablation; evaluation only).
+    pub fn ablate_encoder(&mut self, block: &str) -> Result<(), zerolm_engine::isa::IsaError> {
+        self.encode.ablate_block(block)
     }
 
     /// Episodic records whose key is this fact key, oldest first.
@@ -857,7 +888,7 @@ impl MemoryStore {
 
     // ---- Checkpoint ----
 
-    fn core_tensors(core: &Model, encoder: &KeyEncoder, separator: &Matrix, read: &Compiled) -> Vec<Tensor> {
+    fn core_tensors(core: &Model, encoder: &KeyEncoder, separator: &Matrix, circuits: [&Compiled; 2]) -> Vec<Tensor> {
         let mut t = vec![Tensor::new(EMBED, "byte_embed", core.embed.rows, core.embed.cols, core.embed.data.clone())];
         for (name, data) in core.cell.groups() {
             t.push(Tensor::new(&format!("{CELL_PREFIX}{name}"), "recurrent_core", 1, data.len(), data.to_vec()));
@@ -865,15 +896,17 @@ impl MemoryStore {
         let e = &encoder.table;
         t.push(Tensor::new(encoder::TENSOR, "memory_encoder", e.rows, e.cols, e.data.clone()));
         t.push(Tensor::new(fast_weights::SEPARATOR, "memory_encoder", separator.rows, separator.cols, separator.data.clone()));
-        for c in &read.tensors {
-            t.push(Tensor::new(&read.qualified(&c.name), zerolm_wsp::compiler::GROUP, c.rows, c.cols, c.data.clone()));
+        for prog in circuits {
+            for c in &prog.tensors {
+                t.push(Tensor::new(&prog.qualified(&c.name), zerolm_wsp::compiler::GROUP, c.rows, c.cols, c.data.clone()));
+            }
         }
         t
     }
 
     /// Every tensor of the checkpoint, with its weight group.
     pub fn tensors(&self) -> Vec<Tensor> {
-        let mut t = Self::core_tensors(&self.core, &self.encoder, &self.separator, &self.read);
+        let mut t = Self::core_tensors(&self.core, &self.encoder, &self.separator, [&self.encode, &self.read]);
         let mat = |name: &str, group: &str, m: &Matrix| Tensor::new(name, group, m.rows, m.cols, m.data.clone());
         t.push(mat(KEYS, "memory_keys", &self.keys));
         t.push(mat(KEY_WORDS, "memory_keys", &self.key_words));

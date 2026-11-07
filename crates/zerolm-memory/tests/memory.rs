@@ -382,3 +382,26 @@ fn the_default_read_circuit_is_the_shipped_pinned_spec() {
     assert_eq!(prog.len(), shipped.tensors.len());
     assert!(prog.iter().all(|t| t.group == "w_prog"));
 }
+
+#[test]
+fn the_default_encoder_circuit_is_the_shipped_pinned_spec() {
+    use zerolm_memory::read_circuit;
+    let shipped = zerolm_wsp::shipped(read_circuit::ENCODE_ID).unwrap();
+    let cfg = zerolm_memory::MemoryConfig::default();
+    assert_eq!(read_circuit::build_encoder(&cfg).sha256(), shipped.sha256(), "MemoryConfig::default() must compile to model/prog/memory-encode.json");
+    let store = zerolm_memory::MemoryStore::new(cfg).unwrap();
+    assert_eq!(store.encode_circuit().sha256(), shipped.sha256());
+    let prog: Vec<_> = store.tensors().into_iter().filter(|t| t.name.starts_with("prog.memory-encode.")).collect();
+    assert_eq!(prog.len(), shipped.tensors.len());
+    assert!(prog.iter().all(|t| t.group == "w_prog"));
+}
+
+#[test]
+fn over_long_text_is_refused_and_changes_nothing() {
+    let mut m = zerolm_memory::MemoryStore::new(zerolm_memory::MemoryConfig::default()).unwrap();
+    let before = m.checkpoint_bytes();
+    let long = "a".repeat(zerolm_memory::read_circuit::TEXT_BYTES - 1);
+    assert!(matches!(m.teach(&long, "v", "test"), Err(zerolm_memory::MemoryError::TextTooLong { .. })));
+    assert!(matches!(m.query(&long), Err(zerolm_memory::MemoryError::TextTooLong { .. })));
+    assert_eq!(m.checkpoint_bytes(), before);
+}

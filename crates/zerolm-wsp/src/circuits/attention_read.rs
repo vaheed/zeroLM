@@ -1,7 +1,8 @@
 //! Memory retrieval as a circuit: active-slot selection, attention read,
 //! late-interaction coverage verification, nearest-code value cleanup, and
 //! the accept gate. Every decision is an ISA operation on tensors; the host
-//! only binds the memory tensors and the query vectors.
+//! only binds the memory tensors and the query vectors (the outputs of the
+//! `key_encode` circuit: pooled key, word rows, and the word mask).
 //!
 //! Blocks (units of ablation):
 //! - `select`: status-column selector and the active-status window.
@@ -52,6 +53,8 @@ pub fn compile(id: &str, p: &Params) -> Result<Compiled, IsaError> {
     let mut b = Builder::new(id);
     b.input("q", Some(1), d);
     b.input("qw", None, d);
+    // 1 for each present query word row (padding rows of the encoder are 0).
+    b.input_dyn("qmask", Some(1), None);
     b.external("keys", s, d);
     b.external("key_words", s, w * d);
     b.external("values", s, pos * e);
@@ -120,7 +123,10 @@ pub fn compile(id: &str, p: &Params) -> Result<Compiled, IsaError> {
     b.matvec("key_words", "best_mask", "kw_row", true);
     b.reshape("kw_row", w, d, "kw");
     b.matmul("kw", "qw", "kw_sims");
-    b.reduce(ReduceFn::Max, "kw_sims", Axis::Rows, "kw_best");
+    b.gate(Sub, "one", "qmask", "q_absent");
+    b.gate(Mul, "q_absent", "big", "q_penalty");
+    b.gate(Sub, "kw_sims", "q_penalty", "kw_sims_present");
+    b.reduce(ReduceFn::Max, "kw_sims_present", Axis::Rows, "kw_best");
     b.gate(Mul, "best_meta", "key_words_sel", "n_words_row");
     b.reduce(ReduceFn::Sum, "n_words_row", Axis::All, "n_words");
     b.gate(Ge, "word_index", "n_words", "unused_word");

@@ -123,17 +123,16 @@ fn memory_parity() -> Result<Parity, String> {
     for i in 0..n {
         m.teach(&format!("entity{i} attribute{}", i % 7), &format!("value{i}"), "uniform:synthetic-facts").map_err(|e| e.to_string())?;
     }
-    let bundle = m.read_bundle();
+    let (enc, read) = (m.encode_bundle(), m.read_bundle());
     let mut p = Parity::default();
     let queries: Vec<String> = (0..n).map(|i| format!("entity{i} attribute{}", i % 7)).chain((0..100).map(|i| format!("entity{i} unrelated{i}"))).collect();
     for q in queries {
-        let (k, words) = m.query_inputs(&q).map_err(|e| e.to_string())?;
-        let engine = m.read_outputs(&k, &words).map_err(|e| e.to_string())?;
-        let inputs = [("q", T { r: 1, c: k.len(), d: k.clone() }), ("qw", T { r: words.len(), c: k.len(), d: words.concat() })];
-        let reference = isa_ref::run(&bundle, &inputs)?;
-        p.runs += 1;
-        p.mismatches += !same(&engine, &reference) as usize;
-        *p.by_program.entry("memory-read".into()).or_default() += 1;
+        let (enc_ok, read_ok) = crate::memory::replay_query(&m, &enc, &read, &q)?;
+        for (id, ok) in [("memory-encode", enc_ok), ("memory-read", read_ok)] {
+            p.runs += 1;
+            p.mismatches += !ok as usize;
+            *p.by_program.entry(id.into()).or_default() += 1;
+        }
     }
     Ok(p)
 }

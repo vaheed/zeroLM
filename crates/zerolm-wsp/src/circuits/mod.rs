@@ -2,4 +2,5 @@
 //! constants; none may contain language data (constitution invariant 11).
 
 pub mod attention_read;
+pub mod key_encode;
 pub mod relational;

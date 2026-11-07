@@ -1,15 +1,86 @@
-//! The compiled read circuit (`model/prog/memory-read.json`): how a store
-//! answers a query. The host encodes the query text into its pooled key and
-//! word vectors, binds the memory tensors, and runs the program; selection,
-//! attention, verification, cleanup, and the accept decision are all ISA
-//! operations (see `zerolm_wsp::circuits::attention_read`).
+//! The compiled memory circuits: how a store encodes text and answers a
+//! query. `memory-encode` (`model/prog/memory-encode.json`) turns raw text
+//! bytes into the pooled key, word rows, and word mask
+//! (`zerolm_wsp::circuits::key_encode`); `memory-read`
+//! (`model/prog/memory-read.json`) takes those three tensors and does
+//! selection, attention, verification, cleanup, and the accept decision
+//! (`zerolm_wsp::circuits::attention_read`). The host copies bytes into the
+//! input tensor, binds model tensors, runs the programs, and passes one
+//! program's outputs to the other unchanged.
 
 use crate::persistent_memory::{field, MemoryConfig};
 use zerolm_engine::isa::{self, bundle, Bindings, Buf, IsaError, Outputs, View};
 use zerolm_wsp::circuits::attention_read::Params;
+use zerolm_wsp::circuits::key_encode;
 use zerolm_wsp::{compile, Circuit, Compiled, Spec};
 
 pub const ID: &str = "memory-read";
+pub const ENCODE_ID: &str = "memory-encode";
+
+/// Input width of the encoder: texts up to `TEXT_BYTES - 2` bytes.
+pub const TEXT_BYTES: usize = 256;
+
+/// The encoder spec for a configuration (equal to the shipped spec for the
+/// frozen default configuration).
+pub fn encode_spec(cfg: &MemoryConfig) -> Spec {
+    Spec {
+        id: ENCODE_ID.into(),
+        version: 1,
+        seed_entry: "memory-encode-circuit".into(),
+        description: String::new(),
+        circuit: Circuit::KeyEncode(key_encode::Params { text_bytes: TEXT_BYTES, buckets: cfg.buckets, key_dim: cfg.key_dim }),
+    }
+}
+
+pub fn build_encoder(cfg: &MemoryConfig) -> Compiled {
+    compile(&encode_spec(cfg)).expect("valid memory configuration compiles")
+}
+
+/// The encoder input: the text's bytes copied to positions 1..=len of a
+/// zero row (data movement only; no byte is inspected). `None` if too long.
+pub fn text_input(text: &str) -> Option<Buf> {
+    let mut d = vec![0.0f32; TEXT_BYTES];
+    if text.len() + 2 > TEXT_BYTES {
+        return None;
+    }
+    for (slot, b) in d[1..].iter_mut().zip(text.bytes()) {
+        *slot = b as f32;
+    }
+    Some(Buf::row(d))
+}
+
+fn encoder_bindings<'a>(c: &'a Compiled, table: View<'a>) -> Vec<(&'a str, View<'a>)> {
+    let mut ws = vec![("table", table)];
+    ws.extend(c.tensors.iter().map(|t| (t.name.as_str(), t.view())));
+    ws
+}
+
+pub fn run_encoder(c: &Compiled, table: View<'_>, text: Buf) -> Result<Outputs, IsaError> {
+    let mut b = Bindings::new().input("text", text);
+    for (n, v) in encoder_bindings(c, table) {
+        b = b.weight(n, v);
+    }
+    isa::run(&c.program, b)
+}
+
+/// Encoder program plus every tensor it reads, for an independent interpreter.
+pub fn export_encoder(c: &Compiled, table: View<'_>) -> Vec<u8> {
+    bundle::encode(&c.program, &encoder_bindings(c, table))
+}
+
+/// The read circuit's query inputs from the encoder's outputs, in order
+/// (`q`, `qw`, `qmask`).
+pub fn read_inputs(encoded: &Outputs) -> [Buf; 3] {
+    [encoded.get("key").clone(), encoded.get("words").clone(), encoded.get("word_mask").clone()]
+}
+
+/// Read inputs for a single key vector used as its own only word.
+pub fn key_inputs(k: &[f32]) -> [Buf; 3] {
+    [Buf::row(k.to_vec()), Buf::row(k.to_vec()), Buf::scalar(1.0)]
+}
+
+/// Input names of the read circuit, matching [`read_inputs`].
+pub const READ_INPUTS: [&str; 3] = ["q", "qw", "qmask"];
 
 /// The read-circuit spec for a configuration (equal to the shipped spec for
 /// the frozen default configuration).
@@ -57,15 +128,11 @@ impl<'a> External<'a> {
     }
 }
 
-/// Query inputs: pooled key (1 x key_dim) and word vectors (words x key_dim).
-pub fn inputs(q: &[f32], words: &[Vec<f32>]) -> (Buf, Buf) {
-    let d = q.len();
-    (Buf::row(q.to_vec()), Buf::new(words.len(), d, words.concat()))
-}
-
-pub fn run(c: &Compiled, ext: &External<'_>, q: &[f32], words: &[Vec<f32>]) -> Result<Outputs, IsaError> {
-    let (qb, wb) = inputs(q, words);
-    let mut b = Bindings::new().input("q", qb).input("qw", wb);
+pub fn run(c: &Compiled, ext: &External<'_>, inputs: [Buf; 3]) -> Result<Outputs, IsaError> {
+    let mut b = Bindings::new();
+    for (n, v) in READ_INPUTS.into_iter().zip(inputs) {
+        b = b.input(n, v);
+    }
     for (n, v) in ext.named() {
         b = b.weight(n, v);
     }

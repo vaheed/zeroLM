@@ -64,6 +64,7 @@ engine interpreter  ==bit for bit==  reference interpreter (independent code)
 
 | Circuit | Replaces | Blocks |
 |---|---|---|
+| `memory-encode` | memory key encoder: word split, case folding, trigram hashing, normalization | classify, fold, window, segment, support |
 | `memory-read` | memory retrieval: attention, coverage verification, value cleanup, accept decision | select, attend, verify, decode, support |
 | `relation-graph` | reasoning: decoding relation slots into subject and object matrices | decode, polarity, support |
 | `relation-reach` | reasoning: graph search with shortest proofs | one block per inference operator, depth, probe, support |

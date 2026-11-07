@@ -31,6 +31,7 @@ pub struct Spec {
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Circuit {
     AttentionRead(circuits::attention_read::Params),
+    KeyEncode(circuits::key_encode::Params),
     RelationGraph(circuits::relational::Params),
     RelationReach(circuits::relational::Params),
 }
@@ -115,6 +116,7 @@ impl Compiled {
 pub fn compile(spec: &Spec) -> Result<Compiled, IsaError> {
     let c = match &spec.circuit {
         Circuit::AttentionRead(p) => circuits::attention_read::compile(&spec.id, p)?,
+        Circuit::KeyEncode(p) => circuits::key_encode::compile(&spec.id, p)?,
         Circuit::RelationGraph(p) => circuits::relational::compile_graph(&spec.id, p)?,
         Circuit::RelationReach(p) => circuits::relational::compile_reach(&spec.id, p)?,
     };
@@ -157,6 +159,11 @@ impl Builder {
 
     pub fn input(&mut self, n: &str, rows: Option<usize>, cols: usize) {
         self.inputs.push(Decl::new(n, rows, cols));
+    }
+
+    /// A per-run input whose rows and/or columns the caller fixes.
+    pub fn input_dyn(&mut self, n: &str, rows: Option<usize>, cols: Option<usize>) {
+        self.inputs.push(Decl::dynamic(n, rows, cols));
     }
 
     /// A model tensor the caller binds at run time.

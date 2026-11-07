@@ -98,9 +98,43 @@ For $\mu_i = 1$ this is exactly $s_i$, since $s_i \cdot 1 = s_i$ and $s_i - 0 = 
 
 **Selecting a value without branching.** If a condition $c \in \{0, 1\}$ chooses between a value $v$ and a default $-1$: $\;c\, v + (c - 1)$. That gives $v$ when $c = 1$ and $-1$ when $c = 0$, exactly, because $v \cdot 1 = v$ and $v \cdot 0 = \pm 0$.
 
+## The memory-encode circuit
+
+`model/prog/memory-encode.json`, compiled by `zerolm_wsp::circuits::key_encode`. It computes the key encoder of [memory-format.md](memory-format.md#key-encoder) from raw bytes. Input: a row $t \in \{0..255\}^L$, $L = 256$, holding the text's bytes at positions $1..\ell$ ($\ell \le L - 2$) and 0 elsewhere. The host copies the bytes there and inspects none of them. Bound model tensor: the trigram table $T$ (`core.memory_encoder`). Output rows are indexed by word rank $k = 1..W$, $W = L/2$; a text of $\ell \le L-2$ bytes has at most $W - 1$ words.
+
+**Why fixed shapes suffice.** Map every separator byte to `#` and fold upper case. Then the trigrams of `#word#`, over all words, are exactly the length-3 windows whose middle byte is a word byte. Position 0 and every position after the text are 0 bytes, which are separators, so the first and last word of the text are padded too.
+
+**classify** (constants: the bounds 48, 58, 65, 91, 97, 123, 128):
+
+$$	ext{up}_i = [\![t_i \ge 65]\!] - [\![t_i \ge 91]\!], \qquad \text{word}_i = \big([\![t_i \ge 48]\!] - [\![t_i \ge 58]\!]\big) + \text{up}_i + \big([\![t_i \ge 97]\!] - [\![t_i \ge 123]\!]\big) + [\![t_i \ge 128]\!]$$
+
+**fold** (constants: the case offset 32 and the pad byte 35, `#`):
+
+$$m_i = \text{word}_i\,(t_i + 32\,\text{up}_i - 35) + 35$$
+
+**window** (constants: the gather matrix $G \in \{0,1\}^{L \times 3L}$, $G_{j,\,3i+c} = [\![j = i - 1 + c]\!]$, and the selector $(1, 0, 0)$):
+
+$$\text{win} = \mathrm{reshape}_{L \times 3}(G^\top m), \qquad H_i = T\big[\mathrm{FNV1a}(\text{win}_i) \bmod 4096\big] \quad (\texttt{hash\_rows},\ n = 3), \qquad p_i = \text{word}_{i-1}\ (p_0 = 0)$$
+
+**segment** (constants: the prefix-sum matrix $P_{rc} = [\![r \le c]\!]$ and the ranks $\rho_k = k$, $\rho'_k = k + 1$):
+
+$$\text{start}_i = \text{word}_i (1 - p_i), \qquad \text{id} = P^\top \text{start}, \qquad A_{ki} = \big([\![\text{id}_i \ge k]\!] - [\![\text{id}_i \ge k + 1]\!]\big)\,\text{word}_i$$
+
+$$\tilde w = A H \in \mathbb{R}^{W \times 128}, \qquad n = \textstyle\sum_i \text{start}_i, \qquad \text{mask}_k = [\![n \ge k]\!]$$
+
+**normalize** (no constants; `support` holds 1 and $\epsilon = 0$):
+
+$$w_k = \frac{\tilde w_k}{\sqrt{\lVert \tilde w_k\rVert^2 + 0}}, \qquad \text{key} = \frac{\sum_k w_k}{\lVert \sum_k w_k\rVert}$$
+
+With $\epsilon = 0$, `norm` maps a zero row to zero, so rows past the last word stay 0.
+
+**Bit equality with the former host encoder.** $A$ is 0/1, so `matmul` (which skips zero terms exactly) adds each word's window rows in text order, starting from $+0$, exactly as the host loop did. The norm and the column sum also run in the host's order. A unit test (`encoder.rs`) compares every output bit for bit with the former host code on ASCII, mixed case, punctuation, digits, UTF-8, an emoji, and a maximal-length text.
+
+**Blocks and ablation.** Zeroing `classify` makes every byte, including the zero padding, a word byte, so the whole input becomes one word. Zeroing `window` sends every window to the same row. Zeroing `segment` leaves no word. Each of these cuts exact recall to 0. Zeroing `fold` removes case folding and the `#` padding (separators become byte 0). Interior trigrams of a lower-case word use neither, so lower-case exact recall only falls to about 0.83. What `fold` carries is case invariance: upper-cased exact queries, answered by the intact encoder like lower-case ones, are what its ablation must remove, and that is what the memory gate checks.
+
 ## The memory-read circuit
 
-`model/prog/memory-read.json`, compiled by `zerolm_wsp::circuits::attention_read`. Inputs: the pooled query key $q \in \mathbb{R}^{128}$ and query word vectors $U \in \mathbb{R}^{n' \times 128}$. Bound model tensors: keys $K$, key words $\mathcal{K}$, values $V$, metadata $\Pi$, and byte codes $E$ (see [memory-format.md](memory-format.md)). Every step below is one ISA instruction or a few; $[\![\cdot]\!]$ is the `ge` gate.
+`model/prog/memory-read.json`, compiled by `zerolm_wsp::circuits::attention_read`. Inputs: the encoder's outputs: the pooled query key $q \in \mathbb{R}^{128}$, the word rows $U \in \mathbb{R}^{n' \times 128}$, and the word mask $\lambda \in \{0,1\}^{n'}$ (for a write's same-key check, $U = q$ and $\lambda = 1$). Bound model tensors: keys $K$, key words $\mathcal{K}$, values $V$, metadata $\Pi$, and byte codes $E$ (see [memory-format.md](memory-format.md)). Every step below is one ISA instruction or a few; $[\![\cdot]\!]$ is the `ge` gate.
 
 **select** (block constants: the status-column selector $e_\text{st}$ and the window bounds 0.5, 1.5):
 
@@ -118,11 +152,11 @@ The best slot's one-hot mask $e_{i^\star}$ (from `topk`) gathers its rows by tra
 
 **verify** (constants: thresholds 0.3 and 0.5, the key-word-count selector, and the position index $\iota = (0, 1, \dots, 7)$):
 
-$$n_w = (\Pi^\top e_{i^\star})_\text{kw}, \qquad \kappa = \mathrm{reshape}_{8 \times 128}(\mathcal{K}^\top e_{i^\star}), \qquad g_j = \max_i (\kappa U^\top)_{ji}$$
+$$n_w = (\Pi^\top e_{i^\star})_\text{kw}, \qquad \kappa = \mathrm{reshape}_{8 \times 128}(\mathcal{K}^\top e_{i^\star}), \qquad g_j = \max_i \big((\kappa U^\top)_{ji} - (1 - \lambda_i)\, B\big)$$
 
 $$\text{cov} = h_1 \cdot [\![n_w \ge 1]\!] \cdot \min_j \big(g_j + [\![\iota_j \ge n_w]\!]\, B\big)$$
 
-Unused word positions $j \ge n_w$ get $+B$ and drop out of the minimum.
+Unused word positions $j \ge n_w$ get $+B$ and drop out of the minimum; absent query rows ($\lambda_i = 0$) get $-B$ and drop out of the maximum.
 
 **decode** (constants: the score scale 2 and the margin selector $(1, -1)$):
 
@@ -184,6 +218,7 @@ $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top 
 
 | Circuit | Spec | Replaces | Verified by |
 |---|---|---|---|
+| `memory-encode` | `model/prog/memory-encode.json` (`zerolm_wsp::circuits::key_encode`) | the host key encoder: word split, case folding, `#word#` trigram hashing, normalization | bit-equality unit test against the former host code; memory gate unchanged; `reference_interpreter_parity` (every gate query); `circuit_block_ablation` per block |
 | `memory-read` | `model/prog/memory-read.json` (`zerolm_wsp::circuits::attention_read`) | memory pooled attention, coverage verification, value cleanup, accept decision | memory gate unchanged; `reference_interpreter_parity` (every gate query, bit for bit); `circuit_block_ablation` per block |
 | `relation-graph` (C5) | `model/prog/relation-graph.json` (`zerolm_wsp::circuits::relational`) | per-question probe, unbind, and cleanup loops over slots | reasoning gate unchanged |
 | `relation-reach` (C6) | `model/prog/relation-reach.json` | breadth-first search in class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation | reasoning gate unchanged, including every operator ablation through its `enable` block |
@@ -192,7 +227,6 @@ $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top 
 
 ## Not yet done
 
-- The query encoder (word split, `#word#` trigram hashing) still runs on the host; `hash_rows` exists for it.
 - Write-time bookkeeping and fast-weight recall cleanup are host code.
 - Reasoning: the search (reachability and shortest proofs) runs in C6, and slot decoding in C5. Still Rust control flow: each operator's decision logic (combining yes/no proofs, the inheritance level scan, the negation edge scan, conditional rule chaining, count arithmetic), the one-step `edges` probes they use, and the bounded-language parser.
 - Symbol vectors are generated from names by a seeded random generator on the host, which no ISA operation can compute. Moving the parser into a circuit first needs an ISA-computable symbol encoding, for example `hash_rows` over a word's bytes.
