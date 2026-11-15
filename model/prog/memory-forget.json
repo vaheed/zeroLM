@@ -1,0 +1,21 @@
+{
+  "id": "memory-forget",
+  "version": 1,
+  "seed_entry": "memory-write-circuits",
+  "description": "Memory forget compiled to the neural ISA: the same-key slot and every slot it supersedes (one link per step, one step per slot), the episodic records referring to them (keys erased), and the metadata with the chain marked deleted. Parameters equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "memory_forget",
+    "codec": {
+      "positions": 48,
+      "code_rows": 256,
+      "code_dim": 16
+    },
+    "slots": 2048,
+    "key_dim": 128,
+    "key_words": 1024,
+    "episodes": 4096,
+    "same_key_threshold": 0.95,
+    "unconfirmed": 0.5,
+    "confirmed": 1.0
+  }
+}

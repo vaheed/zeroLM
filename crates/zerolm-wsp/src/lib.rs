@@ -12,12 +12,28 @@ pub mod patch;
 pub use compiler::{compile, parse_spec, Circuit, Compiled, ProgTensor, Spec};
 
 /// Pinned circuit specifications shipped with the model, as (file name, JSON).
-pub const SPECS: [(&str, &str); 5] = [
+pub const SPECS: [(&str, &str); 21] = [
     ("memory-read.json", include_str!("../../../model/prog/memory-read.json")),
     ("memory-encode.json", include_str!("../../../model/prog/memory-encode.json")),
     ("relation-graph.json", include_str!("../../../model/prog/relation-graph.json")),
     ("atom-encode.json", include_str!("../../../model/prog/atom-encode.json")),
     ("relation-reach.json", include_str!("../../../model/prog/relation-reach.json")),
+    ("number-encode.json", include_str!("../../../model/prog/number-encode.json")),
+    ("number-decode.json", include_str!("../../../model/prog/number-decode.json")),
+    ("value-encode.json", include_str!("../../../model/prog/value-encode.json")),
+    ("fast-recall.json", include_str!("../../../model/prog/fast-recall.json")),
+    ("fast-write.json", include_str!("../../../model/prog/fast-write.json")),
+    ("relation-probe.json", include_str!("../../../model/prog/relation-probe.json")),
+    ("symbol-cleanup.json", include_str!("../../../model/prog/symbol-cleanup.json")),
+    ("relation-join.json", include_str!("../../../model/prog/relation-join.json")),
+    ("relation-levels.json", include_str!("../../../model/prog/relation-levels.json")),
+    ("relation-rules.json", include_str!("../../../model/prog/relation-rules.json")),
+    ("relation-counts.json", include_str!("../../../model/prog/relation-counts.json")),
+    ("relation-verdict.json", include_str!("../../../model/prog/relation-verdict.json")),
+    ("memory-write.json", include_str!("../../../model/prog/memory-write.json")),
+    ("memory-forget.json", include_str!("../../../model/prog/memory-forget.json")),
+    ("memory-compact.json", include_str!("../../../model/prog/memory-compact.json")),
+    ("memory-history.json", include_str!("../../../model/prog/memory-history.json")),
 ];
 
 /// `model/prog/pinned.json`: circuit id -> SHA-256 of the compiled output.

@@ -2,9 +2,25 @@
   "version": 1,
   "circuits": {
     "atom-encode": "94a9df214e0da88cbb3b3a59bebe001073ec75fd133e4c36a9ec57ac033ded0e",
+    "fast-recall": "0653978c84ac08c5cfadc1e4a48cf0e73a90bf92d8df139970b36ff8afd27723",
+    "fast-write": "66d4e9f0c7ae3fb08cc470c033f6c3c81ac057344579864797c7bac0722b640a",
+    "memory-compact": "f853cde0c51409d08d33ade081dce10c437097067a677797197ee1e4a53edb64",
     "memory-encode": "99b405aa6bd6a3beaf5f8e87f425a24721e0817f18807408f6ffaae5a8207feb",
+    "memory-forget": "15f4f62ec7877278f367144bb3cf8b156efca60442dafa4db3d861f8c0bba050",
+    "memory-history": "867a935aaaf91dfb9d5a9645f7f9c4300698285504ec788b087c280b0334ee3f",
     "memory-read": "05a51725faae1cf9282815f82417a3976b5034937bdf7f7ee8449104659d475d",
+    "memory-write": "596eb76594039399714da7e88bf642facad19f7ebd6c36bc38245ba5e36fdc34",
+    "number-decode": "faf56ddfb8f262aa26784a5da5b9fd40f90f46afbd2202d7e9082dc53ce00aee",
+    "number-encode": "bb850fbef9db6f31b63f71ae16e304842f6d2d30ab4aa0348d1d37842ac78c0d",
+    "relation-counts": "6d2c70ec564839c47b9032a6848a2a7dc5590b909a376c24c1d147e26fa3b5a8",
     "relation-graph": "efefcd319d2f39c8366a3491c1505cbfa8e05287be3293a57fca586ad668bb51",
-    "relation-reach": "7f6ed8d82ffc0d10f9a63bb897b874d53c54eec33960a4c68122449a1438c6ee"
+    "relation-join": "ccedd0ce9fbd4956617da47eea16a80d823b508dea9f2b8034960db3a6efdec7",
+    "relation-levels": "dc6a19dd8edd9b3f98217269832e969cc43f3dbb106ce0e48322c4558f373338",
+    "relation-probe": "099a1ed106d1ab5188a3e1a304c824561ef9725c246bb599c6c28cfeefad3293",
+    "relation-reach": "7f6ed8d82ffc0d10f9a63bb897b874d53c54eec33960a4c68122449a1438c6ee",
+    "relation-rules": "3b6350b4642c4b8a7210f646474f4bf4998743738d9481da9dcb7650b1d4eef8",
+    "relation-verdict": "698ebf8ddbcc1ef9ef51d8e5932a26ea7ad1f77d97b92e5b0fa930b86a09a16c",
+    "symbol-cleanup": "33506da99bcea531e8eac9b21b07ec9e6d8dc7805e6cb85e3dcacb219f451fb0",
+    "value-encode": "e6240156a25968a4289f20d748a4cf6ed1e65fc9ca59380ed0a468661a170c01"
   }
 }

@@ -40,7 +40,7 @@
     {
       "id": "phasor-binding-init",
       "kind": "init_formula",
-      "description": "Symbols, roles, and relation atoms are unit complex phasors computed by the compiled atom-encode circuit from their namespaced name bytes and the seeded table core.reasoner.atom_table (random rows from a SplitMix64 stream); numbers use fractional-power encoding exp(i n theta) with a seeded base. Binding is elementwise complex multiplication.",
+      "description": "Symbols, roles, and relation atoms are unit complex phasors computed by the compiled atom-encode circuit from their namespaced name bytes and the seeded table core.reasoner.atom_table (random rows from a SplitMix64 stream); numbers use fractional-power encoding exp(i n theta) with a seeded base theta, from which two tables are initialized: core.reasoner.number_digits (row 10 q + v = number(v 10^q), q < 7) and core.reasoner.number_codebook (row j = number(j - number_range)); encoding and cleanup run in the compiled number-encode and number-decode circuits. Binding is elementwise complex multiplication.",
       "source": "crates/zerolm-engine/src/binding.rs",
       "derived_from_corpus": false
     },
@@ -77,6 +77,48 @@
       "kind": "structural_prior",
       "description": "Circuit atom-encode (model/prog/atom-encode.json): the vector-symbolic atom encoder as a neural ISA program, the bytes of a namespaced name to a unit complex phasor vector. Constants: three salt bytes (1, 2, 3), a broadcast column of ones, one-hot row selectors, and norm epsilon 0. Hashed rows come from core.reasoner.atom_table (seeded random). No vocabulary or facts.",
       "source": "crates/zerolm-wsp/src/circuits/atom_encode.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "number-encode-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit number-encode (model/prog/number-encode.json): a decimal numeral (bytes, optional leading minus) to its fractional-power phasor as a neural ISA program. Constants: the ten digit byte codes 48..57, the minus byte 45, a strict lower-triangular place counter, place indices 0..6, one-hot spread and tile selectors, the identity phasor, row pickers, and the conjugation mask. Digit rows come from core.reasoner.number_digits (seeded). Positional decimal notation is the only prior; no vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/number.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "value-codec-circuits",
+      "kind": "structural_prior",
+      "description": "Circuits value-encode, fast-recall, and fast-write (model/prog/value-encode.json, fast-*.json): memory value bytes to rows of core.embed by a byte one-hot (byte indices 0..255); nearest-code cleanup (score 2 x.c - |c|^2, NUL-terminated, top-1 minus top-2 margin); W_FAST pattern separation by core.fast_separator with k-winners-take-all (amplitude 1/sqrt(active)); and the decayed normalized delta rule as two delta_write instructions (decay 0.99, learning rate 1, epsilon 1e-6, from model/specs/memory.json). No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/value_codec.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "relation-probe-circuits",
+      "kind": "structural_prior",
+      "description": "Circuits relation-probe and symbol-cleanup (model/prog/relation-probe.json, symbol-cleanup.json): a role-filler probe (role selection from core.reasoner.roles, binding, bundling, sim >= K - margin over active slots, polarity and role-count filters from metadata column selectors) and nearest-symbol cleanup (cosine against memory.relations.codebook, top-1, and a threshold chosen by a one-hot mode among cleanup_min, symbol_same, pronoun_min from model/specs/reasoning.json). No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/probe.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "memory-write-circuits",
+      "kind": "structural_prior",
+      "description": "Circuits memory-write, memory-forget, memory-compact, and memory-history (model/prog/memory-*.json): every change to the semantic and episodic memory as neural ISA programs: the same-key slot (best active key, score >= same_key_threshold), decode-and-compare of its value, the lowest empty slot, the outcome of teach/correct/confirm, new and updated metadata rows (status codes, unconfirmed/confirmed levels, supersession links), following supersession links for forget, the compaction order (top-k) and link remapping (a permutation matrix), and episodic history by key similarity. Constants: metadata column selectors, status and op codes, slot indices. No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/memory_write.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "relation-decide-circuits",
+      "kind": "structural_prior",
+      "description": "Circuits relation-join, relation-levels, relation-rules, relation-counts, and relation-verdict (model/prog/relation-*.json): the eight operators' decisions as fixed-step recurrences over the C5 graph outputs: negative edges between source and target sets with the shortest proof, level-by-level inheritance with a latched first decision, backward chaining over in-scope rules, counts along 'more' chains by phasor binding and codebook cleanup (one distinct value or a contradiction), and the yes/no/contradiction/unknown combination of findings. Constants: per-operator enable scalars, proof-length scores, readout values -range..range, one-hot verdict selectors. No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/decide.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "number-decode-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit number-decode (model/prog/number-decode.json): cleanup of a noisy number phasor as a neural ISA program: scores against core.reasoner.number_codebook, top-1, and readout of the integer value (constant column -range..range) and the clean codebook row. No vocabulary or facts.",
+      "source": "crates/zerolm-wsp/src/circuits/number.rs",
       "derived_from_corpus": false
     },
     {

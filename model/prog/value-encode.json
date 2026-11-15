@@ -1,0 +1,12 @@
+{
+  "id": "value-encode",
+  "version": 1,
+  "seed_entry": "value-codec-circuits",
+  "description": "Memory value encoder compiled to the neural ISA: value bytes (NUL-padded to 48 positions) to the concatenated rows of core.embed, by a byte one-hot (comparison with 0..255) and a matrix product. Parameters equal model/specs/memory.json (value_bytes + 1 positions) and the core byte embedding.",
+  "circuit": {
+    "kind": "value_encode",
+    "positions": 48,
+    "code_rows": 256,
+    "code_dim": 16
+  }
+}

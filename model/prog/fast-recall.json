@@ -1,0 +1,20 @@
+{
+  "id": "fast-recall",
+  "version": 1,
+  "seed_entry": "value-codec-circuits",
+  "description": "W_FAST recall compiled to the neural ISA: pattern separation of the pooled key by core.fast_separator and k-winners-take-all (32 of 1024, amplitude 1/sqrt(32)), the read memory.fast s, and nearest-code cleanup against core.embed. Parameters equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "fast_recall",
+    "codec": {
+      "positions": 48,
+      "code_rows": 256,
+      "code_dim": 16
+    },
+    "key_dim": 128,
+    "expansion": 1024,
+    "active": 32,
+    "lr": 1.0,
+    "decay": 0.99,
+    "eps": 1e-6
+  }
+}

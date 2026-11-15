@@ -54,20 +54,20 @@ pub struct Params {
     pub symbol_same: f32,
 }
 
-fn check(id: &str, p: &Params) -> Result<(), IsaError> {
+pub(crate) fn check(id: &str, p: &Params) -> Result<(), IsaError> {
     if p.dim == 0 || p.max_depth == 0 || p.meta_cols <= META_POLARITY {
         return Err(IsaError(format!("{id}: invalid relational parameters")));
     }
     Ok(())
 }
 
-fn onehot(n: usize, i: usize) -> Vec<f32> {
+pub(crate) fn onehot(n: usize, i: usize) -> Vec<f32> {
     let mut v = vec![0.0; n];
     v[i] = 1.0;
     v
 }
 
-fn support(b: &mut Builder, p: &Params) {
+pub(crate) fn support(b: &mut Builder, p: &Params) {
     b.block("support");
     b.scalar("one", 1.0);
     b.scalar("zero", 0.0);
@@ -78,7 +78,7 @@ fn support(b: &mut Builder, p: &Params) {
 }
 
 /// Row `role` of the roles table as a 1 x 2d vector.
-fn role(b: &mut Builder, role: usize, out: &str) {
+pub(crate) fn role(b: &mut Builder, role: usize, out: &str) {
     let sel = format!("{out}_sel");
     b.constant(&sel, 1, N_ROLES, onehot(N_ROLES, role));
     b.matvec("roles", &sel, out, true);
@@ -127,7 +127,7 @@ pub fn compile_graph(id: &str, p: &Params) -> Result<Compiled, IsaError> {
 }
 
 /// Cleanup of a query vector to a one-hot codebook row (cosine >= symbol_same).
-fn cleanup_query(b: &mut Builder, v: &str) {
+pub(crate) fn cleanup_query(b: &mut Builder, v: &str) {
     b.op(Instr::Norm { kind: NormKind::L2, x: v.into(), eps: "eps".into(), out: format!("{v}_unit") });
     b.matvec("codes_unit", &format!("{v}_unit"), &format!("{v}_cos"), false);
     b.op(Instr::Topk { x: format!("{v}_cos"), k: 1, idx: None, val: Some(format!("{v}_best")), mask: Some(format!("{v}_mask")) });

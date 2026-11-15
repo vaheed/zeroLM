@@ -1,0 +1,15 @@
+{
+  "id": "relation-join",
+  "version": 1,
+  "seed_entry": "relation-decide-circuits",
+  "description": "Negation as a circuit: the shortest negative edge of a relation from a source set (x, plus its reached ancestors when class inclusion is enabled) to a target set (y, plus its ancestors), with source and target premise matrices from relation-reach. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "relation_join",
+    "dim": 512,
+    "meta_cols": 10,
+    "max_depth": 8,
+    "match_margin": 0.5,
+    "cleanup_min": 0.3,
+    "symbol_same": 0.9
+  }
+}

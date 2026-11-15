@@ -20,7 +20,7 @@ pub mod oracle;
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use zerolm_engine::binding::{bind, bundle, sim_raw, unbind, Hv, Space};
+use zerolm_engine::binding::{bind, Hv};
 use zerolm_engine::semantic_state::{parse, Fact, Pred, Rule, SemanticState, Term, Utterance};
 use zerolm_memory::checkpoint::{self, CheckpointError, Tensor};
 use zerolm_tensor::sha256::Sha256;
@@ -32,7 +32,8 @@ pub const CODEBOOK: &str = "memory.relations.codebook";
 pub const STATE: &str = "memory.relations.state";
 pub const ROLES_T: &str = "core.reasoner.roles";
 pub const RELATIONS_T: &str = "core.reasoner.relations";
-pub const NUMBER_T: &str = "core.reasoner.number_one";
+pub const NUMBER_DIGITS_T: &str = "core.reasoner.number_digits";
+pub const NUMBER_CODEBOOK_T: &str = "core.reasoner.number_codebook";
 pub const ATOM_TABLE_T: &str = "core.reasoner.atom_table";
 
 pub const ROLES: [&str; 5] = ["subj", "rel", "obj", "quant", "scope"];
@@ -271,7 +272,7 @@ pub struct WriteEvent {
 pub struct Reasoner {
     pub cfg: ReasonerConfig,
     pub ops: Ops,
-    space: Space,
+    numbers: circuits::Numbers,
     /// Compiled atom encoder (`atom-encode`) with its table.
     atoms: circuits::Atoms,
     roles: Vec<Hv>,
@@ -292,7 +293,7 @@ pub struct Reasoner {
     /// C5 output for the current memory state (session state, recomputed after writes).
     graph_cache: std::cell::RefCell<Option<circuits::Graph>>,
     /// Evaluation only: recorded circuit runs for reference replay.
-    recorder: std::cell::RefCell<Option<Vec<circuits::Recorded>>>,
+    recorder: circuits::Recorder,
 }
 
 pub(crate) const SUBJ: usize = 0;
@@ -310,7 +311,6 @@ const P24: u64 = 1 << 24;
 impl Reasoner {
     pub fn new(cfg: ReasonerConfig) -> Result<Self, ReasonerError> {
         cfg.validate().map_err(ReasonerError::Config)?;
-        let space = Space::new(cfg.seed, cfg.dim);
         let atoms = circuits::Atoms::new(&cfg);
         let roles = ROLES.iter().map(|r| atoms.encode("role", r)).collect();
         let rels = RELATIONS.iter().map(|r| atoms.encode("rel", r)).collect();
@@ -331,9 +331,9 @@ impl Reasoner {
             unsaved_from: 0,
             circuits: circuits::Circuits::new(&cfg),
             graph_cache: std::cell::RefCell::new(None),
-            recorder: std::cell::RefCell::new(None),
+            recorder: Default::default(),
             atoms,
-            space,
+            numbers: circuits::Numbers::new(&cfg),
             cfg,
         })
     }
@@ -354,8 +354,9 @@ impl Reasoner {
         self.atoms.encode("sym", name)
     }
 
-    pub fn space(&self) -> &Space {
-        &self.space
+    /// The compiled number encoder and decoder.
+    pub fn numbers(&self) -> &circuits::Numbers {
+        &self.numbers
     }
 
     pub fn events(&self) -> &[WriteEvent] {
@@ -387,42 +388,16 @@ impl Reasoner {
         }
     }
 
-    pub(crate) fn encode(&self, parts: &[(usize, Hv)]) -> Hv {
-        let items: Vec<Hv> = parts.iter().map(|(r, f)| bind(&self.role(*r), f)).collect();
-        bundle(&items)
-    }
-
     // ---- Codebook ----
 
     pub(crate) fn code(&self, i: usize) -> Hv {
         Hv::from_data(self.cfg.dim, self.codebook.row(i))
     }
 
-    /// Codebook index of a symbol vector (cosine >= symbol_same).
+    /// Codebook index of a symbol vector (cosine >= symbol_same), by the
+    /// `symbol-cleanup` circuit.
     pub(crate) fn find_symbol(&self, v: &Hv) -> Option<usize> {
-        self.cleanup_with(v, self.cfg.symbol_same)
-    }
-
-    /// Nearest codebook entry with cosine >= min.
-    pub(crate) fn cleanup_with(&self, v: &Hv, min: f32) -> Option<usize> {
-        let d = self.cfg.dim;
-        let vn = sim_raw(&v.data, &v.data, d).sqrt();
-        if vn == 0.0 {
-            return None;
-        }
-        let mut best: Option<(usize, f32)> = None;
-        for i in 0..self.n_sym {
-            let row = self.codebook.row(i);
-            let c = sim_raw(row, &v.data, d) / vn; // rows are unit phasors: |row| = 1
-            if c >= min && best.map(|b| c > b.1).unwrap_or(true) {
-                best = Some((i, c));
-            }
-        }
-        best.map(|b| b.0)
-    }
-
-    pub(crate) fn cleanup(&self, v: &Hv) -> Option<usize> {
-        self.cleanup_with(v, self.cfg.cleanup_min)
+        self.symbol_cleanup(v, circuits::CleanupMode::Same)
     }
 
     /// Index of a name's symbol if it was ever stored.
@@ -430,38 +405,19 @@ impl Reasoner {
         self.find_symbol(&self.symbol(name))
     }
 
-    fn intern(&mut self, name: &str) -> Result<usize, ReasonerError> {
-        let v = self.symbol(name);
-        if let Some(i) = self.find_symbol(&v) {
-            return Ok(i);
+    /// Intern a name: `symbol-cleanup` decides whether its vector is new (and
+    /// `gate` is 1); the host appends the circuit's row at the codebook counter.
+    fn intern(&mut self, name: &str, gate: f32) -> Result<(), ReasonerError> {
+        let c = self.symbol_cleanup_full(&self.symbol(name), circuits::CleanupMode::Same, gate);
+        if c.added {
+            if self.n_sym == self.cfg.symbols {
+                return Err(ReasonerError::Full("codebook"));
+            }
+            let (i, w) = (self.n_sym, self.codebook.cols);
+            self.codebook.data[i * w..(i + 1) * w].copy_from_slice(&c.row);
+            self.n_sym += 1;
         }
-        if self.n_sym == self.cfg.symbols {
-            return Err(ReasonerError::Full("codebook"));
-        }
-        let i = self.n_sym;
-        let c = self.codebook.cols;
-        self.codebook.data[i * c..(i + 1) * c].copy_from_slice(&v.data);
-        self.n_sym += 1;
-        Ok(i)
-    }
-
-    // ---- Probes ----
-
-    /// Slots matching every given role-filler pair (sim >= k - margin).
-    pub(crate) fn matches(&self, parts: &[(usize, Hv)]) -> Vec<usize> {
-        if self.retrieval_ablated {
-            return Vec::new();
-        }
-        let q = self.encode(parts);
-        let need = parts.len() as f32 - self.cfg.match_margin;
-        (0..self.n_slots)
-            .filter(|&s| self.slot_meta(s, field::ACTIVE) == 1.0)
-            .filter(|&s| sim_raw(self.slots.row(s), &q.data, self.cfg.dim) >= need)
-            .collect()
-    }
-
-    pub(crate) fn unbind_slot(&self, slot: usize, role: usize) -> Hv {
-        unbind(&Hv::from_data(self.cfg.dim, self.slots.row(slot)), &self.role(role))
+        Ok(())
     }
 
     // ---- Language interface ----
@@ -477,9 +433,9 @@ impl Reasoner {
             Pred::Prop(x) => p.extend([(REL, self.rel("prop").clone()), (OBJ, sym(x))]),
             Pred::Greater { dim, other } => p.extend([(REL, bind(self.rel("gt"), &sym(dim))), (OBJ, sym(other))]),
             Pred::Before(y) => p.extend([(REL, self.rel("before").clone()), (OBJ, sym(y))]),
-            Pred::Count { thing, n } => p.extend([(REL, bind(self.rel("has"), &sym(thing))), (QUANT, self.space.number(*n))]),
+            Pred::Count { thing, n } => p.extend([(REL, bind(self.rel("has"), &sym(thing))), (QUANT, self.numbers.encode(*n))]),
             Pred::More { thing, delta, other } => {
-                p.extend([(REL, bind(self.rel("more"), &sym(thing))), (OBJ, sym(other)), (QUANT, self.space.number(*delta))])
+                p.extend([(REL, bind(self.rel("more"), &sym(thing))), (OBJ, sym(other)), (QUANT, self.numbers.encode(*delta))])
             }
         }
         p
@@ -494,49 +450,62 @@ impl Reasoner {
         }
     }
 
-    /// Resolve a subject term to a codebook vector; `None` if "it" is unresolved.
-    pub(crate) fn resolve(&self, t: &Term) -> Option<(Hv, bool)> {
+    /// Resolve a subject term to (vector, via pronoun, resolved). An
+    /// unresolved "it" is the zero vector with `resolved` 0.
+    pub(crate) fn resolve_gated(&self, t: &Term) -> (Hv, bool, f32) {
         match t {
-            Term::Name(n) => Some((self.symbol(n), false)),
-            Term::Pronoun => {
-                let cands: Vec<Hv> = (0..self.n_sym).map(|i| self.code(i)).collect();
-                self.state.resolve(cands.iter().enumerate(), self.cfg.pronoun_min).map(|(i, _)| (cands[i].clone(), true))
-            }
+            Term::Name(n) => (self.symbol(n), false, 1.0),
+            // "it": the codebook symbol nearest the discourse state (`symbol-cleanup`, pronoun threshold).
+            Term::Pronoun => match self.symbol_cleanup(&self.state.context, circuits::CleanupMode::Pronoun) {
+                Some(i) => (self.code(i), true, 1.0),
+                None => (Hv::zeros(self.cfg.dim), true, 0.0),
+            },
         }
     }
 
-    fn write(&mut self, parts: &[(usize, Hv)], polarity: f32, kind: f32, confidence: f32, stream: &str) -> Result<Observed, ReasonerError> {
-        let v = self.encode(parts);
-        let full = parts.len() as f32 - self.cfg.match_margin;
-        for s in 0..self.n_slots {
-            if self.slot_meta(s, field::POLARITY) == polarity
-                && self.slot_meta(s, field::N_ROLES) == parts.len() as f32
-                && sim_raw(self.slots.row(s), &v.data, self.cfg.dim) >= full
-            {
-                return Ok(Observed::Duplicate { slot: s });
-            }
+    /// Resolve a subject term to a codebook vector; `None` if "it" is unresolved.
+    pub(crate) fn resolve(&self, t: &Term) -> Option<(Hv, bool)> {
+        let (v, via, ok) = self.resolve_gated(t);
+        (ok == 1.0).then_some((v, via))
+    }
+
+    /// Store a statement: `relation-probe` decides (resolved and not a
+    /// duplicate) and computes the slot and metadata rows; the host appends
+    /// them at the slot counter and logs the write.
+    fn write(&mut self, parts: &[(usize, Hv)], polarity: f32, kind: f32, confidence: f32, gate: f32, stream: &str) -> Result<Observed, ReasonerError> {
+        let seq = self.clock + 1;
+        let h = fnv1a(stream.as_bytes());
+        let m = (1u64 << 22) - 1;
+        let mut record = vec![0.0f32; field::COUNT];
+        record[field::ACTIVE] = 1.0;
+        record[field::POLARITY] = polarity;
+        record[field::CONFIDENCE] = confidence;
+        record[field::KIND] = kind;
+        record[field::SEQ_LO] = (seq % P24) as f32;
+        record[field::SEQ_HI] = (seq / P24 % P24) as f32;
+        record[field::PROV] = (h & m) as f32;
+        record[field::PROV + 1] = ((h >> 22) & m) as f32;
+        record[field::PROV + 2] = (h >> 44) as f32;
+        record[field::N_ROLES] = parts.len() as f32;
+        let st = self.store(parts, &record, gate);
+        if self.state.enabled && kind != RULE_KIND {
+            self.state.context = st.context.clone();
+        }
+        if !st.stored {
+            return Ok(match st.dup_slot {
+                Some(s) if gate == 1.0 => Observed::Duplicate { slot: s },
+                _ => Observed::Unresolved,
+            });
         }
         if self.n_slots == self.cfg.slots {
             return Err(ReasonerError::Full("relation slots"));
         }
         let s = self.n_slots;
         self.n_slots += 1;
-        self.clock += 1;
+        self.clock = seq;
         let c = self.slots.cols;
-        self.slots.data[s * c..(s + 1) * c].copy_from_slice(&v.data);
-        let h = fnv1a(stream.as_bytes());
-        let m = (1u64 << 22) - 1;
-        let row = &mut self.meta.data[s * field::COUNT..(s + 1) * field::COUNT];
-        row[field::ACTIVE] = 1.0;
-        row[field::POLARITY] = polarity;
-        row[field::CONFIDENCE] = confidence;
-        row[field::KIND] = kind;
-        row[field::SEQ_LO] = (self.clock % P24) as f32;
-        row[field::SEQ_HI] = (self.clock / P24 % P24) as f32;
-        row[field::PROV] = (h & m) as f32;
-        row[field::PROV + 1] = ((h >> 22) & m) as f32;
-        row[field::PROV + 2] = (h >> 44) as f32;
-        row[field::N_ROLES] = parts.len() as f32;
+        self.slots.data[s * c..(s + 1) * c].copy_from_slice(&st.row);
+        self.meta.data[s * field::COUNT..(s + 1) * field::COUNT].copy_from_slice(&st.meta_row);
         let mut sh = Sha256::new();
         sh.update_f32(self.slots.row(s));
         sh.update_f32(self.meta.row(s));
@@ -554,23 +523,21 @@ impl Reasoner {
     }
 
     pub fn teach_fact(&mut self, f: &Fact, stream: &str) -> Result<Observed, ReasonerError> {
-        let Some((s, via_pronoun)) = self.resolve(&f.subj) else { return Ok(Observed::Unresolved) };
+        let (s, via_pronoun, gate) = self.resolve_gated(&f.subj);
         if let Term::Name(n) = &f.subj {
-            self.intern(n)?;
+            self.intern(n, gate)?;
         }
         for n in Self::pred_symbols(&f.pred) {
-            self.intern(n)?;
+            self.intern(n, gate)?;
         }
         let parts = self.pred_parts(&s, &f.pred);
         let conf = if via_pronoun { self.cfg.pronoun_confidence } else { 1.0 };
-        let out = self.write(&parts, if f.negated { -1.0 } else { 1.0 }, pred_code(&f.pred), conf, stream)?;
-        self.state.observe_subject(&s);
-        Ok(out)
+        self.write(&parts, if f.negated { -1.0 } else { 1.0 }, pred_code(&f.pred), conf, gate, stream)
     }
 
     pub fn teach_rule(&mut self, r: &Rule, stream: &str) -> Result<Observed, ReasonerError> {
         for n in [&r.premise, &r.conclusion].into_iter().chain(r.scope.as_ref()) {
-            self.intern(n)?;
+            self.intern(n, 1.0)?;
         }
         let scope = match &r.scope {
             Some(x) => self.symbol(x),
@@ -582,7 +549,7 @@ impl Reasoner {
             (OBJ, self.symbol(&r.conclusion)),
             (SCOPE, scope),
         ];
-        self.write(&parts, 1.0, RULE_KIND, 1.0, stream)
+        self.write(&parts, 1.0, RULE_KIND, 1.0, 1.0, stream)
     }
 
     /// Process one line: statements are stored, questions are answered.
@@ -612,7 +579,8 @@ impl Reasoner {
         let mut t = vec![
             Tensor::new(ROLES_T, "binding_roles", ROLES.len(), d2, rows(&fresh.roles)),
             Tensor::new(RELATIONS_T, "binding_roles", RELATIONS.len(), d2, rows(&fresh.rels)),
-            Tensor::new(NUMBER_T, "binding_roles", 1, d2, self.space.number(1).data),
+            Tensor::new(NUMBER_DIGITS_T, "binding_roles", fresh.numbers.digits.rows, d2, fresh.numbers.digits.data.clone()),
+            Tensor::new(NUMBER_CODEBOOK_T, "binding_roles", fresh.numbers.codebook.rows, d2, fresh.numbers.codebook.data.clone()),
             Tensor::new(ATOM_TABLE_T, "binding_roles", self.atoms.table.rows, d2, self.atoms.table.data.clone()),
             Tensor::new(SLOTS, "relation_memory", self.slots.rows, d2, self.slots.data.clone()),
             Tensor::new(META, "relation_memory", self.meta.rows, field::COUNT, self.meta.data.clone()),
@@ -626,7 +594,7 @@ impl Reasoner {
             ),
         ];
         // Compiled circuit constants (W_PROG), frozen like the role phasors.
-        for c in [&fresh.atoms.circuit, &fresh.circuits.graph, &fresh.circuits.reach] {
+        for c in [&fresh.atoms.circuit, &fresh.numbers.encoder, &fresh.numbers.decoder].into_iter().chain(fresh.circuits.all()) {
             for p in &c.tensors {
                 t.push(Tensor::new(&c.qualified(&p.name), zerolm_wsp::compiler::GROUP, p.rows, p.cols, p.data.clone()));
             }
@@ -658,7 +626,7 @@ impl Reasoner {
                 return Err(ReasonerError::Format(format!("unexpected tensor {}", got.name)));
             }
             match got.name.as_str() {
-                name if name == ROLES_T || name == RELATIONS_T || name == NUMBER_T || name == ATOM_TABLE_T || name.starts_with("prog.") => {
+                name if name == ROLES_T || name == RELATIONS_T || name == NUMBER_DIGITS_T || name == NUMBER_CODEBOOK_T || name == ATOM_TABLE_T || name.starts_with("prog.") => {
                     if got.data.iter().zip(&w.data).any(|(a, b)| a.to_bits() != b.to_bits()) {
                         return Err(ReasonerError::CoreMismatch(got.name));
                     }

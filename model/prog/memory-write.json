@@ -1,0 +1,21 @@
+{
+  "id": "memory-write",
+  "version": 1,
+  "seed_entry": "memory-write-circuits",
+  "description": "Memory write decisions compiled to the neural ISA (teach, correct, confirm): the same-key slot (best active key with score >= 0.95), its value decoded against core.embed and compared with the new value, the lowest empty slot, and the outcome (stored, unchanged, conflict, superseded, confirmed, unknown); outputs the new slot's rows, the old slot's updated metadata, and the episode row. Parameters equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "memory_write",
+    "codec": {
+      "positions": 48,
+      "code_rows": 256,
+      "code_dim": 16
+    },
+    "slots": 2048,
+    "key_dim": 128,
+    "key_words": 1024,
+    "episodes": 4096,
+    "same_key_threshold": 0.95,
+    "unconfirmed": 0.5,
+    "confirmed": 1.0
+  }
+}

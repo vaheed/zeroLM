@@ -1,0 +1,18 @@
+{
+  "id": "relation-counts",
+  "version": 1,
+  "seed_entry": "relation-decide-circuits",
+  "description": "Arithmetic as a circuit: breadth-first over more edges from x carrying number(sum of differences) as a phasor (binding is addition, differences cleaned up against core.reasoner.number_codebook), every reached has-count bound to its carried difference and decoded; one distinct value answers with the shortest proof, several are a contradiction with all proofs. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "relation_counts",
+    "relational": {
+      "dim": 512,
+      "meta_cols": 10,
+      "max_depth": 8,
+      "match_margin": 0.5,
+      "cleanup_min": 0.3,
+      "symbol_same": 0.9
+    },
+    "range": 1000
+  }
+}

@@ -51,7 +51,7 @@
     },
     {
       "id": "binding_roles",
-      "description": "Frozen vector-symbolic constants (core.reasoner.*): the atom hash table (core.reasoner.atom_table, input of the atom-encode circuit), the role phasors (subj, rel, obj, quant, scope) and relation atoms it computes, and the fractional-power number base. Seeded; verified bit-identical on load.",
+      "description": "Frozen vector-symbolic constants (core.reasoner.*): the atom hash table (core.reasoner.atom_table, input of the atom-encode circuit), the role phasors (subj, rel, obj, quant, scope) and relation atoms it computes, and the two fractional-power number tables (core.reasoner.number_digits, input of the number-encode circuit; core.reasoner.number_codebook, input of the number-decode circuit). Seeded; verified bit-identical on load.",
       "init_source": "phasor-binding-init",
       "update_path": "none"
     },

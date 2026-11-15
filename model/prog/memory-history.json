@@ -1,0 +1,21 @@
+{
+  "id": "memory-history",
+  "version": 1,
+  "seed_entry": "memory-write-circuits",
+  "description": "Episodic history compiled to the neural ISA: valid episodes whose key matches the query key (dot product >= 0.95). Parameters equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "memory_history",
+    "codec": {
+      "positions": 48,
+      "code_rows": 256,
+      "code_dim": 16
+    },
+    "slots": 2048,
+    "key_dim": 128,
+    "key_words": 1024,
+    "episodes": 4096,
+    "same_key_threshold": 0.95,
+    "unconfirmed": 0.5,
+    "confirmed": 1.0
+  }
+}

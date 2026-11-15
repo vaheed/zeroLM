@@ -405,3 +405,40 @@ fn over_long_text_is_refused_and_changes_nothing() {
     assert!(matches!(m.query(&long), Err(zerolm_memory::MemoryError::TextTooLong { .. })));
     assert_eq!(m.checkpoint_bytes(), before);
 }
+
+#[test]
+fn the_default_value_circuits_are_the_shipped_pinned_specs() {
+    use zerolm_memory::value_circuits;
+    let cfg = zerolm_memory::MemoryConfig::default();
+    let store = zerolm_memory::MemoryStore::new(cfg).unwrap();
+    let tensors = store.tensors();
+    for (spec, built) in value_circuits::specs(&cfg, 256, zerolm_engine::bootstrap::EMBED_DIM).iter().zip(store.value_circuits().all()) {
+        let shipped = zerolm_wsp::shipped(&spec.id).unwrap();
+        assert_eq!(zerolm_wsp::compile(spec).unwrap().sha256(), shipped.sha256(), "MemoryConfig::default() must compile to model/prog/{}.json", spec.id);
+        assert_eq!(built.sha256(), shipped.sha256());
+        let prog: Vec<_> = tensors.iter().filter(|t| t.name.starts_with(&format!("prog.{}.", spec.id))).collect();
+        assert_eq!(prog.len(), shipped.tensors.len());
+        assert!(prog.iter().all(|t| t.group == "w_prog"));
+    }
+}
+
+#[test]
+fn the_write_circuits_use_the_store_metadata_layout() {
+    use zerolm_memory::persistent_memory::{ep_field, field, ACTIVE, CONFIRMED, DELETED, EMPTY, OPS, SUPERSEDED, UNCONFIRMED};
+    use zerolm_wsp::circuits::memory_write as w;
+    assert_eq!((w::META_COLS, w::EP_COLS), (field::COUNT, ep_field::COUNT));
+    assert_eq!(
+        [w::field::STATUS, w::field::CONFIDENCE, w::field::UPDATED_LO, w::field::UPDATED_HI, w::field::SUPERSEDES, w::field::SUPERSEDED_BY, w::field::CONTRADICTIONS],
+        [field::STATUS, field::CONFIDENCE, field::UPDATED_LO, field::UPDATED_HI, field::SUPERSEDES, field::SUPERSEDED_BY, field::CONTRADICTIONS]
+    );
+    assert_eq!([w::ep_field::OP, w::ep_field::SLOT, w::ep_field::VALID], [ep_field::OP, ep_field::SLOT, ep_field::VALID]);
+    assert_eq!([w::EMPTY, w::ACTIVE, w::SUPERSEDED, w::DELETED], [EMPTY, ACTIVE, SUPERSEDED, DELETED]);
+    let code = |op: &str| OPS.iter().position(|o| *o == op).unwrap() as f32;
+    assert_eq!(
+        [w::OP_ADD, w::OP_UNCHANGED, w::OP_CONTRADICTION, w::OP_SUPERSEDE, w::OP_CONFIRM, w::OP_FORGET],
+        [code("add"), code("unchanged"), code("contradiction"), code("supersede"), code("confirm"), code("forget")]
+    );
+    let spec = zerolm_memory::value_circuits::specs(&zerolm_memory::MemoryConfig::default(), 256, zerolm_engine::bootstrap::EMBED_DIM);
+    let zerolm_wsp::Circuit::MemoryWrite(p) = &spec[3].circuit else { panic!("memory-write spec") };
+    assert_eq!((p.unconfirmed, p.confirmed), (UNCONFIRMED, CONFIRMED));
+}

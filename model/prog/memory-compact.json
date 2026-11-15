@@ -1,0 +1,21 @@
+{
+  "id": "memory-compact",
+  "version": 1,
+  "seed_entry": "memory-write-circuits",
+  "description": "Memory compaction compiled to the neural ISA: active slots move to the lowest slots in order (top-k), supersession links and episodic slot references are remapped through the permutation (-1 when the target is gone), and the remaining rows become empty records. Parameters equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "memory_compact",
+    "codec": {
+      "positions": 48,
+      "code_rows": 256,
+      "code_dim": 16
+    },
+    "slots": 2048,
+    "key_dim": 128,
+    "key_words": 1024,
+    "episodes": 4096,
+    "same_key_threshold": 0.95,
+    "unconfirmed": 0.5,
+    "confirmed": 1.0
+  }
+}

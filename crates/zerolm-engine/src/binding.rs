@@ -11,6 +11,9 @@
 //!   identical ones give 1, a bundle of k pairs matches each pair at ~1.
 //! - Numbers use fractional-power encoding: `number(n)_k = exp(i n theta_k)`,
 //!   so `bind(number(a), number(b)) == number(a + b)`: addition is binding.
+//!   [`Space`] only initializes the two seeded number tables (digit phasors and
+//!   the cleanup codebook); encoding and decoding run as compiled circuits
+//!   (`number-encode`, `number-decode` in `zerolm-wsp`).
 //!
 //! Everything is programmed and seeded; nothing here is learned.
 
@@ -153,32 +156,16 @@ impl Space {
         &self.number_base
     }
 
-    /// Clean up a noisy number vector to the best integer in `range`.
-    /// Scans the range with a rotating phasor (`number(n+1) = number(n) * number(1)`
-    /// in f64), so no trigonometry runs per candidate.
-    pub fn decode_number(&self, v: &Hv, range: std::ops::RangeInclusive<i64>) -> (i64, f32) {
-        let (start, end) = (*range.start(), *range.end());
-        let d = self.d;
-        let mut cur: Vec<(f64, f64)> = self.number_base.iter().map(|t| ((start as f64 * t).cos(), (start as f64 * t).sin())).collect();
-        let step: Vec<(f64, f64)> = self.number_base.iter().map(|t| (t.cos(), t.sin())).collect();
-        let (re, im) = (v.re(), v.im());
-        let mut best = (start, f32::NEG_INFINITY);
-        let mut n = start;
-        while n <= end {
-            let mut s = 0.0f64;
-            for k in 0..d {
-                s += re[k] as f64 * cur[k].0 + im[k] as f64 * cur[k].1;
-            }
-            let s = (s / d as f64) as f32;
-            if s > best.1 {
-                best = (n, s);
-            }
-            for (c, st) in cur.iter_mut().zip(&step) {
-                *c = (c.0 * st.0 - c.1 * st.1, c.0 * st.1 + c.1 * st.0);
-            }
-            n += 1;
-        }
-        best
+    /// Digit table of the `number-encode` circuit (`10 places x 2d`): row
+    /// `10 q + v` is `number(v 10^q)`.
+    pub fn digit_table(&self, places: usize) -> Vec<f32> {
+        (0..places).flat_map(|q| (0..10).flat_map(move |v| self.number(v * 10i64.pow(q as u32)).data)).collect()
+    }
+
+    /// Cleanup codebook of the `number-decode` circuit (`(2 range + 1) x 2d`):
+    /// row `j` is `number(j - range)`.
+    pub fn codebook(&self, range: i64) -> Vec<f32> {
+        (-range..=range).flat_map(|n| self.number(n).data).collect()
     }
 }
 
@@ -206,11 +193,15 @@ mod tests {
         let s = Space::new(1, 512);
         let five = bind(&s.number(3), &s.number(2));
         assert!((sim(&five, &s.number(5)) - 1.0).abs() < 1e-3);
-        assert_eq!(s.decode_number(&five, 0..=100).0, 5);
-        assert_eq!(s.decode_number(&unbind(&s.number(3), &s.number(7)), -50..=50).0, -4);
+        assert!((sim(&unbind(&s.number(3), &s.number(7)), &s.number(-4)) - 1.0).abs() < 1e-3);
         assert!(sim(&s.number(4), &s.number(5)).abs() < 0.15);
-        for n in [-1000, -3, 0, 7, 999, 1000] {
-            assert_eq!(s.decode_number(&s.number(n), -1000..=1000).0, n);
-        }
+        // Digit products give the numeral's vector (the number-encode identity).
+        let digits = s.digit_table(3);
+        let row = |q: usize, v: usize| Hv::from_data(512, &digits[(10 * q + v) * 1024..(10 * q + v + 1) * 1024]);
+        let n907 = bind(&bind(&row(2, 9), &row(1, 0)), &row(0, 7));
+        assert!((sim(&n907, &s.number(907)) - 1.0).abs() < 1e-4);
+        let book = s.codebook(10);
+        assert_eq!(book.len(), 21 * 1024);
+        assert_eq!(&book[..1024], &s.number(-10).data[..]);
     }
 }

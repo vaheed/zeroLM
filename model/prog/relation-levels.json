@@ -1,0 +1,15 @@
+{
+  "id": "relation-levels",
+  "version": 1,
+  "seed_entry": "relation-decide-circuits",
+  "description": "Attribute inheritance ('can') as a circuit: breadth-first levels over positive isa edges from x (max_depth + 1 levels), latching positive and (with negation) negative can edges to v at the first level that has any. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "relation_levels",
+    "dim": 512,
+    "meta_cols": 10,
+    "max_depth": 8,
+    "match_margin": 0.5,
+    "cleanup_min": 0.3,
+    "symbol_same": 0.9
+  }
+}

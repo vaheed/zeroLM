@@ -1,0 +1,11 @@
+{
+  "id": "number-decode",
+  "version": 1,
+  "seed_entry": "number-decode-circuit",
+  "description": "Number cleanup compiled to the neural ISA: a noisy number phasor is scored against core.reasoner.number_codebook (row j = number(j - range)), the top-1 row is selected, and its integer value and clean row are read out. range equals number_range and dim equals dim in model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "number_decode",
+    "range": 1000,
+    "dim": 512
+  }
+}

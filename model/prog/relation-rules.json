@@ -1,0 +1,15 @@
+{
+  "id": "relation-rules",
+  "version": 1,
+  "seed_entry": "relation-decide-circuits",
+  "description": "Conditionals as a circuit: backward levels from a property over in-scope rules ('if <something or x> is q then it is p'), latching the first level at which x has a frontier property directly; the proof is that fact plus the rule chain. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "relation_rules",
+    "dim": 512,
+    "meta_cols": 10,
+    "max_depth": 8,
+    "match_margin": 0.5,
+    "cleanup_min": 0.3,
+    "symbol_same": 0.9
+  }
+}

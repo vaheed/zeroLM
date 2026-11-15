@@ -168,9 +168,22 @@ fn every_tensor_belongs_to_a_declared_weight_group() {
 
 #[test]
 fn default_config_compiles_to_the_shipped_pinned_circuits() {
-    use zerolm_reasoner::circuits::{graph_spec, reach_spec, GRAPH_ID, REACH_ID};
+    use zerolm_reasoner::circuits::*;
     let cfg = ReasonerConfig::default();
-    for (spec, id) in [(graph_spec(&cfg), GRAPH_ID), (reach_spec(&cfg), REACH_ID)] {
+    for (spec, id) in [
+        (graph_spec(&cfg), GRAPH_ID),
+        (reach_spec(&cfg), REACH_ID),
+        (atom_spec(&cfg), ATOM_ID),
+        (number_encode_spec(&cfg), NUMBER_ENCODE_ID),
+        (number_decode_spec(&cfg), NUMBER_DECODE_ID),
+        (probe_spec(&cfg), PROBE_ID),
+        (cleanup_spec(&cfg), CLEANUP_ID),
+        (decide_spec(&cfg, JOIN_ID), JOIN_ID),
+        (decide_spec(&cfg, LEVELS_ID), LEVELS_ID),
+        (decide_spec(&cfg, RULES_ID), RULES_ID),
+        (decide_spec(&cfg, COUNTS_ID), COUNTS_ID),
+        (decide_spec(&cfg, VERDICT_ID), VERDICT_ID),
+    ] {
         let built = zerolm_wsp::compile(&spec).unwrap();
         assert_eq!(built.sha256(), zerolm_wsp::shipped(id).unwrap().sha256(), "{id}: ReasonerConfig::default() must compile to model/prog/{id}.json");
     }

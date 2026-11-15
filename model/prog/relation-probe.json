@@ -1,0 +1,14 @@
+{
+  "id": "relation-probe",
+  "version": 1,
+  "seed_entry": "relation-probe-circuits",
+  "description": "Statement write decision compiled to the neural ISA: role-filler pairs (fillers and one-hot role selectors) are bound with core.reasoner.roles and bundled; an active slot of memory.relations.slots with the same polarity and role count and sim >= K - margin is a duplicate; the statement is stored (row and metadata row output, zero otherwise) only when its subject resolved and it is not a duplicate; the discourse state is updated (decay * state + subject) when the subject resolved. dim, match_margin, pronoun_decay equal model/specs/reasoning.json; meta columns as in zerolm-reasoner field.",
+  "circuit": {
+    "kind": "relation_probe",
+    "dim": 512,
+    "meta_cols": 10,
+    "n_roles_col": 9,
+    "match_margin": 0.5,
+    "discourse_decay": 0.5
+  }
+}

@@ -70,14 +70,14 @@ The header is `{"program": <Program>, "tensors": [{"name", "rows", "cols"}, ...]
 
 ## The uniform-engine gate
 
-`cargo run --release -p zerolm-eval --bin zerolm-uniform` (about 2 minutes; report schema `research/schemas/uniform-engine-report.schema.json`):
+`cargo run --release -p zerolm-eval --bin zerolm-uniform` (about 4 minutes; report schema `research/schemas/uniform-engine-report.schema.json`):
 
 | Check | What it shows |
 |---|---|
 | circuits pinned and reproducible | every spec in `model/prog/` compiles twice to the same SHA-256, equal to `model/prog/pinned.json` |
 | patch round trip | for every circuit: a one-value patch applies, a second apply is refused, and revert restores the original hash |
-| memory reference parity | 400 memory queries (taught keys and unknown keys) reproduced bit for bit from the exported bundle |
-| reasoning reference parity | every circuit run behind a generated world's questions, intact and with each operator ablated, replayed on the reference interpreter (970 runs, all bit-exact) |
+| memory reference parity | 400 memory queries (taught keys and unknown keys) through `memory-encode` and `memory-read`, plus a short session of new, repeated, contradicting, corrected, confirmed, and forgotten facts, history, compaction, and fast associations through the write circuits, `fast-write` (including its final `memory.fast` state), and `fast-recall`: every run reproduced bit for bit from the exported bundles |
+| reasoning reference parity | every circuit run while a generated world is taught and its questions answered, intact and with each operator ablated, replayed on the reference interpreter (3,520 runs, all bit-exact; every decision circuit included) |
 | host audit | the model-path files listed in `model/prog/host-audit.json` contain no text processing; host code that still makes content decisions is listed as **pending** |
 
 The gate passes when every check holds. The milestone counts as complete only when the pending list is also empty, which means all model behavior is in weights.
@@ -92,6 +92,67 @@ The gate passes when every check holds. The milestone counts as complete only wh
 4. Bind the three: $a = u_1 \otimes u_2 \otimes u_3$ (elementwise complex product).
 
 Two different names collide only if all three hashes collide (probability about $1024^{-3}$), and the phases of unrelated names are independent, so their cosine is about 0 with standard deviation $1/\sqrt{2d}$. The host copies bytes and memoizes the circuit's output by the same key; it inspects no byte.
+
+## The value codec and W_FAST circuits
+
+`model/prog/value-encode.json`, `fast-recall.json`, `fast-write.json`, compiled by `zerolm_wsp::circuits::value_codec`; they replace the host value encoder, the host nearest-code decoder, and the host fast-weight code (`retrieval.rs` and `fast_weights.rs` are deleted). Bound tensors: the byte code table $E$ (`core.embed`, 256 x 16), the separator $P$ (`core.fast_separator`), and `memory.fast` (a weight for recall, the `delta_write` state for writes).
+
+- `value-encode`: value bytes (NUL-padded to 48) compared with the indices 0..255 (`ge` both ways) give a one-hot $O$; the row is $OE$, reshaped to 1 x 768.
+- `fast-recall`: $\sigma(k) = \mathrm{topk}_{32}(Pk) / \sqrt{32}$, the read $M\sigma$, and the same decoding.
+- `fast-write`: the same $\sigma$, the value encoded as in `value-encode`, then `delta_write` with learning rate 0 and decay 0.99 (decay only), and `delta_write` with learning rate 1, epsilon $10^{-6}$ and decay 1 (the delta rule on the decayed matrix).
+
+`value-encode` remains a standalone pinned program (the write circuits encode values in-circuit with the same block). The nearest-code decoding and the byte comparison that tell an unchanged fact from a contradiction are part of `memory-write` (below).
+
+## The memory write circuits
+
+`model/prog/memory-{write,forget,compact,history}.json`, compiled by `zerolm_wsp::circuits::memory_write`. They decide every change to the semantic and episodic memory; the host stamps a write with what it owns (sequence number, source, provenance, key word count), refuses a write past capacity, and moves the rows the outputs specify.
+
+- `memory-write` (teach, correct, confirm; a one-hot `op`): the same-key slot is the best active key with $k \cdot K_s \ge 0.95$; its value row is decoded (nearest code) and compared byte by byte with the new value; the free slot is the lowest empty one (`topk`, ties to the lowest index). The outcome is one-hot: teach gives unchanged, conflict, or stored; correct gives unchanged, superseded, or stored; confirm gives confirmed or unknown. Outputs: the new slot's key, key-word, value (encoded in-circuit), and metadata rows (zero unless a slot is written; a superseding record links to the old slot), the old slot's metadata after the operation (contradictions + 1, or status superseded with a forward link, or confidence confirmed, and the updated time), and the episode row (op code and slot).
+- `memory-forget`: the same-key slot, then one supersession link per step for as many steps as there are slots (any chain is followed; visited slots are not revisited), the valid episodic records that refer to the chain (their keys are erased), and the metadata with the chain marked deleted.
+- `memory-compact`: active slots first in index order (`topk` with $k = S$), a permutation matrix $P$ (row $j$ holds old slot $\mathrm{order}_j$), the map old $\to$ new ($-1$ for reclaimed slots), and every supersession link and episodic slot reference remapped through it; rows past the active ones become empty records.
+- `memory-history`: valid episodes whose key has $k \cdot e \ge 0.95$ with the query key.
+
+## The reasoner write circuits
+
+`model/prog/relation-probe.json` and `model/prog/symbol-cleanup.json`, compiled by `zerolm_wsp::circuits::probe`. They decide every reasoner write; the host only appends their output rows at its slot and codebook counters (and refuses a write past capacity).
+
+- `relation-probe` (a statement): inputs `fillers` ($K \times 2d$), one-hot `role_sel` ($K \times 5$), the metadata `record` the statement would get, `gate` (1 when the subject resolved), and the discourse state. Roles are selected from `core.reasoner.roles`, bound to the fillers, and summed into $q = \sum_k \rho_{r_k} \circledast f_k$. An active slot with the record's polarity, $K$ stored pairs, and $\mathrm{sim}(\text{slot}, q) \ge K - 0.5$ is a duplicate. `stored` $=$ gate $\cdot$ (1 $-$ duplicate); the outputs `row` $= \text{stored} \cdot q$ and `meta_row` $= \text{stored} \cdot \text{record}$ are what the host appends; `context_out` is $0.5\,c + s$ (s the subject filler) when gate is 1, else $c$. With no slots yet, the host binds one all-zero inactive row, so no tensor is empty.
+- `symbol-cleanup` (a name or "it"): input $v$, a one-hot `mode`, and `gate`. Cosines $c_i = C_i \cdot \hat v / \sqrt d$ with every codebook row, the best row, and `found` when $c \ge$ the mode's threshold: 0.9 (the same symbol) or 0.4 (resolving "it" from the discourse state; a zero state never resolves). `added` $=$ gate $\cdot$ (1 $-$ found) and `row` $=$ added $\cdot v$: interning appends that row. An empty codebook is bound as one zero row.
+
+The binding ablation binds identity role phasors; the discourse-state ablation keeps the state at zero.
+
+## The decision circuits
+
+Compiled by `zerolm_wsp::circuits::decide` (`model/prog/relation-{join,levels,rules,counts,verdict}.json`). They replace the operators' Rust control flow: each is a fixed number of steps over the C5 outputs (`subj_sim`, `obj_t`, `pos`, `neg`), with $E_r[s, i] = [\mathrm{subj\_sim}[s,i] + \mathrm{sim}(\text{slot}_s, r \circledast \rho_{\text{rel}}) \ge 1.5] \cdot \mathrm{pol}[s]$ the r-edges leaving symbol i. Proofs are slot masks or premise matrices (row j = slots on the proof of j); among candidates the shortest proof wins (score $10^6 - 1 - \text{length}$, ties to the lowest slot).
+
+| circuit | operator | computation |
+|---|---|---|
+| `relation-join` | negation | the shortest negative r-edge from $\{x\} \cup$ anc(x) to $\{y\} \cup$ anc(y) (ancestors and their premise matrices from two C6 runs; with class inclusion disabled, only x and y) |
+| `relation-levels` | attribute inheritance | breadth-first levels over positive isa edges; at the first level whose frontier has a positive or negative can-edge to v, both are latched ($\mathrm{done} \leftarrow \max(\mathrm{done}, \mathrm{found})$) |
+| `relation-rules` | conditionals | backward levels from property p over in-scope rules (scope "something" or x, cosine $\ge 0.3$), latched at the first level where x has a frontier property directly |
+| `relation-counts` | arithmetic | breadth-first over "more" edges carrying $\mathrm{num}(\sum \delta)$ by binding cleaned differences; each reached node's count is cleaned up, bound to its carried sum, and decoded; one distinct value is the answer, several are a contradiction |
+| `relation-verdict` | combination | $(p, n) \mapsto$ yes $p\bar n$, no $\bar p n$, contradiction $pn$, unknown $\bar p \bar n$, and the union of the supporting proofs |
+
+Each operator's enable constant is its own block, so zeroing it is the operator ablation. The host chooses which circuits a question's parsed form runs and labels the result from proof lengths and levels; it makes no content decision.
+
+## The number circuits
+
+`model/prog/number-encode.json` and `model/prog/number-decode.json`, compiled by `zerolm_wsp::circuits::number`. They replace the host's fractional-power number encoder and its cleanup scan. Numbers are $\mathrm{num}(n)_k = e^{i n \phi_k}$ with a seeded base $\phi$, and two seeded tables are initialized from it (bound model tensors, verified on load): the digit table $D$ (`core.reasoner.number_digits`, 70 rows, row $10q + v = \mathrm{num}(v\,10^q)$) and the codebook $C$ (`core.reasoner.number_codebook`, 2,001 rows, row $j = \mathrm{num}(j - 1000)$).
+
+**`number-encode`.** Input: a row of $L = 8$ byte values holding the decimal numeral (optional leading `-`) at positions $0..\ell$. Because $\mathrm{num}$ is a homomorphism from addition to binding, $\mathrm{num}(\sum_q v_q 10^q) = \circledast_q\, \mathrm{num}(v_q 10^q)$:
+
+1. `classify`: compare each byte with the codes 48..57 (`ge` both ways, `mul`): a digit one-hot $O \in \{0,1\}^{L \times 10}$ and the digit indicator $s = O\mathbf{1}$.
+2. `position`: the place of byte $j$ is the number of digits after it, $p = s^\top U$ with $U_{ij} = [i > j]$; compared with the places $0..6$ it gives a one-hot $P \in \{0,1\}^{L \times 7}$.
+3. `select`: $S = (P\,\mathrm{Spread}) \odot (O\,\mathrm{Tile})$ has a single 1 at column $10q + v$ in each digit row, so $SD$ holds $\mathrm{num}(v_j 10^{q_j})$ per digit byte.
+4. `fill`: non-digit bytes (padding, the sign) get the identity phasor $\mathrm{num}(0)$: add $(1 - s)\,e$ with $e = [1, \dots, 1, 0, \dots, 0]$.
+5. `product`: bind the $L$ rows.
+6. `sign`: if byte 0 equals 45, negate the imaginary half (conjugation, $\mathrm{num}(-n) = \overline{\mathrm{num}(n)}$).
+
+A digit beyond the seventh place selects no row, which zeroes the output; the parser only produces integers up to $10^6$. The output equals the host formula up to `f32` rounding of the products (similarity $1 \pm 10^{-4}$, unit test).
+
+**`number-decode`.** Input: a vector $v$ (1 x $2d$). `matvec` scores $Cv$, `topk` keeps the best row (ties to the lower index), and the mask reads out the integer (a constant column $-1000..1000$, exact in `f32`) and the clean row of $C$. The arithmetic operator binds clean rows and decodes again, so a sum is exactly `decode(num(a) * num(b))`.
+
+Ablation (unit test): zeroing `sign` zeroes every output; zeroing `position` makes each digit select all of its places (cosine with the true vector about 1/7); zeroing `readout` reads every number as 0.
 
 ## Why the zero-skip is exact
 

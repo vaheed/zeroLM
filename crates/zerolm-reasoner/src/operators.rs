@@ -1,58 +1,56 @@
-//! Controlled inference operators over the relational tensor memory.
-//!
-//! Every step is a vector operation: a probe (thresholded attention over
-//! slots), unbinding a role, cleanup against the codebook, or binding number
-//! vectors (addition). The control flow of each operator (which probe to issue
-//! next, the depth limit, how polarities combine) is programmed and documented
-//! here; nothing is learned. Derived answers are never written back to memory.
+//! Inference operators as a fixed sequence of compiled circuits per question
+//! form (`docs/neural-isa.md`): C6 `relation-reach` (transitive chains),
+//! `relation-join` (negation), `relation-levels` (attribute inheritance),
+//! `relation-rules` (conditionals), `relation-counts` (arithmetic), and
+//! `relation-verdict` (how positive and negative findings combine). The host
+//! picks the circuits from the parsed question's form, passes outputs on
+//! unchanged, and labels the result (which operators a proof used, from the
+//! circuits' proof lengths and levels). Nothing is learned, and derived
+//! answers are never written back to memory.
 
-use crate::{field, Answer, Reasoner, Verdict, OBJ, QUANT, REL, SCOPE, SUBJ};
-use std::collections::{BTreeMap, BTreeSet};
-use zerolm_engine::binding::{bind, cosine, Hv};
+use crate::{field, Answer, Reasoner, Verdict};
+use zerolm_engine::binding::{bind, Hv};
+use zerolm_engine::isa::{Buf, Outputs};
 use zerolm_engine::semantic_state::{Pred, Query};
 
-/// A derivation: premise slots and the operators that produced it.
-#[derive(Debug, Clone, Default)]
-struct Proof {
-    premises: Vec<usize>,
+/// Columns of `relation-verdict`'s one-hot output.
+const VERDICTS: [Kind; 4] = [Kind::Yes, Kind::No, Kind::Contradiction, Kind::Unknown];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Kind {
+    Yes,
+    No,
+    Contradiction,
+    Unknown,
+}
+
+/// One side of a yes/no question: whether a proof was found, the proof as a
+/// slot mask, and the operators it used.
+struct Finding {
+    found: f32,
+    proof: Buf,
     ops: Vec<&'static str>,
 }
 
-impl Proof {
-    fn of(premises: Vec<usize>, op: &'static str) -> Proof {
-        Proof { premises, ops: vec![op] }
-    }
-
-    fn with(mut self, op: &'static str) -> Proof {
-        self.ops.push(op);
-        self
-    }
-
-    fn join(mut self, other: Proof) -> Proof {
-        self.premises.extend(other.premises);
-        self.ops.extend(other.ops);
-        self
-    }
+fn total(b: &Buf) -> f32 {
+    b.data.iter().sum()
 }
 
-use crate::circuits::Reach;
-
 impl Reasoner {
-    /// (target symbol, slot) for every stored edge `from --rel--> target` with `polarity`.
-    fn edges(&self, from: usize, rel: &Hv, polarity: f32) -> Vec<(usize, usize)> {
-        self.matches(&[(SUBJ, self.code(from)), (REL, rel.clone())])
-            .into_iter()
-            .filter(|&s| self.slot_meta(s, field::POLARITY) == polarity)
-            .filter_map(|s| self.cleanup(&self.unbind_slot(s, OBJ)).map(|t| (t, s)))
-            .collect()
+    fn none(&self) -> Finding {
+        Finding { found: 0.0, proof: Buf::zeros(1, self.n_slots), ops: Vec::new() }
     }
 
-    fn finish(&self, verdict: Verdict, proof: Option<Proof>) -> Answer {
-        let proof = proof.unwrap_or_default();
-        let mut premises = proof.premises;
-        premises.sort_unstable();
-        premises.dedup();
-        let mut ops = proof.ops;
+    /// A C6 result as a finding: `op` when the chain is longer than one edge
+    /// (or `always`), else a direct retrieval.
+    fn chain(o: &Outputs, op: &'static str, always: bool) -> Finding {
+        let proof = o.get("proof").clone();
+        let tag = if always || total(&proof) > 1.0 { op } else { "direct" };
+        Finding { found: o.scalar("hit"), proof, ops: vec![tag] }
+    }
+
+    fn finish(&self, verdict: Verdict, mask: &[f32], mut ops: Vec<&'static str>) -> Answer {
+        let premises: Vec<usize> = mask.iter().enumerate().filter(|(_, &v)| v > 0.0).map(|(s, _)| s).collect();
         ops.sort_unstable();
         ops.dedup();
         let confidence = premises.iter().map(|&s| self.slot_meta(s, field::CONFIDENCE)).product();
@@ -61,32 +59,42 @@ impl Reasoner {
         Answer { verdict, derived, premises, confidence, operators: ops }
     }
 
-    fn decide(&self, pos: Option<Proof>, neg: Option<Proof>) -> Answer {
-        match (pos, neg) {
-            (Some(p), Some(n)) => self.finish(Verdict::Contradiction, Some(p.join(n))),
-            (Some(p), None) => self.finish(Verdict::Yes, Some(p)),
-            (None, Some(n)) => self.finish(Verdict::No, Some(n)),
-            (None, None) => self.finish(Verdict::Unknown, None),
-        }
+    fn unknown(&self) -> Answer {
+        self.finish(Verdict::Unknown, &[], Vec::new())
     }
 
-    fn unknown(&self) -> Answer {
-        self.finish(Verdict::Unknown, None)
+    /// Combine findings with `relation-verdict`.
+    fn decide(&self, pos: Finding, neg: Finding) -> Answer {
+        let o = self.run_verdict(pos.found, &pos.proof, neg.found, &neg.proof);
+        let col = o.get("verdict").data.iter().position(|&v| v == 1.0).expect("one-hot verdict");
+        let kind = VERDICTS[col];
+        let mut ops = Vec::new();
+        if matches!(kind, Kind::Yes | Kind::Contradiction) {
+            ops.extend(pos.ops);
+        }
+        if matches!(kind, Kind::No | Kind::Contradiction) {
+            ops.extend(neg.ops);
+        }
+        let verdict = match kind {
+            Kind::Yes => Verdict::Yes,
+            Kind::No => Verdict::No,
+            Kind::Contradiction => Verdict::Contradiction,
+            Kind::Unknown => Verdict::Unknown,
+        };
+        self.finish(verdict, &o.get("premises").data, ops)
     }
 
     pub fn answer(&self, q: &Query) -> Answer {
+        if self.n_slots == 0 || self.n_sym == 0 {
+            return self.unknown();
+        }
+        // An unresolved "it" is the zero vector, which no circuit matches.
+        let subject = |t| self.resolve(t).map(|(v, _)| v).unwrap_or_else(|| Hv::zeros(self.cfg.dim));
         match q {
-            Query::Holds { subj, pred } => {
-                let Some(x) = self.resolve(subj).and_then(|(v, _)| self.find_symbol(&v)) else { return self.unknown() };
-                self.holds(x, pred)
-            }
-            Query::Count { subj, thing } => {
-                let Some(x) = self.resolve(subj).and_then(|(v, _)| self.find_symbol(&v)) else { return self.unknown() };
-                self.count_answer(x, thing)
-            }
+            Query::Holds { subj, pred } => self.holds(&subject(subj), pred),
+            Query::Count { subj, thing } => self.count_answer(&subject(subj), thing),
             Query::Which { dim, higher, a, b } => {
-                let (Some(ia), Some(_)) = (self.known(a), self.known(b)) else { return self.unknown() };
-                let ans = self.holds(ia, &Pred::Greater { dim: dim.clone(), other: b.clone() });
+                let ans = self.holds(&self.symbol(a), &Pred::Greater { dim: dim.clone(), other: b.clone() });
                 let pick = |first: bool| Verdict::Choice(if first { a.clone() } else { b.clone() });
                 let verdict = match ans.verdict {
                     Verdict::Yes => pick(*higher),
@@ -98,199 +106,74 @@ impl Reasoner {
         }
     }
 
-    fn holds(&self, x: usize, pred: &Pred) -> Answer {
-        let ops = self.ops;
+    fn holds(&self, x: &Hv, pred: &Pred) -> Answer {
         match pred {
             Pred::Isa(c) => {
-                let Some(y) = self.known(c) else { return self.unknown() };
-                let isa = self.rel("isa").clone();
-                let anc = self.reach(x, &isa, "class_inclusion");
-                let tag = |p: &Vec<usize>| if p.len() > 1 { "class_inclusion" } else { "direct" };
-                let pos = anc.get(&y).map(|p| Proof::of(p.clone(), tag(p)));
-                let neg = if ops.negation {
-                    let mut sources: Vec<(usize, Vec<usize>)> = vec![(x, Vec::new())];
-                    let mut targets: Reach = BTreeMap::from([(y, Vec::new())]);
-                    if ops.class_inclusion {
-                        sources.extend(anc.iter().map(|(k, v)| (*k, v.clone())));
-                        targets.extend(self.reach(y, &isa, "class_inclusion"));
-                    }
-                    let mut best: Option<Proof> = None;
-                    for (a, pa) in &sources {
-                        for (z, s) in self.edges(*a, &isa, -1.0) {
-                            if let Some(pz) = targets.get(&z) {
-                                let mut prem = pa.clone();
-                                prem.push(s);
-                                prem.extend(pz);
-                                let mut p = Proof::of(prem, "negation");
-                                if !pa.is_empty() || !pz.is_empty() {
-                                    p = p.with("class_inclusion");
-                                }
-                                if best.as_ref().map(|b| p.premises.len() < b.premises.len()).unwrap_or(true) {
-                                    best = Some(p);
-                                }
-                            }
-                        }
-                    }
-                    best
-                } else {
-                    None
-                };
-                self.decide(pos, neg)
+                let (y, isa) = (self.symbol(c), self.rel("isa").clone());
+                let from_x = self.run_reach(x, &y, &isa, "class_inclusion");
+                let from_y = self.run_reach(&y, &y, &isa, "class_inclusion");
+                let pos = Self::chain(&from_x, "class_inclusion", false);
+                let j = self.run_join(x, &y, &isa, Some(&from_x), Some(&from_y));
+                let mut ops = vec!["negation"];
+                if j.scalar("len") > 1.0 {
+                    ops.push("class_inclusion");
+                }
+                self.decide(pos, Finding { found: j.scalar("found"), proof: j.get("proof").clone(), ops })
             }
             Pred::Can(v) => {
-                let Some(v) = self.known(v) else { return self.unknown() };
-                let (can, isa) = (self.rel("can").clone(), self.rel("isa").clone());
-                let mut frontier: Vec<(usize, Vec<usize>)> = vec![(x, Vec::new())];
-                let mut visited = BTreeSet::from([x]);
-                for level in 0..=self.cfg.max_depth {
-                    let (mut pos, mut neg): (Option<Proof>, Option<Proof>) = (None, None);
-                    for (a, pa) in &frontier {
-                        let found = |pol: f32| {
-                            self.edges(*a, &can, pol).into_iter().find(|(t, _)| *t == v).map(|(_, s)| {
-                                let mut prem = pa.clone();
-                                prem.push(s);
-                                Proof::of(prem, if level > 0 { "attribute_inheritance" } else { "direct" })
-                            })
-                        };
-                        pos = pos.or_else(|| found(1.0));
-                        if ops.negation {
-                            neg = neg.or_else(|| found(-1.0).map(|p| p.with("negation")));
-                        }
-                    }
-                    if pos.is_some() || neg.is_some() {
-                        return self.decide(pos, neg);
-                    }
-                    if !ops.attribute_inheritance {
-                        break;
-                    }
-                    let mut next = Vec::new();
-                    for (a, pa) in &frontier {
-                        for (t, s) in self.edges(*a, &isa, 1.0) {
-                            if visited.insert(t) {
-                                let mut p = pa.clone();
-                                p.push(s);
-                                next.push((t, p));
-                            }
-                        }
-                    }
-                    if next.is_empty() {
-                        break;
-                    }
-                    frontier = next;
-                }
-                self.unknown()
+                let o = self.run_levels(x, &self.symbol(v), self.rel("can"), self.rel("isa"));
+                let tag = if o.scalar("level") > 0.0 { "attribute_inheritance" } else { "direct" };
+                let pos = Finding { found: o.scalar("pos_found"), proof: o.get("pos_proof").clone(), ops: vec![tag] };
+                let neg = Finding { found: o.scalar("neg_found"), proof: o.get("neg_proof").clone(), ops: vec![tag, "negation"] };
+                self.decide(pos, neg)
             }
             Pred::In(y) => {
-                let Some(y) = self.known(y) else { return self.unknown() };
-                let rel = self.rel("in").clone();
-                let tag = |p: &Vec<usize>| if p.len() > 1 { "transitivity" } else { "direct" };
-                let pos = self.reach(x, &rel, "transitivity").get(&y).map(|p| Proof::of(p.clone(), tag(p)));
-                let neg = if ops.negation {
-                    self.edges(x, &rel, -1.0).into_iter().find(|(t, _)| *t == y).map(|(_, s)| Proof::of(vec![s], "negation"))
-                } else {
-                    None
-                };
-                self.decide(pos, neg)
+                let (y, rel) = (self.symbol(y), self.rel("in").clone());
+                let pos = Self::chain(&self.run_reach(x, &y, &rel, "transitivity"), "transitivity", false);
+                self.decide(pos, self.direct_negation(x, &y, &rel))
             }
             Pred::Prop(p) => {
-                let Some(p) = self.known(p) else { return self.unknown() };
-                let pos = self.derive_prop(x, p, 0, &mut BTreeSet::new());
-                let neg = if ops.negation {
-                    let rel = self.rel("prop").clone();
-                    self.edges(x, &rel, -1.0).into_iter().find(|(t, _)| *t == p).map(|(_, s)| Proof::of(vec![s], "negation"))
-                } else {
-                    None
-                };
-                self.decide(pos, neg)
+                let (p, rel) = (self.symbol(p), self.rel("prop").clone());
+                let o = self.run_rules(x, &p, &rel, self.rel("implies"), self.rel("something"));
+                let tag = if o.scalar("level") > 0.0 { "conditionals" } else { "direct" };
+                let pos = Finding { found: o.scalar("found"), proof: o.get("proof").clone(), ops: vec![tag] };
+                self.decide(pos, self.direct_negation(x, &p, &rel))
             }
             Pred::Greater { dim, other } => {
                 let rel = bind(self.rel("gt"), &self.symbol(dim));
-                self.order(x, other, &rel, ops.comparison, "comparison")
+                self.order(x, &self.symbol(other), &rel, self.ops.comparison, "comparison")
             }
-            Pred::Before(other) => {
-                let rel = self.rel("before").clone();
-                self.order(x, other, &rel, ops.temporal_ordering, "temporal_ordering")
-            }
+            Pred::Before(other) => self.order(x, &self.symbol(other), &self.rel("before").clone(), self.ops.temporal_ordering, "temporal_ordering"),
             Pred::Count { .. } | Pred::More { .. } => self.unknown(),
         }
     }
 
+    /// A stored negative edge x -rel-> y (`relation-join` with no ancestors).
+    fn direct_negation(&self, x: &Hv, y: &Hv, rel: &Hv) -> Finding {
+        let j = self.run_join(x, y, rel, None, None);
+        Finding { found: j.scalar("found"), proof: j.get("proof").clone(), ops: vec!["negation"] }
+    }
+
     /// Strict order: yes if a reaches b, no if b reaches a (antisymmetry).
-    /// Disabled: only a direct a -> b edge counts.
-    fn order(&self, a: usize, other: &str, rel: &Hv, enabled: bool, op: &'static str) -> Answer {
-        let Some(b) = self.known(other) else { return self.unknown() };
-        let tag = |p: &Vec<usize>| if p.len() > 1 { op } else { "direct" };
-        let pos = self.reach(a, rel, op).get(&b).map(|p| Proof::of(p.clone(), tag(p)));
-        let neg = if enabled { self.reach(b, rel, op).get(&a).map(|p| Proof::of(p.clone(), op)) } else { None };
+    /// With the operator disabled (an evaluation ablation), only a direct
+    /// a -> b edge counts and the reverse direction is not tried.
+    fn order(&self, a: &Hv, b: &Hv, rel: &Hv, enabled: bool, op: &'static str) -> Answer {
+        let pos = Self::chain(&self.run_reach(a, b, rel, op), op, false);
+        let neg = if enabled { Self::chain(&self.run_reach(b, a, rel, op), op, true) } else { self.none() };
         self.decide(pos, neg)
     }
 
-    /// Positive derivation of property `p` for `x`: a direct fact, or (with
-    /// conditionals) a rule "if <scope> is q then it is p" whose premise holds.
-    fn derive_prop(&self, x: usize, p: usize, depth: usize, visited: &mut BTreeSet<usize>) -> Option<Proof> {
-        let prop = self.rel("prop").clone();
-        if let Some((_, s)) = self.edges(x, &prop, 1.0).into_iter().find(|(t, _)| *t == p) {
-            return Some(Proof::of(vec![s], if depth > 0 { "conditionals" } else { "direct" }));
-        }
-        if !self.ops.conditionals || depth >= self.cfg.max_depth || !visited.insert(p) {
-            return None;
-        }
-        let something = self.rel("something").clone();
-        let rules = self.matches(&[(REL, self.rel("implies").clone()), (OBJ, self.code(p))]);
-        for r in rules {
-            let scope = self.unbind_slot(r, SCOPE);
-            let in_scope = cosine(&scope, &something) >= self.cfg.cleanup_min || cosine(&scope, &self.code(x)) >= self.cfg.cleanup_min;
-            if !in_scope {
-                continue;
-            }
-            let Some(q) = self.cleanup(&self.unbind_slot(r, SUBJ)) else { continue };
-            if let Some(sub) = self.derive_prop(x, q, depth + 1, visited) {
-                return Some(Proof::of(vec![r], "conditionals").join(sub));
-            }
-        }
-        None
-    }
-
-    /// Every count of `thing` derivable for `x`, with its proof.
-    fn counts(&self, x: usize, thing: &str, depth: usize, visited: &mut BTreeSet<usize>) -> Vec<(i64, Proof)> {
+    fn count_answer(&self, x: &Hv, thing: &str) -> Answer {
         let sym = self.symbol(thing);
-        let r = self.cfg.number_range;
-        let mut out: Vec<(i64, Proof)> = self
-            .matches(&[(SUBJ, self.code(x)), (REL, bind(self.rel("has"), &sym))])
-            .into_iter()
-            .filter(|&s| self.slot_meta(s, field::POLARITY) == 1.0)
-            .map(|s| (self.space().decode_number(&self.unbind_slot(s, QUANT), -r..=r).0, Proof::of(vec![s], "direct")))
-            .collect();
-        if !self.ops.arithmetic || depth >= self.cfg.max_depth || !visited.insert(x) {
-            return out;
-        }
-        for s in self.matches(&[(SUBJ, self.code(x)), (REL, bind(self.rel("more"), &sym))]) {
-            let Some(other) = self.cleanup(&self.unbind_slot(s, OBJ)) else { continue };
-            let delta = self.space().decode_number(&self.unbind_slot(s, QUANT), -r..=r).0;
-            for (c, p) in self.counts(other, thing, depth + 1, visited) {
-                // Addition is binding of fractional-power number vectors.
-                let sum = bind(&self.space().number(c), &self.space().number(delta));
-                let (n, _) = self.space().decode_number(&sum, -r..=r);
-                out.push((n, Proof::of(vec![s], "arithmetic").join(p)));
-            }
-        }
-        visited.remove(&x);
-        out
-    }
-
-    fn count_answer(&self, x: usize, thing: &str) -> Answer {
-        let all = self.counts(x, thing, 0, &mut BTreeSet::new());
-        let values: BTreeSet<i64> = all.iter().map(|(n, _)| *n).collect();
-        match values.len() {
-            0 => self.unknown(),
-            1 => {
-                let best = all.into_iter().min_by_key(|(_, p)| p.premises.len()).map(|(_, p)| p);
-                self.finish(Verdict::Number(*values.iter().next().expect("one")), best)
-            }
-            _ => {
-                let joined = all.into_iter().fold(Proof::default(), |acc, (_, p)| acc.join(p));
-                self.finish(Verdict::Contradiction, Some(joined))
-            }
+        let o = self.run_counts(x, &bind(self.rel("has"), &sym), &bind(self.rel("more"), &sym));
+        let ops = if o.scalar("arith") > 0.0 { vec!["arithmetic", "direct"] } else { vec!["direct"] };
+        let premises = &o.get("premises").data;
+        if o.scalar("found") == 0.0 {
+            self.unknown()
+        } else if o.scalar("contradiction") == 1.0 {
+            self.finish(Verdict::Contradiction, premises, ops)
+        } else {
+            self.finish(Verdict::Number(o.scalar("value") as i64), premises, ops)
         }
     }
 }

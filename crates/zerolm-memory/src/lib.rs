@@ -11,9 +11,8 @@
 
 pub mod checkpoint;
 pub mod encoder;
-pub mod fast_weights;
 pub mod persistent_memory;
 pub mod read_circuit;
-pub mod retrieval;
+pub mod value_circuits;
 
 pub use persistent_memory::{Ablation, Answer, MemoryConfig, MemoryError, MemoryEvent, MemoryStore, Outcome, Stats};

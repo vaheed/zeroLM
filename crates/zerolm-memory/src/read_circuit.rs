@@ -17,6 +17,9 @@ use zerolm_wsp::{compile, Circuit, Compiled, Spec};
 pub const ID: &str = "memory-read";
 pub const ENCODE_ID: &str = "memory-encode";
 
+/// Read weights below this are dropped from the value read (a circuit parameter).
+pub const MIN_WEIGHT: f32 = 1e-7;
+
 /// Input width of the encoder: texts up to `TEXT_BYTES - 2` bytes.
 pub const TEXT_BYTES: usize = 256;
 
@@ -104,7 +107,7 @@ pub fn spec(cfg: &MemoryConfig, code_rows: usize, code_dim: usize) -> Spec {
             beta: cfg.beta,
             read_threshold: cfg.read_threshold,
             coverage_threshold: cfg.coverage_threshold,
-            min_weight: crate::retrieval::MIN_WEIGHT,
+            min_weight: MIN_WEIGHT,
         }),
     }
 }

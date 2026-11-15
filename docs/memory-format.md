@@ -101,7 +101,7 @@ A value of bytes $v_1..v_m$ ($m \le 47$) is stored as 48 code rows, $V = [E[v_1]
 
 $$\hat b = \arg\min_b \lVert x - E_b\rVert^2 = \arg\max_b \big(2\langle x, E_b\rangle - \lVert E_b\rVert^2\big)$$
 
-The two forms are equal because $\lVert x\rVert^2$ does not depend on $b$; the circuit uses the second, a matmul plus a bias. Decoding stops at the first $\hat b = 0$ (NUL). The **margin** is the smallest gap, over decoded positions, between the best and second-best score: how far the read is from flipping a byte.
+The two forms are equal because $\lVert x\rVert^2$ does not depend on $b$; the circuit uses the second, a matmul plus a bias. Decoding stops at the first $\hat b = 0$ (NUL). The **margin** is the smallest gap, over decoded positions, between the best and second-best score: how far the read is from flipping a byte. Values are encoded in-circuit (byte one-hot times $E$), and at write time the `memory-write` circuit decodes the same-key slot's row this way and compares it byte by byte with the new value, which tells an unchanged fact from a contradiction.
 
 ### Accept rule
 
@@ -109,9 +109,9 @@ $$\text{answer} \iff s_{\text{best}} \ge 0.3 \;\wedge\; \text{cov} \ge 0.5 \;\we
 
 In the circuit this is the product of four $\{0, 1\}$ gates, multiplied into the decoded bytes, so a rejected read outputs an empty value.
 
-**Writes** address an existing slot when $s_{\text{best}} \ge 0.95$ (same fact key). That uses the circuit's `best` and `score` outputs, queried with the write key as its only word.
+**Writes** address an existing slot when $s_{\text{best}} = \max_{s\ \text{active}} k \cdot K_s \ge 0.95$ (same fact key). Every write decision (teach, correct, confirm, forget, compaction) is made by the compiled write circuits (`memory-write`, `memory-forget`, `memory-compact`; see `docs/neural-isa.md`); the host stamps sequence and provenance, refuses writes past capacity, and moves the rows the circuits specify.
 
-### Fast weights: sparse keys and the delta rule (`fast_weights.rs`)
+### Fast weights: sparse keys and the delta rule (`fast-write`, `fast-recall`)
 
 The pooled key $k$ is expanded and sparsified by a frozen projection $P \in \mathbb{R}^{1024 \times 128}$, $P_{ij} \sim \mathcal{U}(-1,1)$:
 
@@ -122,6 +122,8 @@ Two codes overlap by $\langle \sigma(k), \sigma(k')\rangle = |\mathrm{top}_a(Pk)
 $$M \leftarrow \gamma M, \qquad M \leftarrow M + \eta\, \frac{(v - M\sigma)\,\sigma^\top}{\sigma^\top\sigma + \epsilon}, \qquad \gamma = 0.99,\ \eta = 1,\ \epsilon = 10^{-6}$$
 
 Since $\sigma^\top\sigma = 1$, right after the write $M\sigma = v$ up to $\epsilon$: the newest association is stored exactly. An older association $j$ is read back as $M\sigma_j$. Its own contribution has decayed by $\gamma$ per later write, and every later write $t$ corrupted it in proportion to the code overlap $\langle\sigma_t, \sigma_j\rangle$. That is why recall falls with load (measured below).
+
+Both run as compiled circuits (`model/prog/fast-write.json`, `model/prog/fast-recall.json`, template `zerolm_wsp::circuits::value_codec`): the separation is a `matvec` with $P$, `topk` with $k = a$ (ties to the lower index), and a constant amplitude $1/\sqrt a$; the value is encoded in-circuit by a byte one-hot times $E$; the write is two `delta_write` instructions on the state `memory.fast`, the first with learning rate 0 and decay $\gamma$ (only the decay), the second with $\eta$, $\epsilon$ and decay 1, so the error is computed on the decayed matrix exactly as above. Recall reads $M\sigma(k)$ and decodes it with the same nearest-code cleanup as the semantic read.
 
 ### Integers in `f32` tensors
 

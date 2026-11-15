@@ -86,11 +86,10 @@ fn to_t(b: &Buf) -> T {
     T { r: b.rows, c: b.cols, d: b.data.clone() }
 }
 
-/// Every output of the engine equals the reference output bit for bit.
+/// Every output and final state tensor of the engine equals the reference bit for bit.
 fn same(engine: &Outputs, reference: &std::collections::BTreeMap<String, T>) -> bool {
-    engine.values.iter().all(|(n, b)| {
-        reference.get(n).map(|t| t.r == b.rows && t.c == b.cols && t.d.iter().zip(&b.data).all(|(x, y)| x.to_bits() == y.to_bits())).unwrap_or(false)
-    })
+    let eq = |b: &Buf, t: Option<&T>| t.map(|t| t.r == b.rows && t.c == b.cols && t.d.iter().zip(&b.data).all(|(x, y)| x.to_bits() == y.to_bits())).unwrap_or(false);
+    engine.values.iter().all(|(n, b)| eq(b, reference.get(n))) && engine.state.iter().all(|(n, b)| eq(b, reference.get(&format!("state:{n}"))))
 }
 
 fn circuits() -> Result<Vec<CircuitRow>, String> {
@@ -134,21 +133,63 @@ fn memory_parity() -> Result<Parity, String> {
             *p.by_program.entry(id.into()).or_default() += 1;
         }
     }
+    // Write and W_FAST circuits: a short session of new facts, repeated facts
+    // (unchanged), contradicting facts, corrections, confirmations, a
+    // forgotten chain, history, compaction, fast associations, and recalls.
+    let mut v = MemoryStore::new(MemoryConfig::default()).map_err(|e| e.to_string())?;
+    v.value_circuits().record(true);
+    let me = |e: zerolm_memory::MemoryError| e.to_string();
+    let s = "uniform:memory-writes";
+    for i in 0..24 {
+        v.teach(&format!("item{i} colour"), &format!("shade{i}"), s).map_err(me)?;
+    }
+    for i in 0..12 {
+        let value = if i % 2 == 0 { format!("shade{i}") } else { format!("tint{i}") };
+        v.teach(&format!("item{i} colour"), &value, s).map_err(me)?;
+    }
+    for i in 12..18 {
+        v.correct(&format!("item{i} colour"), &format!("hue{i}"), s).map_err(me)?;
+    }
+    for i in 18..22 {
+        v.confirm(&format!("item{i} colour"), s).map_err(me)?;
+    }
+    v.confirm("never taught key", s).map_err(me)?;
+    v.correct("item12 colour", "hue12b", s).map_err(me)?;
+    v.forget("item12 colour", s).map_err(me)?;
+    v.forget("item13 colour", s).map_err(me)?;
+    v.forget("never taught key", s).map_err(me)?;
+    v.history("item14 colour").map_err(me)?;
+    v.compact(s);
+    v.teach("after compaction", "fresh", s).map_err(me)?;
+    for i in 0..4 {
+        v.associate_fast(&format!("door{i} code"), &format!("code{i}"), "uniform:value-codec").map_err(me)?;
+    }
+    for i in 0..4 {
+        v.recall_fast(&format!("door{i} code")).map_err(me)?;
+    }
+    for rec in v.value_circuits().take_recorded() {
+        let inputs: Vec<(&str, T)> = rec.inputs.iter().map(|(n, b)| (n.as_str(), to_t(b))).collect();
+        let ok = same(&rec.outputs, &isa_ref::run(&rec.bundle, &inputs)?);
+        p.runs += 1;
+        p.mismatches += !ok as usize;
+        *p.by_program.entry(rec.program).or_default() += 1;
+    }
     Ok(p)
 }
 
-/// Reasoning: answer a generated world's questions (intact, then with each
-/// operator ablated in turn on a subset), record every circuit run, and
+/// Reasoning: teach a generated world, answer its questions (intact, then
+/// with each operator ablated in turn on a subset), record every circuit run, and
 /// replay all of them on the reference interpreter in parallel.
 fn reasoning_parity(root: &Path) -> Result<Parity, String> {
     let spec = reasoning::Spec::load(root)?;
     let seed = *spec.main_seeds.first().ok_or("no main seed")?;
     let world = reasoning::generate(&spec, seed);
     let mut r = Reasoner::new(spec.config).map_err(|e| e.to_string())?;
+    // Record from the first statement, so encoder runs while teaching are replayed too.
+    r.record_circuits(true);
     for s in &world.statements {
         r.observe(&s.text, "uniform:synthetic-world").map_err(|e| e.to_string())?;
     }
-    r.record_circuits(true);
     for q in &world.questions {
         r.ask(&q.text);
     }

@@ -1,0 +1,20 @@
+{
+  "id": "fast-write",
+  "version": 1,
+  "seed_entry": "value-codec-circuits",
+  "description": "W_FAST write compiled to the neural ISA: the same pattern separation, the value bytes encoded through core.embed in-circuit, then delta_write into the state memory.fast twice: decay 0.99 with learning rate 0, then the normalized delta rule (learning rate 1, epsilon 1e-6) on the decayed matrix. Parameters equal model/specs/memory.json.",
+  "circuit": {
+    "kind": "fast_write",
+    "codec": {
+      "positions": 48,
+      "code_rows": 256,
+      "code_dim": 16
+    },
+    "key_dim": 128,
+    "expansion": 1024,
+    "active": 32,
+    "lr": 1.0,
+    "decay": 0.99,
+    "eps": 1e-6
+  }
+}

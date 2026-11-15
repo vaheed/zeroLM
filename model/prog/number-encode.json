@@ -1,0 +1,12 @@
+{
+  "id": "number-encode",
+  "version": 1,
+  "seed_entry": "number-encode-circuit",
+  "description": "Fractional-power number encoder compiled to the neural ISA: the bytes of a decimal numeral (optional leading '-', at positions 0..len of an 8-byte input) to the phasor number(n) = exp(i n theta). Each digit byte selects row 10 q + v (q = digits after it) of core.reasoner.number_digits (number(v 10^q)); the rows are bound, and a leading '-' conjugates. No trigonometry runs. dim equals model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "number_encode",
+    "numeral_bytes": 8,
+    "places": 7,
+    "dim": 512
+  }
+}

@@ -33,6 +33,22 @@ pub enum Circuit {
     AtomEncode(circuits::atom_encode::Params),
     AttentionRead(circuits::attention_read::Params),
     KeyEncode(circuits::key_encode::Params),
+    NumberEncode(circuits::number::EncodeParams),
+    NumberDecode(circuits::number::DecodeParams),
+    ValueEncode(circuits::value_codec::CodecParams),
+    FastRecall(circuits::value_codec::FastParams),
+    FastWrite(circuits::value_codec::FastParams),
+    RelationProbe(circuits::probe::ProbeParams),
+    SymbolCleanup(circuits::probe::CleanupParams),
+    RelationJoin(circuits::relational::Params),
+    RelationLevels(circuits::relational::Params),
+    RelationRules(circuits::relational::Params),
+    RelationCounts(circuits::decide::CountParams),
+    RelationVerdict(circuits::relational::Params),
+    MemoryWrite(circuits::memory_write::WriteParams),
+    MemoryForget(circuits::memory_write::WriteParams),
+    MemoryCompact(circuits::memory_write::WriteParams),
+    MemoryHistory(circuits::memory_write::WriteParams),
     RelationGraph(circuits::relational::Params),
     RelationReach(circuits::relational::Params),
 }
@@ -119,6 +135,22 @@ pub fn compile(spec: &Spec) -> Result<Compiled, IsaError> {
         Circuit::AtomEncode(p) => circuits::atom_encode::compile(&spec.id, p)?,
         Circuit::AttentionRead(p) => circuits::attention_read::compile(&spec.id, p)?,
         Circuit::KeyEncode(p) => circuits::key_encode::compile(&spec.id, p)?,
+        Circuit::NumberEncode(p) => circuits::number::compile_encode(&spec.id, p)?,
+        Circuit::NumberDecode(p) => circuits::number::compile_decode(&spec.id, p)?,
+        Circuit::ValueEncode(p) => circuits::value_codec::compile_encode(&spec.id, p)?,
+        Circuit::FastRecall(p) => circuits::value_codec::compile_fast_recall(&spec.id, p)?,
+        Circuit::FastWrite(p) => circuits::value_codec::compile_fast_write(&spec.id, p)?,
+        Circuit::RelationProbe(p) => circuits::probe::compile_probe(&spec.id, p)?,
+        Circuit::SymbolCleanup(p) => circuits::probe::compile_cleanup(&spec.id, p)?,
+        Circuit::RelationJoin(p) => circuits::decide::compile_join(&spec.id, p)?,
+        Circuit::RelationLevels(p) => circuits::decide::compile_levels(&spec.id, p)?,
+        Circuit::RelationRules(p) => circuits::decide::compile_rules(&spec.id, p)?,
+        Circuit::RelationCounts(p) => circuits::decide::compile_counts(&spec.id, p)?,
+        Circuit::RelationVerdict(p) => circuits::decide::compile_verdict(&spec.id, p)?,
+        Circuit::MemoryWrite(p) => circuits::memory_write::compile_write(&spec.id, p)?,
+        Circuit::MemoryForget(p) => circuits::memory_write::compile_forget(&spec.id, p)?,
+        Circuit::MemoryCompact(p) => circuits::memory_write::compile_compact(&spec.id, p)?,
+        Circuit::MemoryHistory(p) => circuits::memory_write::compile_history(&spec.id, p)?,
         Circuit::RelationGraph(p) => circuits::relational::compile_graph(&spec.id, p)?,
         Circuit::RelationReach(p) => circuits::relational::compile_reach(&spec.id, p)?,
     };
@@ -139,6 +171,7 @@ pub struct Builder {
     body: Vec<Instr>,
     tensors: Vec<ProgTensor>,
     external: Vec<String>,
+    state: Vec<Decl>,
     block: String,
 }
 
@@ -151,6 +184,7 @@ impl Builder {
             body: Vec::new(),
             tensors: Vec::new(),
             external: Vec::new(),
+            state: Vec::new(),
             block: "main".into(),
         }
     }
@@ -179,6 +213,12 @@ impl Builder {
     pub fn external_dyn(&mut self, n: &str, rows: Option<usize>, cols: Option<usize>) {
         self.weights.push(Decl::dynamic(n, rows, cols));
         self.external.push(n.into());
+    }
+
+    /// A mutable model tensor (written only by `delta_write`), bound and
+    /// returned by the caller.
+    pub fn state(&mut self, n: &str, rows: usize, cols: usize) {
+        self.state.push(Decl::new(n, Some(rows), cols));
     }
 
     /// A compiled `W_PROG` constant in the current block.
@@ -232,7 +272,7 @@ impl Builder {
                 name: self.name,
                 inputs: self.inputs,
                 weights: self.weights,
-                state: Vec::new(),
+                state: self.state,
                 body: self.body,
                 outputs: outputs.iter().map(|s| s.to_string()).collect(),
             },
