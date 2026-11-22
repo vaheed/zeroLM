@@ -1,0 +1,12 @@
+{
+  "id": "template-match",
+  "version": 1,
+  "seed_entry": "template-match-circuit",
+  "description": "Generic tensor operations over externally supplied seed attributes and templates; no vocabulary, grammar, or character classes in compiler constants.",
+  "circuit": {
+    "kind": "template_match",
+    "tokens": 9,
+    "features": 20,
+    "fields": 16
+  }
+}

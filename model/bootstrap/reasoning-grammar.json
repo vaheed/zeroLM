@@ -1,7 +1,7 @@
 {
   "version": 1,
   "key_bytes": 16,
-  "tensor_sha256": "6b00fa456532c93a87824ef68d383e4c47aaaee7c680a0e5e3e4277d092d2916",
+  "tensor_sha256": "d7da6ad2f566dc419f46d532f5aef248faa3c8e5dc2def525466110d65afad6c",
   "lexicon": [
     "a",
     "able",
@@ -318,5 +318,4384 @@
       "to": [],
       "at_end": false
     }
-  ]
+  ],
+  "parser": {
+    "reserved": [
+      "a",
+      "able",
+      "after",
+      "all",
+      "an",
+      "anything",
+      "are",
+      "before",
+      "bigger",
+      "came",
+      "can",
+      "cannot",
+      "come",
+      "did",
+      "do",
+      "does",
+      "each",
+      "eight",
+      "eighteen",
+      "eleven",
+      "every",
+      "fewer",
+      "fifteen",
+      "five",
+      "followed",
+      "four",
+      "fourteen",
+      "got",
+      "happen",
+      "happened",
+      "has",
+      "have",
+      "heavier",
+      "how",
+      "if",
+      "in",
+      "inside",
+      "is",
+      "it",
+      "less",
+      "lighter",
+      "lives",
+      "located",
+      "many",
+      "more",
+      "nine",
+      "nineteen",
+      "no",
+      "not",
+      "occurred",
+      "older",
+      "one",
+      "or",
+      "own",
+      "owns",
+      "preceded",
+      "right",
+      "seven",
+      "seventeen",
+      "shorter",
+      "six",
+      "sixteen",
+      "smaller",
+      "so",
+      "something",
+      "taller",
+      "ten",
+      "than",
+      "that",
+      "the",
+      "then",
+      "thing",
+      "thirteen",
+      "three",
+      "to",
+      "true",
+      "twelve",
+      "twenty",
+      "two",
+      "unable",
+      "which",
+      "who",
+      "younger",
+      "zero"
+    ],
+    "number_words": [
+      "zero",
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+      "ten",
+      "eleven",
+      "twelve",
+      "thirteen",
+      "fourteen",
+      "fifteen",
+      "sixteen",
+      "seventeen",
+      "eighteen",
+      "nineteen",
+      "twenty"
+    ],
+    "pronouns": [
+      "it"
+    ],
+    "articles": [
+      "a",
+      "an"
+    ],
+    "quantifiers": [
+      "every",
+      "each"
+    ],
+    "leading_questions": [
+      "is",
+      "can",
+      "did",
+      "does",
+      "how",
+      "who",
+      "which"
+    ],
+    "dimensions": [
+      "height",
+      "age",
+      "weight",
+      "size"
+    ],
+    "comparatives": [
+      {
+        "word": "taller",
+        "dimension": "height",
+        "greater": true
+      },
+      {
+        "word": "shorter",
+        "dimension": "height",
+        "greater": false
+      },
+      {
+        "word": "older",
+        "dimension": "age",
+        "greater": true
+      },
+      {
+        "word": "younger",
+        "dimension": "age",
+        "greater": false
+      },
+      {
+        "word": "heavier",
+        "dimension": "weight",
+        "greater": true
+      },
+      {
+        "word": "lighter",
+        "dimension": "weight",
+        "greater": false
+      },
+      {
+        "word": "bigger",
+        "dimension": "size",
+        "greater": true
+      },
+      {
+        "word": "smaller",
+        "dimension": "size",
+        "greater": false
+      }
+    ],
+    "digit_bytes": [
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57
+    ],
+    "minus_byte": 45,
+    "suffix_byte": 115,
+    "number_limit": 1000000,
+    "whitespace": [
+      [
+        9
+      ],
+      [
+        10
+      ],
+      [
+        11
+      ],
+      [
+        12
+      ],
+      [
+        13
+      ],
+      [
+        32
+      ],
+      [
+        194,
+        133
+      ],
+      [
+        194,
+        160
+      ],
+      [
+        225,
+        154,
+        128
+      ],
+      [
+        226,
+        128,
+        128
+      ],
+      [
+        226,
+        128,
+        129
+      ],
+      [
+        226,
+        128,
+        130
+      ],
+      [
+        226,
+        128,
+        131
+      ],
+      [
+        226,
+        128,
+        132
+      ],
+      [
+        226,
+        128,
+        133
+      ],
+      [
+        226,
+        128,
+        134
+      ],
+      [
+        226,
+        128,
+        135
+      ],
+      [
+        226,
+        128,
+        136
+      ],
+      [
+        226,
+        128,
+        137
+      ],
+      [
+        226,
+        128,
+        138
+      ],
+      [
+        226,
+        128,
+        168
+      ],
+      [
+        226,
+        128,
+        169
+      ],
+      [
+        226,
+        128,
+        175
+      ],
+      [
+        226,
+        129,
+        159
+      ],
+      [
+        227,
+        128,
+        128
+      ]
+    ],
+    "question_byte": 63,
+    "templates": [
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "object": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "object": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "can",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "object": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "object": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "in",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 3,
+          "subject": 1,
+          "object": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "taller",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 1,
+          "object": 4,
+          "dimension": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "shorter",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "object": 1,
+          "dimension": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "older",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 1,
+          "object": 4,
+          "dimension": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "younger",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "object": 1,
+          "dimension": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "heavier",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 1,
+          "object": 4,
+          "dimension": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "lighter",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "object": 1,
+          "dimension": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "bigger",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 1,
+          "object": 4,
+          "dimension": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "smaller",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "object": 1,
+          "dimension": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "did",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "before",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 6,
+          "subject": 1,
+          "object": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "did",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "after",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 6,
+          "subject": 3,
+          "object": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "how",
+          "many",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "does",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "have"
+        ],
+        "question": 1,
+        "frame": {
+          "form": 4,
+          "pred": 0,
+          "subject": 4,
+          "object": 0,
+          "thing": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "how",
+          "many",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "does",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "own"
+        ],
+        "question": 1,
+        "frame": {
+          "form": 4,
+          "pred": 0,
+          "subject": 4,
+          "object": 0,
+          "thing": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "how",
+          "many",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "has",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "got"
+        ],
+        "question": 1,
+        "frame": {
+          "form": 4,
+          "pred": 0,
+          "subject": 4,
+          "object": 0,
+          "thing": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "taller",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 1,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "shorter",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 1,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "older",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 2,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "younger",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 2,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "heavier",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 3,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "lighter",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 3,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "bigger",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 4,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "who",
+          "is",
+          "smaller",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 4,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "taller",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 1,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "shorter",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 1,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "older",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 2,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "younger",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 2,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "heavier",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 3,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "lighter",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 3,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "bigger",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 4,
+          "higher": 1
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "which",
+          "is",
+          "smaller",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "or",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 5,
+          "pred": 0,
+          "subject": 3,
+          "object": 5,
+          "dimension": 4,
+          "higher": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 3,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "is",
+          {
+            "require": [
+              "term"
+            ]
+          },
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 4,
+          "subject": 1,
+          "object": 2
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "all",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "are",
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 1,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "all",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "are",
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 1,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "no",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "no",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "no",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "are",
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 1,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 1,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "ends_s",
+              "singular_name"
+            ]
+          },
+          "are",
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 1,
+          "object": 2,
+          "object_singular": 1,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "ends_s",
+              "singular_name"
+            ]
+          },
+          "are",
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 1,
+          "object": 2,
+          "object_singular": 1,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "ends_s",
+              "singular_name"
+            ]
+          },
+          "are",
+          "not",
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 1,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "every",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "cannot",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "each",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "cannot",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "cannot",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "cannot",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "all",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "all",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "no",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 1,
+          "subject_singular": 1,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 1,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "plural_subject"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 0,
+          "subject_singular": 1,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "plural_subject"
+            ]
+          },
+          "can",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 2,
+          "subject": 0,
+          "subject_singular": 1,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "plural_subject"
+            ]
+          },
+          "cannot",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 2,
+          "subject": 0,
+          "subject_singular": 1,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "not",
+          "a",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "not",
+          "an",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 1,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "in",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 3,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "in",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 3,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "not",
+          "in",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 3,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "taller",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 1,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "taller",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 1,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "shorter",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 1,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "shorter",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 1,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "older",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 2,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "older",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 2,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "younger",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 2,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "younger",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 2,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "heavier",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 3,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "heavier",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 3,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "lighter",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 3,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "lighter",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 3,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "bigger",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 4,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "bigger",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 4,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 4,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "smaller",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 4,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          "smaller",
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 5,
+          "subject": 4,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 4,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 4,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "before",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 6,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "before",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 6,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "after",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 6,
+          "subject": 2,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 2,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "after",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 6,
+          "subject": 2,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 2,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "has",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 7,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": 1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "has",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          "more",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 8,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 6,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": 1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "has",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          "fewer",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 8,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 6,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": -1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "has",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          "less",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 8,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 6,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": -1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "owns",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          {
+            "require": [
+              "singular_name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 7,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 0,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 3
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": 1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "owns",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          "more",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 8,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 6,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": 1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "owns",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          "fewer",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 8,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 6,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": -1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "owns",
+          {
+            "require": [
+              "number_valid"
+            ]
+          },
+          "less",
+          {
+            "require": [
+              "singular_name"
+            ]
+          },
+          "than",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 8,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 6,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 4
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          },
+          "number": {
+            "token": 2,
+            "feature": "number",
+            "scale": -1
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 4,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 1,
+        "frame": {
+          "form": 3,
+          "pred": 4,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 2,
+          "object_singular": 0,
+          "negated": 0,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          {
+            "require": [
+              "term"
+            ]
+          },
+          "is",
+          "not",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 1,
+          "pred": 4,
+          "subject": 0,
+          "subject_singular": 0,
+          "object": 3,
+          "object_singular": 0,
+          "negated": 1,
+          "dimension": 0,
+          "thing": 0
+        },
+        "reads": {
+          "pronoun": {
+            "token": 0,
+            "feature": "pronoun"
+          }
+        },
+        "same": []
+      },
+      {
+        "tokens": [
+          "if",
+          "something",
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "it",
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 2,
+          "premise": 3,
+          "conclusion": 6
+        },
+        "reads": {},
+        "same": []
+      },
+      {
+        "tokens": [
+          "if",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "it",
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 2,
+          "subject": 1,
+          "scope": 1,
+          "premise": 3,
+          "conclusion": 6
+        },
+        "reads": {},
+        "same": []
+      },
+      {
+        "tokens": [
+          "if",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 2,
+          "subject": 1,
+          "scope": 1,
+          "premise": 3,
+          "conclusion": 6
+        },
+        "reads": {},
+        "same": [
+          [
+            1,
+            4
+          ]
+        ]
+      },
+      {
+        "tokens": [
+          "if",
+          "something",
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "then",
+          "it",
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 2,
+          "premise": 3,
+          "conclusion": 7
+        },
+        "reads": {},
+        "same": []
+      },
+      {
+        "tokens": [
+          "if",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "then",
+          "it",
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 2,
+          "subject": 1,
+          "scope": 1,
+          "premise": 3,
+          "conclusion": 7
+        },
+        "reads": {},
+        "same": []
+      },
+      {
+        "tokens": [
+          "if",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "then",
+          {
+            "require": [
+              "name"
+            ]
+          },
+          "is",
+          {
+            "require": [
+              "name"
+            ]
+          }
+        ],
+        "question": 0,
+        "frame": {
+          "form": 2,
+          "subject": 1,
+          "scope": 1,
+          "premise": 3,
+          "conclusion": 7
+        },
+        "reads": {},
+        "same": [
+          [
+            1,
+            5
+          ]
+        ]
+      }
+    ]
+  }
 }

@@ -31,7 +31,7 @@ impl Reasoner {
             ("table_values", View::new(values.rows, values.cols, &values.data)),
         ]);
         let classified = self.exec(&g.lookup, vec![("keys", Buf::new(n, KEY_BYTES, keys))], &lookup_weights);
-        let mut ids = classified.get("values").data.clone();
+        let mut ids = classified.get("values").data.chunks_exact(crate::parser_seed::FEATURES).map(|r| r[0]).collect::<Vec<_>>();
         let mut origins: Vec<f32> = (0..n).map(|i| i as f32).collect();
         let pool: Vec<&str> = original.iter().chain(&g.words).map(String::as_str).collect();
         let mut length = n;

@@ -6,6 +6,6 @@
   "circuit": {
     "kind": "row_lookup",
     "key_cols": 16,
-    "value_cols": 1
+    "value_cols": 20
   }
 }

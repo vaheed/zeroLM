@@ -1,0 +1,9 @@
+{
+  "id": "token-number",
+  "version": 1,
+  "seed_entry": "token-number-circuit",
+  "description": "Generic tensor operations over externally supplied seed attributes and templates; no vocabulary, grammar, or character classes in compiler constants.",
+  "circuit": {
+    "kind": "token_number"
+  }
+}

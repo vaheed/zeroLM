@@ -1,0 +1,11 @@
+{
+  "id": "row-compare",
+  "version": 1,
+  "seed_entry": "row-compare-circuit",
+  "description": "Generic tensor operations over externally supplied seed attributes and templates; no vocabulary, grammar, or character classes in compiler constants.",
+  "circuit": {
+    "kind": "row_compare",
+    "key_cols": 16,
+    "value_cols": 1
+  }
+}

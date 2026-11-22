@@ -47,7 +47,7 @@
     {
       "id": "reasoning-grammar",
       "kind": "protocol_constant",
-      "description": "Bounded statement/question grammar: about 45 function words, 8 comparatives (4 dimensions), number words zero-twenty, verb normalizations, and the pronoun 'it'. Content words are open. Operator semantics (class inclusion, transitivity, inheritance, comparison, arithmetic, temporal order, negation, conditionals) are programmed. Lexical rows and ordered phrase rewrites are explicit frozen bootstrap tensors (bootstrap_grammar), initialized from model/bootstrap/reasoning-grammar.json and run by generic row-lookup and sequence-rewrite circuits; template recognition remains host code during migration.",
+      "description": "Explicit hand-written bounded grammar prior: 88 lexical rows, 23 ordered phrase rewrites, lexical and numeric attributes, Unicode whitespace, and 115 recognition templates with frame readouts. Frozen bootstrap_grammar tensors are hash-pinned; this is declared seed knowledge, not learned language or compiler constants.",
       "source": "model/bootstrap/reasoning-grammar.json",
       "derived_from_corpus": false
     },
@@ -154,6 +154,55 @@
       "kind": "structural_prior",
       "description": "One recurrent step of a shrinking sequence rewrite: match an external masked pattern against a token window, optionally require the end of the sequence, emit externally supplied replacement IDs or the first original row, and advance a cursor. Compiler constants are a first-position selector and scalars zero and one. No vocabulary or grammar.",
       "source": "crates/zerolm-wsp/src/circuits/rewrite.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "byte-lookup-circuit",
+      "kind": "structural_prior",
+      "description": "Generic row_lookup computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/row_lookup.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "masked-lookup-circuit",
+      "kind": "structural_prior",
+      "description": "Generic masked_lookup computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/row_lookup.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "row-compare-circuit",
+      "kind": "structural_prior",
+      "description": "Generic row_compare computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/row_lookup.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "token-number-circuit",
+      "kind": "structural_prior",
+      "description": "Generic token_number computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/token_number.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "token-features-circuit",
+      "kind": "structural_prior",
+      "description": "Generic token_features computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/token_features.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "question-tail-circuit",
+      "kind": "structural_prior",
+      "description": "Generic question_tail computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/question_tail.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "template-match-circuit",
+      "kind": "structural_prior",
+      "description": "Generic template_match computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
+      "source": "crates/zerolm-wsp/src/circuits/template_match.rs",
       "derived_from_corpus": false
     }
   ]

@@ -43,7 +43,7 @@ fn normalization_is_recorded_and_prior_is_in_the_checkpoint() {
     assert!(recorded.iter().any(|run| run.program == "sequence-rewrite"));
     let tensors = r.tensors();
     let prior: Vec<_> = tensors.iter().filter(|t| t.group == "bootstrap_grammar").collect();
-    assert_eq!(prior.len(), 7);
+    assert_eq!(prior.len(), 31);
     assert!(tensors.iter().any(|t| t.name.starts_with("prog.row-lookup.")));
     assert!(tensors.iter().any(|t| t.name.starts_with("prog.sequence-rewrite.")));
 }

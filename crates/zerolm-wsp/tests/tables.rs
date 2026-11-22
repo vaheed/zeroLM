@@ -101,3 +101,31 @@ fn rewrite_matches_emits_deletes_and_stops_at_the_input_end() {
     disabled.ablate_block("end").unwrap();
     assert_eq!(rewrite_once(&disabled, &[1.0, 2.0, 0.0, 0.0], 0.0, 2.0, 0.0, false).get("matched").data, [0.0]);
 }
+
+#[test]
+fn masked_lookup_ignores_unselected_columns_and_rejects_ambiguity() {
+    let c = row_lookup::compile_masked("masked", &row_lookup::Params { key_cols: 2, value_cols: 1 }).unwrap();
+    let keys = [1.0, 2.0, 1.0, 3.0];
+    let evaluate = |masks: &[f32]| run(&c,
+        vec![("keys", Buf::new(2, 2, vec![1.0, 9.0, 7.0, 9.0]))],
+        vec![("table_keys", View::new(2, 2, &keys)),
+             ("table_masks", View::new(2, 2, masks)),
+             ("table_values", View::new(2, 1, &[5.0, 6.0]))]);
+    let unique = evaluate(&[1.0, 0.0, 1.0, 1.0]);
+    assert_eq!(unique.get("values").data, [5.0, 0.0]);
+    let ambiguous = evaluate(&[1.0, 0.0, 1.0, 0.0]);
+    assert_eq!(ambiguous.get("matches").data, [2.0, 0.0]);
+    assert_eq!(ambiguous.get("values").data, [0.0, 0.0]);
+}
+
+#[test]
+fn row_compare_accumulates_equality_without_requiring_unique_rows() {
+    let c = row_lookup::compile_compare("compare", &row_lookup::Params { key_cols: 2, value_cols: 1 }).unwrap();
+    let evaluate = |keys: Vec<f32>, previous: Vec<f32>| run(&c,
+        vec![("keys", Buf::new(2, 2, keys)), ("previous", Buf::new(2, 2, previous))],
+        vec![("table_keys", View::new(2, 2, &[1.0, 2.0, 1.0, 2.0]))]);
+    let first = evaluate(vec![1.0, 2.0, 1.0, 9.0], vec![1.0; 4]);
+    assert_eq!(first.get("mask").data, [1.0, 1.0, 0.0, 0.0]);
+    let next = evaluate(vec![1.0, 9.0, 1.0, 2.0], first.get("mask").data.clone());
+    assert_eq!(next.get("mask").data, [0.0; 4]);
+}

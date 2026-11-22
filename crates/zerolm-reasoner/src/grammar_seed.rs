@@ -21,6 +21,7 @@ struct Seed {
     tensor_sha256: String,
     lexicon: Vec<String>,
     rewrites: Vec<Rewrite>,
+    parser: crate::parser_seed::Seed,
 }
 
 #[derive(Deserialize)]
@@ -35,6 +36,8 @@ pub(crate) struct Grammar {
     pub lookup: Compiled,
     pub rewrite: Compiled,
     pub tensors: Vec<Tensor>,
+    pub parser: crate::parser::Programs,
+    pub dimensions: Vec<String>,
     /// Rendering only: index zero is the unknown/padding label.
     pub words: Vec<String>,
 }
@@ -72,7 +75,7 @@ impl Grammar {
         }
         let n = seed.lexicon.len();
         let r = seed.rewrites.len();
-        let tensors = vec![
+        let mut tensors = vec![
             Tensor::new("bootstrap.reasoning.keys", GROUP, n, KEY_BYTES, keys),
             Tensor::new("bootstrap.reasoning.values", GROUP, n, 1, (1..=n).map(|i| i as f32).collect()),
             Tensor::new("bootstrap.reasoning.from_ids", GROUP, r, WINDOW, from),
@@ -81,11 +84,14 @@ impl Grammar {
             Tensor::new("bootstrap.reasoning.to_mask", GROUP, r, WINDOW, to_mask),
             Tensor::new("bootstrap.reasoning.at_end", GROUP, r, 1, at_end),
         ];
+        crate::parser_seed::augment(&seed.parser, &seed.lexicon, &mut tensors);
         assert_eq!(Self::hash(&tensors), seed.tensor_sha256, "deliberate grammar changes require re-pinning");
         Grammar {
             lookup: zerolm_wsp::shipped("row-lookup").expect("lookup compiles"),
             rewrite: zerolm_wsp::shipped("sequence-rewrite").expect("rewrite compiles"),
             tensors,
+            parser: crate::parser::Programs::new(),
+            dimensions: seed.parser.dimensions,
             words: std::iter::once(String::new()).chain(seed.lexicon).collect(),
         }
     }
@@ -100,6 +106,12 @@ impl Grammar {
             h.update_f32(&t.data);
         }
         h.finish_hex()
+    }
+
+    pub fn view(&self, name: &str) -> View<'_> {
+        let full = format!("bootstrap.reasoning.{name}");
+        let t = self.tensors.iter().find(|t| t.name == full).expect("declared parser table");
+        View::new(t.rows, t.cols, &t.data)
     }
 
     pub fn row(&self, tensor: usize, row: usize) -> View<'_> {

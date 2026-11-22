@@ -81,7 +81,7 @@
     },
     {
       "id": "bootstrap_grammar",
-      "description": "Declared bounded-language prior (bootstrap.reasoning.*): exact lexical rows and ordered shrinking rewrite tables initialized from model/bootstrap/reasoning-grammar.json. Grammar content is seed data, never W_PROG constants. Frozen, hash-pinned, and checked on load; not evidence of language acquisition.",
+      "description": "Frozen bounded grammar seed tables: lexical attributes, ordered rewrites, byte classes, and recognition templates with numeric frame readouts.",
       "init_source": "reasoning-grammar",
       "update_path": "none"
     }

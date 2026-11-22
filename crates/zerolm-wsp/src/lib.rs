@@ -12,7 +12,7 @@ pub mod patch;
 pub use compiler::{compile, parse_spec, Circuit, Compiled, ProgTensor, Spec};
 
 /// Pinned circuit specifications shipped with the model, as (file name, JSON).
-pub const SPECS: [(&str, &str); 24] = [
+pub const SPECS: [(&str, &str); 31] = [
     ("memory-read.json", include_str!("../../../model/prog/memory-read.json")),
     ("memory-encode.json", include_str!("../../../model/prog/memory-encode.json")),
     ("relation-graph.json", include_str!("../../../model/prog/relation-graph.json")),
@@ -33,6 +33,13 @@ pub const SPECS: [(&str, &str); 24] = [
     ("memory-write.json", include_str!("../../../model/prog/memory-write.json")),
     ("memory-forget.json", include_str!("../../../model/prog/memory-forget.json")),
     ("memory-compact.json", include_str!("../../../model/prog/memory-compact.json")),
+    ("byte-lookup.json", include_str!("../../../model/prog/byte-lookup.json")),
+    ("masked-lookup.json", include_str!("../../../model/prog/masked-lookup.json")),
+    ("row-compare.json", include_str!("../../../model/prog/row-compare.json")),
+    ("token-number.json", include_str!("../../../model/prog/token-number.json")),
+    ("token-features.json", include_str!("../../../model/prog/token-features.json")),
+    ("question-tail.json", include_str!("../../../model/prog/question-tail.json")),
+    ("template-match.json", include_str!("../../../model/prog/template-match.json")),
     ("row-lookup.json", include_str!("../../../model/prog/row-lookup.json")),
     ("sequence-rewrite.json", include_str!("../../../model/prog/sequence-rewrite.json")),
     ("language-lex.json", include_str!("../../../model/prog/language-lex.json")),

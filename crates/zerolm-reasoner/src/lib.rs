@@ -17,6 +17,8 @@ pub mod circuits;
 mod lexer;
 mod grammar;
 mod grammar_seed;
+mod parser_seed;
+mod parser;
 pub mod lookup;
 pub mod operators;
 pub mod oracle;
@@ -24,7 +26,7 @@ pub mod oracle;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use zerolm_engine::binding::{bind, Hv};
-use zerolm_engine::semantic_state::{parse_normalized_tokens, Fact, Pred, Rule, SemanticState, Term, Utterance};
+use zerolm_engine::semantic_state::{Fact, Pred, Rule, SemanticState, Term, Utterance};
 use zerolm_memory::checkpoint::{self, CheckpointError, Tensor};
 use zerolm_tensor::sha256::Sha256;
 use zerolm_tensor::{fnv1a, Matrix};
@@ -558,9 +560,9 @@ impl Reasoner {
     }
 
     /// Parse with compiled byte segmentation, folding, and phrase rewrites.
-    /// Template recognition remains host code during the uniform migration.
+    /// Recognition runs in compiled programs; typed binding and dispatch remain host code.
     pub fn parse(&self, text: &str) -> Option<Utterance> {
-        parse_normalized_tokens(text, self.normalized_tokens(text))
+        self.parse_circuits(text)
     }
 
     /// Process one line: statements are stored, questions are answered.
@@ -606,7 +608,7 @@ impl Reasoner {
         ];
         t.extend(fresh.grammar.tensors.iter().cloned());
         // Compiled circuit constants (W_PROG), frozen like the role phasors.
-        for c in [&fresh.atoms.circuit, &fresh.numbers.encoder, &fresh.numbers.decoder, &fresh.grammar.lookup, &fresh.grammar.rewrite].into_iter().chain(fresh.circuits.all()) {
+        for c in [&fresh.atoms.circuit, &fresh.numbers.encoder, &fresh.numbers.decoder, &fresh.grammar.lookup, &fresh.grammar.rewrite].into_iter().chain(fresh.grammar.parser.all()).chain(fresh.circuits.all()) {
             for p in &c.tensors {
                 t.push(Tensor::new(&c.qualified(&p.name), zerolm_wsp::compiler::GROUP, p.rows, p.cols, p.data.clone()));
             }

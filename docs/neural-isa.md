@@ -304,8 +304,8 @@ vocabulary. Tests cover every byte, chunk boundaries, Unicode, and causal
 ablations of classification, folding, segmentation, ordering, and continuation.
 The independent interpreter replays intact and ablated circuits, and the
 uniform-engine gate records lexer calls made by reasoning. Phrase
-normalization runs in the two generic table circuits described below; template
-matching still runs in `semantic_state::parse_normalized_tokens`.
+normalization and bounded grammar recognition run in generic table circuits.
+The former Rust parser remains an evaluation reference.
 
 `row-lookup` compares each fixed-width input row against external key rows and
 reads external values only when exactly one key matches. A duplicate match
@@ -320,7 +320,7 @@ copies only the rows and literal-pool entries selected by these outputs.
 The 88 lexical rows and 23 ordered phrase rewrites are the previously declared
 bounded grammar prior, now explicit in `model/bootstrap/reasoning-grammar.json`.
 Its tensor hash is pinned there. Initialization in `grammar_seed.rs` constructs
-seven frozen `bootstrap_grammar` tensors; checkpoint loading verifies them. This
+31 frozen `bootstrap_grammar` tensors; checkpoint loading verifies them. This
 is declared hand-written language knowledge, not learned language and not
 `W_PROG`: compiler constants contain only selectors and arithmetic scalars.
 The recurrent model's initialization pin in `model/bootstrap/seed.json` is
@@ -338,13 +338,31 @@ claim that a seeded dictionary learns a secret permutation.
 | `relation-graph` (C5) | `model/prog/relation-graph.json` (`zerolm_wsp::circuits::relational`) | per-question probe, unbind, and cleanup loops over slots | reasoning gate unchanged |
 | `relation-reach` (C6) | `model/prog/relation-reach.json` | breadth-first search in class inclusion, transitivity, comparison, temporal order, and the inclusion part of negation | reasoning gate unchanged, including every operator ablation through its `enable` block |
 
+
+`token-number` and `token-features` compute numeric, name, plural, and keyword
+attributes from external byte and lexical tables. `masked-lookup` identifies
+seeded Unicode whitespace spans, and `question-tail` detects a trailing question
+marker. `row-compare` accumulates token equality across fixed-size byte chunks,
+including unknown names of arbitrary length. `template-match` checks length,
+literal IDs, required attributes, and equality guards against 115 external
+seed templates, then emits a numeric frame using their priorities and readouts.
+The host renders that frame into typed structures for the remaining host binding
+and dispatch. Vocabulary, numeric bounds, whitespace classes, and grammar are
+explicit frozen seed data; none are compiled into `W_PROG`. Differential tests
+cover every seeded template and guard mutations, numeric and Unicode edge cases,
+and long names; block ablations establish that the circuits control recognition.
+Exported runs include the external tables for independent interpreter replay.
+The recognition-stage uniform gate reproduced all 140,692 recorded reasoning
+runs and 862 memory runs bit for bit, with zero host-scan violations. The
+milestone remains in progress because binding and dispatch are still pending.
+
 `zerolm-wsp check` recompiles every spec and compares with `model/prog/pinned.json`.
 
 ## Not yet done
 
-- The bounded-language grammar still matches token templates, detects
-  questions, and parses numerals in Rust. Mapping parsed structures to
-  role bindings and dispatching by utterance form also remain host code. The
+- Mapping parsed structures to role bindings and dispatching by utterance
+  form remain host code. Bounded grammar recognition, question detection,
+  and numeric guards now run in compiled programs. The
   byte tokenizer and case folder run in `language-lex`, and normalization runs
   in `row-lookup` and `sequence-rewrite`; symbol vectors run in
   `atom-encode`. Memory writes, fast-weight recall, and reasoning operator
