@@ -78,6 +78,12 @@
       "description": "Skill-level weight edits, accepted only via validated patches.",
       "init_source": "zeros",
       "update_path": "wsp_patch"
+    },
+    {
+      "id": "bootstrap_grammar",
+      "description": "Declared bounded-language prior (bootstrap.reasoning.*): exact lexical rows and ordered shrinking rewrite tables initialized from model/bootstrap/reasoning-grammar.json. Grammar content is seed data, never W_PROG constants. Frozen, hash-pinned, and checked on load; not evidence of language acquisition.",
+      "init_source": "reasoning-grammar",
+      "update_path": "none"
     }
   ]
 }

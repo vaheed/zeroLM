@@ -21,6 +21,8 @@
     "relation-reach": "7f6ed8d82ffc0d10f9a63bb897b874d53c54eec33960a4c68122449a1438c6ee",
     "relation-rules": "3b6350b4642c4b8a7210f646474f4bf4998743738d9481da9dcb7650b1d4eef8",
     "relation-verdict": "698ebf8ddbcc1ef9ef51d8e5932a26ea7ad1f77d97b92e5b0fa930b86a09a16c",
+    "row-lookup": "145c2566772f455f95178ee741f6ec8cd18ce9096d19704369ac9bc497af4c6d",
+    "sequence-rewrite": "bf8703979c7149060fdabf1494c68625110421b67855ea38370fc2b8833d0306",
     "symbol-cleanup": "33506da99bcea531e8eac9b21b07ec9e6d8dc7805e6cb85e3dcacb219f451fb0",
     "value-encode": "e6240156a25968a4289f20d748a4cf6ed1e65fc9ca59380ed0a468661a170c01"
   }

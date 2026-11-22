@@ -6,6 +6,30 @@ use zerolm_eval::isa_ref::{self, T};
 use zerolm_tensor::Rng;
 
 #[test]
+fn parser_normalization_replays_with_exported_seed_tables() {
+    let r = zerolm_reasoner::Reasoner::new(zerolm_reasoner::ReasonerConfig {
+        dim: 64, symbols: 32, slots: 32, number_range: 20, ..Default::default()
+    }).unwrap();
+    r.record_circuits(true);
+    for text in ["the dax lives in the zup", "is it true that dax is unable to jump right?", "a thing happened before dax", "right right"] {
+        r.parse(text);
+    }
+    let runs = r.take_recorded();
+    for program in ["row-lookup", "sequence-rewrite"] {
+        assert!(runs.iter().any(|run| run.program == program));
+    }
+    for run in runs {
+        let inputs: Vec<_> = run.inputs.iter().map(|(name, buf)| (name.as_str(), to_t(buf))).collect();
+        let reference = isa_ref::run(&run.bundle, &inputs).unwrap();
+        for (name, value) in run.outputs.values {
+            let expected = &reference[&name];
+            assert_eq!((value.rows, value.cols), (expected.r, expected.c));
+            assert_eq!(value.data.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), expected.d.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "{}: {name}", run.program);
+        }
+    }
+}
+
+#[test]
 fn lexer_edge_cases_and_ablations_replay_bit_exactly() {
     let base = zerolm_wsp::shipped("language-lex").unwrap();
     let l = base.program.inputs[0].cols.unwrap();

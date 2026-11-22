@@ -6,6 +6,8 @@ pub mod decide;
 pub mod attention_read;
 pub mod key_encode;
 pub mod lexer;
+pub mod row_lookup;
+pub mod rewrite;
 pub mod memory_write;
 pub mod number;
 pub mod probe;

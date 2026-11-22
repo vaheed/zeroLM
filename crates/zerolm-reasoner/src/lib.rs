@@ -15,6 +15,8 @@
 
 pub mod circuits;
 mod lexer;
+mod grammar;
+mod grammar_seed;
 pub mod lookup;
 pub mod operators;
 pub mod oracle;
@@ -22,7 +24,7 @@ pub mod oracle;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use zerolm_engine::binding::{bind, Hv};
-use zerolm_engine::semantic_state::{parse_tokens, Fact, Pred, Rule, SemanticState, Term, Utterance};
+use zerolm_engine::semantic_state::{parse_normalized_tokens, Fact, Pred, Rule, SemanticState, Term, Utterance};
 use zerolm_memory::checkpoint::{self, CheckpointError, Tensor};
 use zerolm_tensor::sha256::Sha256;
 use zerolm_tensor::{fnv1a, Matrix};
@@ -274,6 +276,7 @@ pub struct Reasoner {
     pub cfg: ReasonerConfig,
     pub ops: Ops,
     numbers: circuits::Numbers,
+    grammar: grammar_seed::Grammar,
     /// Compiled atom encoder (`atom-encode`) with its table.
     atoms: circuits::Atoms,
     roles: Vec<Hv>,
@@ -335,6 +338,7 @@ impl Reasoner {
             recorder: Default::default(),
             atoms,
             numbers: circuits::Numbers::new(&cfg),
+            grammar: grammar_seed::Grammar::new(),
             cfg,
         })
     }
@@ -553,10 +557,10 @@ impl Reasoner {
         self.write(&parts, 1.0, RULE_KIND, 1.0, 1.0, stream)
     }
 
-    /// Parse with compiled byte segmentation and folding. The bounded grammar
-    /// stage remains host code until the uniform-engine migration is complete.
+    /// Parse with compiled byte segmentation, folding, and phrase rewrites.
+    /// Template recognition remains host code during the uniform migration.
     pub fn parse(&self, text: &str) -> Option<Utterance> {
-        parse_tokens(text, self.language_tokens(text))
+        parse_normalized_tokens(text, self.normalized_tokens(text))
     }
 
     /// Process one line: statements are stored, questions are answered.
@@ -600,8 +604,9 @@ impl Reasoner {
                 vec![(self.clock % P24) as f32, (self.clock / P24 % P24) as f32, self.n_slots as f32, self.n_sym as f32],
             ),
         ];
+        t.extend(fresh.grammar.tensors.iter().cloned());
         // Compiled circuit constants (W_PROG), frozen like the role phasors.
-        for c in [&fresh.atoms.circuit, &fresh.numbers.encoder, &fresh.numbers.decoder].into_iter().chain(fresh.circuits.all()) {
+        for c in [&fresh.atoms.circuit, &fresh.numbers.encoder, &fresh.numbers.decoder, &fresh.grammar.lookup, &fresh.grammar.rewrite].into_iter().chain(fresh.circuits.all()) {
             for p in &c.tensors {
                 t.push(Tensor::new(&c.qualified(&p.name), zerolm_wsp::compiler::GROUP, p.rows, p.cols, p.data.clone()));
             }
@@ -633,7 +638,7 @@ impl Reasoner {
                 return Err(ReasonerError::Format(format!("unexpected tensor {}", got.name)));
             }
             match got.name.as_str() {
-                name if name == ROLES_T || name == RELATIONS_T || name == NUMBER_DIGITS_T || name == NUMBER_CODEBOOK_T || name == ATOM_TABLE_T || name.starts_with("prog.") => {
+                name if name == ROLES_T || name == RELATIONS_T || name == NUMBER_DIGITS_T || name == NUMBER_CODEBOOK_T || name == ATOM_TABLE_T || name.starts_with("prog.") || name.starts_with("bootstrap.reasoning.") => {
                     if got.data.iter().zip(&w.data).any(|(a, b)| a.to_bits() != b.to_bits()) {
                         return Err(ReasonerError::CoreMismatch(got.name));
                     }

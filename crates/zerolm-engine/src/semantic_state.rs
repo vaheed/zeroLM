@@ -113,7 +113,9 @@ pub fn tokens(text: &str) -> Vec<String> {
         .collect()
 }
 
-fn normalize(mut t: Vec<String>) -> Vec<String> {
+/// Reference phrase normalization, retained for evaluation parity.
+/// Model-path normalization runs through the generic sequence-rewrite circuit.
+pub fn normalize_tokens(mut t: Vec<String>) -> Vec<String> {
     let phrases: [(&[&str], &[&str]); 21] = [
         (&["is", "it", "true", "that"], &[]),
         (&["can", "not"], &["cannot"]),
@@ -320,7 +322,13 @@ pub fn parse(text: &str) -> Option<Utterance> {
 /// `parse` entry point retains its independent host tokenizer for evaluation.
 /// Normalization, grammar matching, and question detection are still host code.
 pub fn parse_tokens(text: &str, tokens: Vec<String>) -> Option<Utterance> {
-    let t = normalize(tokens);
+    parse_normalized_tokens(text, normalize_tokens(tokens))
+}
+
+/// Template-recognition stage for tokens normalized by the model circuits.
+/// Recognition and question detection still use host code during migration.
+pub fn parse_normalized_tokens(text: &str, tokens: Vec<String>) -> Option<Utterance> {
+    let t = tokens;
     let t: Vec<&str> = t.iter().map(String::as_str).collect();
     let question = text.trim_end().ends_with('?')
         || matches!(t.first(), Some(&("is" | "can" | "did" | "does" | "how" | "who" | "which")));

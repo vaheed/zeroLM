@@ -47,8 +47,8 @@
     {
       "id": "reasoning-grammar",
       "kind": "protocol_constant",
-      "description": "Bounded statement/question grammar: about 45 function words, 8 comparatives (4 dimensions), number words zero-twenty, verb normalizations, and the pronoun 'it'. Content words are open. Operator semantics (class inclusion, transitivity, inheritance, comparison, arithmetic, temporal order, negation, conditionals) are programmed.",
-      "source": "crates/zerolm-engine/src/semantic_state.rs",
+      "description": "Bounded statement/question grammar: about 45 function words, 8 comparatives (4 dimensions), number words zero-twenty, verb normalizations, and the pronoun 'it'. Content words are open. Operator semantics (class inclusion, transitivity, inheritance, comparison, arithmetic, temporal order, negation, conditionals) are programmed. Lexical rows and ordered phrase rewrites are explicit frozen bootstrap tensors (bootstrap_grammar), initialized from model/bootstrap/reasoning-grammar.json and run by generic row-lookup and sequence-rewrite circuits; template recognition remains host code during migration.",
+      "source": "model/bootstrap/reasoning-grammar.json",
       "derived_from_corpus": false
     },
     {
@@ -140,6 +140,20 @@
       "kind": "structural_prior",
       "description": "Circuit language-lex: ASCII alphanumeric and hyphen classification, case folding, ordered byte spans, and a tail-word bit for continuation across fixed-size chunks. Constants are ASCII ranges, a case offset, position scores and selectors. No vocabulary, facts, or corpus statistics. The bounded grammar remains host code.",
       "source": "crates/zerolm-wsp/src/circuits/lexer.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "row-lookup-circuit",
+      "kind": "structural_prior",
+      "description": "Exact row comparison against external keys, with unique-match checking and external value readout. The key and value tables are model weights, not compiler constants. Compiler constants are column selectors and scalars one; no vocabulary or grammar.",
+      "source": "crates/zerolm-wsp/src/circuits/row_lookup.rs",
+      "derived_from_corpus": false
+    },
+    {
+      "id": "sequence-rewrite-circuit",
+      "kind": "structural_prior",
+      "description": "One recurrent step of a shrinking sequence rewrite: match an external masked pattern against a token window, optionally require the end of the sequence, emit externally supplied replacement IDs or the first original row, and advance a cursor. Compiler constants are a first-position selector and scalars zero and one. No vocabulary or grammar.",
+      "source": "crates/zerolm-wsp/src/circuits/rewrite.rs",
       "derived_from_corpus": false
     }
   ]

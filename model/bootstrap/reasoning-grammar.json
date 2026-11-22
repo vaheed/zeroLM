@@ -1,0 +1,322 @@
+{
+  "version": 1,
+  "key_bytes": 16,
+  "tensor_sha256": "6b00fa456532c93a87824ef68d383e4c47aaaee7c680a0e5e3e4277d092d2916",
+  "lexicon": [
+    "a",
+    "able",
+    "after",
+    "age",
+    "all",
+    "an",
+    "anything",
+    "are",
+    "before",
+    "bigger",
+    "came",
+    "can",
+    "cannot",
+    "come",
+    "did",
+    "do",
+    "does",
+    "each",
+    "eight",
+    "eighteen",
+    "eleven",
+    "every",
+    "fewer",
+    "fifteen",
+    "five",
+    "followed",
+    "four",
+    "fourteen",
+    "got",
+    "happen",
+    "happened",
+    "has",
+    "have",
+    "heavier",
+    "height",
+    "how",
+    "if",
+    "in",
+    "inside",
+    "is",
+    "it",
+    "less",
+    "lighter",
+    "lives",
+    "located",
+    "many",
+    "more",
+    "nine",
+    "nineteen",
+    "no",
+    "not",
+    "occurred",
+    "older",
+    "one",
+    "or",
+    "own",
+    "owns",
+    "preceded",
+    "right",
+    "seven",
+    "seventeen",
+    "shorter",
+    "six",
+    "sixteen",
+    "size",
+    "smaller",
+    "so",
+    "something",
+    "taller",
+    "ten",
+    "than",
+    "that",
+    "the",
+    "then",
+    "thing",
+    "thirteen",
+    "three",
+    "to",
+    "true",
+    "twelve",
+    "twenty",
+    "two",
+    "unable",
+    "weight",
+    "which",
+    "who",
+    "younger",
+    "zero"
+  ],
+  "rewrites": [
+    {
+      "from": [
+        "is",
+        "it",
+        "true",
+        "that"
+      ],
+      "to": [],
+      "at_end": false
+    },
+    {
+      "from": [
+        "can",
+        "not"
+      ],
+      "to": [
+        "cannot"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "is",
+        "unable",
+        "to"
+      ],
+      "to": [
+        "cannot"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "is",
+        "able",
+        "to"
+      ],
+      "to": [
+        "can"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "able",
+        "to"
+      ],
+      "to": [
+        "can"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "is",
+        "located",
+        "in"
+      ],
+      "to": [
+        "is",
+        "in"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "inside"
+      ],
+      "to": [
+        "in"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "lives",
+        "in"
+      ],
+      "to": [
+        "is",
+        "in"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "happened",
+        "before"
+      ],
+      "to": [
+        "before"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "happen",
+        "before"
+      ],
+      "to": [
+        "before"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "came",
+        "before"
+      ],
+      "to": [
+        "before"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "come",
+        "before"
+      ],
+      "to": [
+        "before"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "occurred",
+        "before"
+      ],
+      "to": [
+        "before"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "preceded"
+      ],
+      "to": [
+        "before"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "happened",
+        "after"
+      ],
+      "to": [
+        "after"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "happen",
+        "after"
+      ],
+      "to": [
+        "after"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "came",
+        "after"
+      ],
+      "to": [
+        "after"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "come",
+        "after"
+      ],
+      "to": [
+        "after"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "followed"
+      ],
+      "to": [
+        "after"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "a",
+        "thing"
+      ],
+      "to": [
+        "something"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "anything"
+      ],
+      "to": [
+        "something"
+      ],
+      "at_end": false
+    },
+    {
+      "from": [
+        "right"
+      ],
+      "to": [],
+      "at_end": true
+    },
+    {
+      "from": [
+        "the"
+      ],
+      "to": [],
+      "at_end": false
+    }
+  ]
+}

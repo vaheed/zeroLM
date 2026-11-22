@@ -20,7 +20,10 @@
     "crates/zerolm-memory/src/read_circuit.rs",
     "crates/zerolm-reasoner/src/circuits.rs",
     "crates/zerolm-wsp/src/circuits/lexer.rs",
-    "crates/zerolm-reasoner/src/lexer.rs"
+    "crates/zerolm-reasoner/src/lexer.rs",
+    "crates/zerolm-wsp/src/circuits/row_lookup.rs",
+    "crates/zerolm-wsp/src/circuits/rewrite.rs",
+    "crates/zerolm-reasoner/src/grammar.rs"
   ],
   "forbidden": [
     ".split(",
@@ -41,7 +44,7 @@
   "pending": [
     {
       "file": "crates/zerolm-engine/src/semantic_state.rs",
-      "reason": "the bounded-language grammar still normalizes phrases, matches token templates, detects questions, and converts numerals to integers in Rust; byte tokenization and folding now run in language-lex. The grammar must become a recurrent parser circuit; parsed structures are still mapped to role-filler circuit inputs (pred_parts in zerolm-reasoner) and dispatched by form on the host"
+      "reason": "the bounded-language grammar still matches token templates, detects questions, and converts numerals to integers in Rust. Byte tokenization and folding run in language-lex; phrase normalization now runs in generic row-lookup and sequence-rewrite programs over declared bootstrap_grammar tensors. Template recognition must become a recurrent parser circuit; parsed structures are still mapped to role-filler circuit inputs (pred_parts in zerolm-reasoner) and dispatched by form on the host"
     }
   ]
 }

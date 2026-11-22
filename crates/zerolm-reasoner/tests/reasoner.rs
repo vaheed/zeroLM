@@ -167,6 +167,21 @@ fn every_tensor_belongs_to_a_declared_weight_group() {
 }
 
 #[test]
+fn a_checkpoint_cannot_replace_the_declared_grammar_prior() {
+    use zerolm_memory::checkpoint;
+    let cfg = ReasonerConfig { dim: 64, symbols: 32, slots: 32, number_range: 20, ..Default::default() };
+    let r = Reasoner::new(cfg).unwrap();
+    let mut tensors = r.tensors();
+    let key = tensors.iter_mut().find(|t| t.name == "bootstrap.reasoning.keys").unwrap();
+    key.data[0] += 1.0;
+    let dir = std::path::Path::new(env!("CARGO_TARGET_TMPDIR")).join("zerolm-grammar-tamper");
+    let _ = std::fs::remove_dir_all(&dir);
+    let bytes = checkpoint::encode(&serde_json::json!({"config": cfg}), &tensors);
+    checkpoint::save_atomic(&dir, &bytes).unwrap();
+    assert!(matches!(Reasoner::load(&dir), Err(zerolm_reasoner::ReasonerError::CoreMismatch(name)) if name == "bootstrap.reasoning.keys"));
+}
+
+#[test]
 fn default_config_compiles_to_the_shipped_pinned_circuits() {
     use zerolm_reasoner::circuits::*;
     let cfg = ReasonerConfig::default();

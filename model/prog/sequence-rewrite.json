@@ -1,0 +1,10 @@
+{
+  "id": "sequence-rewrite",
+  "version": 1,
+  "seed_entry": "sequence-rewrite-circuit",
+  "description": "Generic algorithm over externally bound model tables; no vocabulary or grammar in compiled weights.",
+  "circuit": {
+    "kind": "rewrite",
+    "window": 4
+  }
+}

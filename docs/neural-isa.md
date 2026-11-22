@@ -303,8 +303,33 @@ The circuit constants contain byte ranges and position selectors, with no
 vocabulary. Tests cover every byte, chunk boundaries, Unicode, and causal
 ablations of classification, folding, segmentation, ordering, and continuation.
 The independent interpreter replays intact and ablated circuits, and the
-uniform-engine gate records lexer calls made by reasoning. Grammar
-normalization and matching still run in `semantic_state::parse_tokens`.
+uniform-engine gate records lexer calls made by reasoning. Phrase
+normalization runs in the two generic table circuits described below; template
+matching still runs in `semantic_state::parse_normalized_tokens`.
+
+`row-lookup` compares each fixed-width input row against external key rows and
+reads external values only when exactly one key matches. A duplicate match
+fails closed. `sequence-rewrite` takes a four-token window, an external masked
+pattern and replacement, a cursor, a sequence length, and a literal-pool base.
+It emits a replacement when the pattern matches (optionally only at the end),
+or copies the first input row otherwise, and advances its cursor. Exhausted
+input emits nothing. A fixed input-length step budget supports any sequence
+length with constant-size circuit windows and linear host storage. The host
+copies only the rows and literal-pool entries selected by these outputs.
+
+The 88 lexical rows and 23 ordered phrase rewrites are the previously declared
+bounded grammar prior, now explicit in `model/bootstrap/reasoning-grammar.json`.
+Its tensor hash is pinned there. Initialization in `grammar_seed.rs` constructs
+seven frozen `bootstrap_grammar` tensors; checkpoint loading verifies them. This
+is declared hand-written language knowledge, not learned language and not
+`W_PROG`: compiler constants contain only selectors and arithmetic scalars.
+The recurrent model's initialization pin in `model/bootstrap/seed.json` is
+unchanged. Reference-normalization parity tests cover rewrite order, repeated
+patterns, sequence ends, long inputs, and unknown words; exported programs
+include their seed tables for independent replay. A row-lookup alphabet-renaming
+test checks representation equivariance with both input and external keys
+renamed. It does not establish held-out BPB invariance for the whole model, nor
+claim that a seeded dictionary learns a secret permutation.
 
 | Circuit | Spec | Replaces | Verified by |
 |---|---|---|---|
@@ -317,12 +342,14 @@ normalization and matching still run in `semantic_state::parse_tokens`.
 
 ## Not yet done
 
-- The bounded-language grammar still normalizes phrases, matches token templates,
-  detects questions, and parses numerals in Rust. Mapping parsed structures to
+- The bounded-language grammar still matches token templates, detects
+  questions, and parses numerals in Rust. Mapping parsed structures to
   role bindings and dispatching by utterance form also remain host code. The
-  byte tokenizer and case folder run in `language-lex`; symbol vectors run in
+  byte tokenizer and case folder run in `language-lex`, and normalization runs
+  in `row-lookup` and `sequence-rewrite`; symbol vectors run in
   `atom-encode`. Memory writes, fast-weight recall, and reasoning operator
   decisions already run in their compiled circuits.
-- No circuit has been through the byte-permutation test yet.
+- Full-model held-out BPB byte-permutation testing remains outstanding; the
+  generic row-lookup circuit has a separate alphabet-renaming equivariance test.
 
 The authoritative list is the `pending` section of `model/prog/host-audit.json`; the uniform-engine gate prints it on every run.

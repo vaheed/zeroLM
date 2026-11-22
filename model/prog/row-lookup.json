@@ -1,0 +1,11 @@
+{
+  "id": "row-lookup",
+  "version": 1,
+  "seed_entry": "row-lookup-circuit",
+  "description": "Generic algorithm over externally bound model tables; no vocabulary or grammar in compiled weights.",
+  "circuit": {
+    "kind": "row_lookup",
+    "key_cols": 16,
+    "value_cols": 1
+  }
+}
