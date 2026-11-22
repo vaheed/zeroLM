@@ -9,7 +9,6 @@ use std::collections::HashMap;
 use std::io::{BufRead, Write};
 use std::path::Path;
 use std::process::ExitCode;
-use zerolm_engine::semantic_state::parse;
 use zerolm_memory::checkpoint::CheckpointError;
 use zerolm_reasoner::{Answer, Observed, Reasoner, ReasonerConfig, ReasonerError};
 
@@ -63,7 +62,7 @@ pub fn run(dir: Option<&Path>, trace: Option<String>, stream: &str, view: &View)
         let text = text.strip_suffix('\r').unwrap_or(&text);
         view.input(seq, text);
         if view.on() {
-            match parse(text) {
+            match r.parse(text) {
                 Some(u) => view.note("parsed", serde_json::to_string(&u).expect("serialize")),
                 None => view.note("parsed", "no match in the bounded grammar"),
             }

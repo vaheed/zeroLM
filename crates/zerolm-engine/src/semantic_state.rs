@@ -313,7 +313,14 @@ fn parse_query(t: &[&str]) -> Option<Query> {
 /// Parse one utterance. A trailing "?" (or a leading question word) makes it
 /// a question; a declarative question ("x is a y?") asks whether it holds.
 pub fn parse(text: &str) -> Option<Utterance> {
-    let t = normalize(tokens(text));
+    parse_tokens(text, tokens(text))
+}
+
+/// Grammar stage for tokens supplied by the compiled lexer. The reference
+/// `parse` entry point retains its independent host tokenizer for evaluation.
+/// Normalization, grammar matching, and question detection are still host code.
+pub fn parse_tokens(text: &str, tokens: Vec<String>) -> Option<Utterance> {
+    let t = normalize(tokens);
     let t: Vec<&str> = t.iter().map(String::as_str).collect();
     let question = text.trim_end().ends_with('?')
         || matches!(t.first(), Some(&("is" | "can" | "did" | "does" | "how" | "who" | "which")));

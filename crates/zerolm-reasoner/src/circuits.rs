@@ -231,11 +231,13 @@ pub struct Circuits {
     pub rules: Compiled,
     pub counts: Compiled,
     pub verdict: Compiled,
+    pub lexer: Compiled,
 }
 
 impl Circuits {
     pub fn new(cfg: &ReasonerConfig) -> Self {
         Circuits {
+            lexer: zerolm_wsp::shipped("language-lex").expect("shipped lexer compiles"),
             graph: compile(&graph_spec(cfg)).expect("valid reasoning config compiles"),
             reach: compile(&reach_spec(cfg)).expect("valid reasoning config compiles"),
             probe: compile(&probe_spec(cfg)).expect("valid reasoning config compiles"),
@@ -249,8 +251,8 @@ impl Circuits {
     }
 
     /// Every compiled program, in checkpoint order.
-    pub fn all(&self) -> [&Compiled; 9] {
-        [&self.graph, &self.reach, &self.probe, &self.cleanup, &self.join, &self.levels, &self.rules, &self.counts, &self.verdict]
+    pub fn all(&self) -> [&Compiled; 10] {
+        [&self.graph, &self.reach, &self.probe, &self.cleanup, &self.join, &self.levels, &self.rules, &self.counts, &self.verdict, &self.lexer]
     }
 }
 
@@ -455,7 +457,7 @@ impl Reasoner {
     }
 
     /// Bind, run, and (when recording) export one program run.
-    fn exec(&self, c: &Compiled, inputs: Vec<(&str, Buf)>, weights: &[(&str, View<'_>)]) -> Outputs {
+    pub(crate) fn exec(&self, c: &Compiled, inputs: Vec<(&str, Buf)>, weights: &[(&str, View<'_>)]) -> Outputs {
         run(c, inputs, weights, &self.recorder)
     }
 

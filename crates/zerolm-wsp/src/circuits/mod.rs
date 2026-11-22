@@ -5,6 +5,7 @@ pub mod atom_encode;
 pub mod decide;
 pub mod attention_read;
 pub mod key_encode;
+pub mod lexer;
 pub mod memory_write;
 pub mod number;
 pub mod probe;

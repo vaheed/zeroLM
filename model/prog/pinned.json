@@ -4,6 +4,7 @@
     "atom-encode": "94a9df214e0da88cbb3b3a59bebe001073ec75fd133e4c36a9ec57ac033ded0e",
     "fast-recall": "0653978c84ac08c5cfadc1e4a48cf0e73a90bf92d8df139970b36ff8afd27723",
     "fast-write": "66d4e9f0c7ae3fb08cc470c033f6c3c81ac057344579864797c7bac0722b640a",
+    "language-lex": "b63ed152eb51d959e0b47dab093871b05676f49d06e962a1dcfd70442f8af2a1",
     "memory-compact": "f853cde0c51409d08d33ade081dce10c437097067a677797197ee1e4a53edb64",
     "memory-encode": "99b405aa6bd6a3beaf5f8e87f425a24721e0817f18807408f6ffaae5a8207feb",
     "memory-forget": "15f4f62ec7877278f367144bb3cf8b156efca60442dafa4db3d861f8c0bba050",

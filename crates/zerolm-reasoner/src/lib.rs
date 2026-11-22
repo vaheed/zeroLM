@@ -14,6 +14,7 @@
 //! never called by the reasoner.
 
 pub mod circuits;
+mod lexer;
 pub mod lookup;
 pub mod operators;
 pub mod oracle;
@@ -21,7 +22,7 @@ pub mod oracle;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use zerolm_engine::binding::{bind, Hv};
-use zerolm_engine::semantic_state::{parse, Fact, Pred, Rule, SemanticState, Term, Utterance};
+use zerolm_engine::semantic_state::{parse_tokens, Fact, Pred, Rule, SemanticState, Term, Utterance};
 use zerolm_memory::checkpoint::{self, CheckpointError, Tensor};
 use zerolm_tensor::sha256::Sha256;
 use zerolm_tensor::{fnv1a, Matrix};
@@ -552,9 +553,15 @@ impl Reasoner {
         self.write(&parts, 1.0, RULE_KIND, 1.0, 1.0, stream)
     }
 
+    /// Parse with compiled byte segmentation and folding. The bounded grammar
+    /// stage remains host code until the uniform-engine migration is complete.
+    pub fn parse(&self, text: &str) -> Option<Utterance> {
+        parse_tokens(text, self.language_tokens(text))
+    }
+
     /// Process one line: statements are stored, questions are answered.
     pub fn observe(&mut self, text: &str, stream: &str) -> Result<Observed, ReasonerError> {
-        match parse(text) {
+        match self.parse(text) {
             None => Ok(Observed::Unparsed),
             Some(Utterance::Fact(f)) => self.teach_fact(&f, stream),
             Some(Utterance::Rule(r)) => self.teach_rule(&r, stream),
@@ -564,7 +571,7 @@ impl Reasoner {
 
     /// Answer a question line (`None` if it is not a question in the language).
     pub fn ask(&self, text: &str) -> Option<Answer> {
-        match parse(text) {
+        match self.parse(text) {
             Some(Utterance::Query(q)) => Some(self.answer(&q)),
             _ => None,
         }

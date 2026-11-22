@@ -134,6 +134,13 @@
       "description": "Circuit relation-reach (model/prog/relation-reach.json, roadmap C6): reachability over one relation as a fixed 8-step recurrence with a premise matrix, replacing breadth-first search. Constants: probe threshold 2 - 0.5, symbol cleanup threshold 0.9, an 8-step depth schedule and shift matrix, one enable scalar per inference operator, operator selectors.",
       "source": "crates/zerolm-wsp/src/circuits/relational.rs",
       "derived_from_corpus": false
+    },
+    {
+      "id": "language-lex-circuit",
+      "kind": "structural_prior",
+      "description": "Circuit language-lex: ASCII alphanumeric and hyphen classification, case folding, ordered byte spans, and a tail-word bit for continuation across fixed-size chunks. Constants are ASCII ranges, a case offset, position scores and selectors. No vocabulary, facts, or corpus statistics. The bounded grammar remains host code.",
+      "source": "crates/zerolm-wsp/src/circuits/lexer.rs",
+      "derived_from_corpus": false
     }
   ]
 }

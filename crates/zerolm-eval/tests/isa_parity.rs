@@ -5,6 +5,37 @@ use zerolm_engine::isa::{self, bundle, Axis, Bindings, Buf, Decl, GateFn, Instr,
 use zerolm_eval::isa_ref::{self, T};
 use zerolm_tensor::Rng;
 
+#[test]
+fn lexer_edge_cases_and_ablations_replay_bit_exactly() {
+    let base = zerolm_wsp::shipped("language-lex").unwrap();
+    let l = base.program.inputs[0].cols.unwrap();
+    for block in [None, Some("classify"), Some("fold"), Some("segment"), Some("order"), Some("carry")] {
+        let mut c = base.clone();
+        if let Some(block) = block {
+            c.ablate_block(block).unwrap();
+        }
+        let weights: Vec<_> = c.tensors.iter().map(|t| (t.name.as_str(), t.view())).collect();
+        let exported = bundle::encode(&c.program, &weights);
+        for offset in [0usize, 128, 256] {
+            let text = Buf::row((0..l).map(|i| ((offset + i) % 256) as f32).collect());
+            for tail in [0.0, 1.0] {
+                let tail = Buf::row(vec![tail]);
+                let mut bindings = Bindings::new().input("text", text.clone()).input("tail", tail.clone());
+                for (name, view) in &weights {
+                    bindings = bindings.weight(name, *view);
+                }
+                let actual = isa::run(&c.program, bindings).unwrap();
+                let expected = isa_ref::run(&exported, &[("text", to_t(&text)), ("tail", to_t(&tail))]).unwrap();
+                for (name, value) in actual.values {
+                    let expected = &expected[&name];
+                    assert_eq!((value.rows, value.cols), (expected.r, expected.c));
+                    assert_eq!(value.data.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), expected.d.iter().map(|v| v.to_bits()).collect::<Vec<_>>(), "{block:?}: {name}");
+                }
+            }
+        }
+    }
+}
+
 fn s(x: &str) -> String {
     x.to_string()
 }

@@ -1,0 +1,10 @@
+{
+  "id": "language-lex",
+  "version": 1,
+  "seed_entry": "language-lex-circuit",
+  "description": "ASCII alphanumeric and hyphen word segmentation and case folding. Returns ordered byte spans and a chunk continuation bit; the host copies the selected bytes. No vocabulary or facts. Zero padding is a separator.",
+  "circuit": {
+    "kind": "lexer",
+    "chunk_bytes": 128
+  }
+}

@@ -18,7 +18,9 @@
     "crates/zerolm-wsp/src/circuits/memory_write.rs",
     "crates/zerolm-memory/src/value_circuits.rs",
     "crates/zerolm-memory/src/read_circuit.rs",
-    "crates/zerolm-reasoner/src/circuits.rs"
+    "crates/zerolm-reasoner/src/circuits.rs",
+    "crates/zerolm-wsp/src/circuits/lexer.rs",
+    "crates/zerolm-reasoner/src/lexer.rs"
   ],
   "forbidden": [
     ".split(",
@@ -37,6 +39,9 @@
     ".contains(\""
   ],
   "pending": [
-    {"file": "crates/zerolm-engine/src/semantic_state.rs", "reason": "the bounded-language parser matches token templates in Rust; it must become a recurrent parser circuit; it also converts numerals to integers, which the host formats back to decimal bytes for the number-encode circuit, and its parsed structures are mapped to role-filler circuit inputs (pred_parts in zerolm-reasoner) and dispatched by form (statement or question kind) on the host"}
+    {
+      "file": "crates/zerolm-engine/src/semantic_state.rs",
+      "reason": "the bounded-language grammar still normalizes phrases, matches token templates, detects questions, and converts numerals to integers in Rust; byte tokenization and folding now run in language-lex. The grammar must become a recurrent parser circuit; parsed structures are still mapped to role-filler circuit inputs (pred_parts in zerolm-reasoner) and dispatched by form on the host"
+    }
   ]
 }

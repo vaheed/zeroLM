@@ -288,6 +288,24 @@ $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top 
 
 ## Compiled circuits
 
+`language-lex` (`model/prog/language-lex.json`) is the first parser circuit.
+On each 128-byte chunk it classifies ASCII letters, digits, and hyphens as
+word bytes, folds ASCII uppercase by adding 32, and computes word-start and
+word-end masks with a position shift matrix. Descending position scores and
+`topk` return the spans in input order; a sum returns their count. A tail-word
+bit from the preceding chunk and the first byte's word mask determine whether
+the first span continues the preceding word. The host copies the folded spans
+and joins only when instructed by that bit. Padding zeroes are separators.
+Input and word length are unbounded across chunks; UTF-8 bytes above 127 are
+separators, matching the reference tokenizer's ASCII-only grammar.
+
+The circuit constants contain byte ranges and position selectors, with no
+vocabulary. Tests cover every byte, chunk boundaries, Unicode, and causal
+ablations of classification, folding, segmentation, ordering, and continuation.
+The independent interpreter replays intact and ablated circuits, and the
+uniform-engine gate records lexer calls made by reasoning. Grammar
+normalization and matching still run in `semantic_state::parse_tokens`.
+
 | Circuit | Spec | Replaces | Verified by |
 |---|---|---|---|
 | `memory-encode` | `model/prog/memory-encode.json` (`zerolm_wsp::circuits::key_encode`) | the host key encoder: word split, case folding, `#word#` trigram hashing, normalization | bit-equality unit test against the former host code; memory gate unchanged; `reference_interpreter_parity` (every gate query); `circuit_block_ablation` per block |
@@ -299,9 +317,12 @@ $$\text{hit} = \langle R - \hat x,\ \hat y\rangle, \qquad \text{proof} = P^\top 
 
 ## Not yet done
 
-- Write-time bookkeeping and fast-weight recall cleanup are host code.
-- Reasoning: the search (reachability and shortest proofs) runs in C6, and slot decoding in C5. Still Rust control flow: each operator's decision logic (combining yes/no proofs, the inheritance level scan, the negation edge scan, conditional rule chaining, count arithmetic), the one-step `edges` probes they use, and the bounded-language parser.
-- Symbol vectors are generated from names by a seeded random generator on the host, which no ISA operation can compute. Moving the parser into a circuit first needs an ISA-computable symbol encoding, for example `hash_rows` over a word's bytes.
+- The bounded-language grammar still normalizes phrases, matches token templates,
+  detects questions, and parses numerals in Rust. Mapping parsed structures to
+  role bindings and dispatching by utterance form also remain host code. The
+  byte tokenizer and case folder run in `language-lex`; symbol vectors run in
+  `atom-encode`. Memory writes, fast-weight recall, and reasoning operator
+  decisions already run in their compiled circuits.
 - No circuit has been through the byte-permutation test yet.
 
 The authoritative list is the `pending` section of `model/prog/host-audit.json`; the uniform-engine gate prints it on every run.
