@@ -3,13 +3,14 @@
 //! milestone's delta-rule predictor, all learning chronologically from the
 //! same exposure bytes and scored on the hidden split's whole documents.
 //!
-//! `zerolm-realtext --root DATA_DIR [--manifest PATH] [--exposure N] [--hidden N] [--learner-limit N] [--out DIR]`
-//! Not yet run here: the backpropagation CONTROL.
+//! `zerolm-realtext --root DATA_DIR [--manifest PATH] [--exposure N] [--hidden N] [--learner-limit N] [--control] [--control-limit N] [--out DIR]`
+//! With `--control`, also the online-backpropagation CONTROL (labelled, excluded from strict results).
 
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
 use zerolm_data::{corpus, manifest::Manifest};
+use zerolm_eval::bptt::{Bptt, Config as BpttConfig};
 use zerolm_learning::online_predictor::{Constants, OnlinePredictor, Rule};
 use zerolm_tensor::fnv1a;
 
@@ -203,11 +204,39 @@ fn main() {
         rows.push(("online-delta (phase 4 learner)".into(), p, m_delta.evaluate(hidden).expect("finite").bpb));
     }
     println!("online learner {:.1}s", t.elapsed().as_secs_f64());
+    if std::env::args().any(|a| a == "--control") {
+        // Learning rate chosen on the dev role only (first 200k exposure bytes in, first 200k dev bytes scored).
+        let dev_all = corpus::role_stream(&m, &root, corpus::Role::Dev).expect("dev");
+        let dev = &dev_all[..dev_all.len().min(200_000)];
+        let pilot = &exposure[..exposure.len().min(200_000)];
+        let mut best = (f64::INFINITY, 3e-3f32);
+        for lr in [1e-3f32, 3e-3, 1e-2] {
+            let t = Instant::now();
+            let mut c = Bptt::new(9001, BpttConfig { lr, ..Default::default() });
+            c.observe_all(pilot);
+            let b = c.evaluate(dev);
+            println!("control pilot lr {lr}: dev BPB {b:.3} ({:.0}s)", t.elapsed().as_secs_f64());
+            if b < best.0 {
+                best = (b, lr);
+            }
+        }
+        let control_limit: usize = arg("--control-limit").map(|v| v.parse().expect("number")).unwrap_or(1_000_000);
+        let t = Instant::now();
+        let mut c = Bptt::new(1, BpttConfig { lr: best.1, ..Default::default() });
+        let mut done = 0;
+        for &p in points.iter().filter(|p| **p <= control_limit) {
+            c.observe_all(&exposure[done..p]);
+            done = p;
+            rows.push((format!("CONTROL backprop-through-time GRU (lr {})", best.1), p, c.evaluate(hidden)));
+            println!("control prequential BPB over the first {p} bytes: {:.3}", c.prequential_bpb());
+        }
+        println!("control {:.1}s", t.elapsed().as_secs_f64());
+    }
     let mut out = String::from("## Real-text baselines (held-out BPB on hidden whole documents)\n\n| baseline | exposure bytes | hidden BPB |\n|---|---|---|\n");
     for (n, p, b) in &rows {
         out += &format!("| {n} | {p} | {b:.3} |\n");
     }
-    out += "\nNot yet run: the online-backpropagation CONTROL.\n";
+    out += "\nThe CONTROL row (if present) is online backpropagation through time, excluded from strict results.\n";
     print!("{out}");
     let dir = PathBuf::from(arg("--out").unwrap_or_else(|| "reports/real-text".into()));
     std::fs::create_dir_all(&dir).expect("out dir");
