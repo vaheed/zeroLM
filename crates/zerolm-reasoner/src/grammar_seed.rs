@@ -10,6 +10,8 @@ use zerolm_wsp::Compiled;
 
 pub(crate) const KEY_BYTES: usize = 16;
 pub(crate) const WINDOW: usize = 4;
+/// Dimension names in the seed (`dimensions` of the parser seed).
+pub(crate) const DIMENSIONS: usize = 4;
 const GROUP: &str = "bootstrap_grammar";
 const SEED: &str = include_str!("../../../model/bootstrap/reasoning-grammar.json");
 
@@ -47,6 +49,7 @@ impl Grammar {
         let seed: Seed = serde_json::from_str(SEED).expect("valid grammar seed");
         assert_eq!((seed.version, seed.key_bytes), (1, KEY_BYTES));
         assert!(!seed.lexicon.is_empty() && !seed.rewrites.is_empty());
+        assert_eq!(seed.parser.dimensions.len(), DIMENSIONS);
         let mut keys = Vec::new();
         for (i, word) in seed.lexicon.iter().enumerate() {
             assert!(!word.is_empty() && word.len() < KEY_BYTES && word.is_ascii());

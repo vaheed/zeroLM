@@ -1,12 +1,11 @@
-//! Circuit binding and output rendering for the seeded bounded grammar.
-//! The host copies bytes and tensor rows. Recognition and attribute decisions
-//! are outputs of compiled programs; enum rendering remains an interface to
-//! the existing binding/dispatch path during the uniform-engine migration.
+//! Circuit binding for the seeded bounded grammar. The host copies bytes and
+//! tensor rows; recognition and attribute decisions are outputs of compiled
+//! programs. Typed binding of the recognized frame is the `frame-bind`
+//! circuit (`frame.rs`).
 
 use crate::{Reasoner, grammar_seed::KEY_BYTES, parser_seed::{TOKENS, FEATURES}};
 use crate::circuits::with_consts;
 use zerolm_engine::isa::{Buf, View};
-use zerolm_engine::semantic_state::{Fact, Pred, Query, Rule, Term, Utterance};
 use zerolm_wsp::Compiled;
 
 pub(crate) struct Programs {
@@ -110,7 +109,9 @@ impl Reasoner {
         self.exec(c, vec![("features", Buf::new(TOKENS, FEATURES, padded)), ("same", self.token_equality(words)), ("length", Buf::row(vec![arity as f32])), ("raw_question", self.raw_question(text))], &weights).get("frame").clone()
     }
 
-    pub(crate) fn parse_circuits(&self, text: &str) -> Option<Utterance> {
+    /// Run the compiled recognizers: the clause's tokens, their features, and
+    /// the selected template's numeric frame. `None` when the clause is empty.
+    pub(crate) fn recognize(&self, text: &str) -> Option<Recognized> {
         let all_words = self.normalized_tokens(text);
         if all_words.is_empty() { return None; }
         let words: Vec<_> = all_words.iter().take(TOKENS).cloned().collect();
@@ -118,36 +119,15 @@ impl Reasoner {
         // The length input must retain the full arity even when only the
         // fixed-capacity prefix is classified; overlong clauses cannot match.
         let frame = self.recognized_frame(text, &words, &features, all_words.len());
-        self.render_frame(&frame.data, &words, &features)
+        Some(Recognized { words, features, frame })
     }
+}
 
-    fn render_frame(&self, f: &[f32], words: &[String], features: &Buf) -> Option<Utterance> {
-        let word = |i: usize, singular: bool| {
-            let length = if singular { features.data[i * FEATURES + 14] as usize } else { words[i].len() };
-            words[i][..length].to_string()
-        };
-        let subject = || if f[4] != 0.0 { Term::Pronoun } else { Term::Name(word(f[2] as usize, f[3] != 0.0)) };
-        let dimension = || self.grammar.dimensions[f[7] as usize - 1].clone();
-        let object = || word(f[5] as usize, f[6] != 0.0);
-        let thing = || word(f[15] as usize, true);
-        match f[0] as usize {
-            0 => None,
-            2 => Some(Utterance::Rule(Rule { scope: (f[11] != 0.0).then(|| word(f[2] as usize, false)), premise: word(f[12] as usize, false), conclusion: word(f[13] as usize, false) })),
-            4 => Some(Utterance::Query(Query::Count { subj: subject(), thing: thing() })),
-            5 => Some(Utterance::Query(Query::Which { dim: dimension(), higher: f[14] != 0.0, a: word(f[2] as usize, false), b: object() })),
-            form @ (1 | 3) => {
-                let pred = match f[1] as usize {
-                    1 => Pred::Isa(object()), 2 => Pred::Can(object()), 3 => Pred::In(object()), 4 => Pred::Prop(object()),
-                    5 => Pred::Greater { dim: dimension(), other: object() }, 6 => Pred::Before(object()),
-                    7 => Pred::Count { thing: thing(), n: f[8] as i64 },
-                    8 => Pred::More { thing: thing(), delta: f[8] as i64, other: object() },
-                    _ => unreachable!("validated template predicate"),
-                };
-                Some(if form == 1 { Utterance::Fact(Fact { subj: subject(), pred, negated: f[9] != 0.0 }) } else { Utterance::Query(Query::Holds { subj: subject(), pred }) })
-            }
-            _ => unreachable!("validated template form"),
-        }
-    }
+/// Outputs of the recognizing circuits for one clause.
+pub(crate) struct Recognized {
+    pub words: Vec<String>,
+    pub features: Buf,
+    pub frame: Buf,
 }
 
 #[cfg(test)]

@@ -18,3 +18,4 @@ pub mod token_number;
 pub mod token_features;
 pub mod question_tail;
 pub mod template_match;
+pub mod frame_bind;

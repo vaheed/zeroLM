@@ -28,7 +28,10 @@
     "crates/zerolm-wsp/src/circuits/token_number.rs",
     "crates/zerolm-wsp/src/circuits/token_features.rs",
     "crates/zerolm-wsp/src/circuits/question_tail.rs",
-    "crates/zerolm-wsp/src/circuits/template_match.rs"
+    "crates/zerolm-wsp/src/circuits/template_match.rs",
+    "crates/zerolm-wsp/src/circuits/frame_bind.rs",
+    "crates/zerolm-reasoner/src/frame.rs",
+    "crates/zerolm-reasoner/src/lib.rs"
   ],
   "forbidden": [
     ".split(",
@@ -46,10 +49,5 @@
     "parse::<",
     ".contains(\""
   ],
-  "pending": [
-    {
-      "file": "crates/zerolm-reasoner/src/lib.rs",
-      "reason": "Compiled programs now normalize phrases and recognize bounded grammar, including numeric guards and question markers. The numeric frame is rendered into typed structures, then pred_parts maps these to role-filler inputs and observe/ask dispatch by utterance form on the host. This binding and dispatch must move into compiled programs before the uniform-engine milestone is complete."
-    }
-  ]
+  "pending": []
 }

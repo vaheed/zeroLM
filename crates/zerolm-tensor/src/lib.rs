@@ -3,6 +3,11 @@
 
 pub mod sha256;
 
+/// FNV-1a of a stream label's bytes (provenance stamps; copies bytes, reads none).
+pub fn fnv1a_label(label: &str) -> u64 {
+    fnv1a(label.as_bytes())
+}
+
 /// FNV-1a 64-bit hash (stable, used for tags and checksums).
 pub fn fnv1a(bytes: &[u8]) -> u64 {
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;

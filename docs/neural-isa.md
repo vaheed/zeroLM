@@ -1,6 +1,6 @@
 # Neural ISA
 
-Status: uniform-engine milestone, in progress. Roadmap section 3.7; constitution invariant 10 (uniform execution).
+Status: uniform-engine milestone, complete. Roadmap section 3.7; constitution invariant 10 (uniform execution).
 
 **What "ISA" means.** ISA stands for *instruction set architecture*, a term from processor design: the fixed list of instructions a CPU can execute, which every program is ultimately built from. ZeroLM borrows the idea for a neural network. The **neural ISA** is the fixed list of tensor operations (matrix-vector products, elementwise gates, normalization, phasor binding, top-k selection, hashed row selection, the delta-rule write, and fixed repetition) that every computation of the model must be expressed in. The name is this project's own, not an external standard, which is why it does not turn up in searches. The closest published ideas are RASP and Tracr, which compile programs into Transformer weights (roadmap section 2.8).
 
@@ -346,27 +346,26 @@ marker. `row-compare` accumulates token equality across fixed-size byte chunks,
 including unknown names of arbitrary length. `template-match` checks length,
 literal IDs, required attributes, and equality guards against 115 external
 seed templates, then emits a numeric frame using their priorities and readouts.
-The host renders that frame into typed structures for the remaining host binding
-and dispatch. Vocabulary, numeric bounds, whitespace classes, and grammar are
+`frame-bind` then turns the frame and the atom vectors of the clause's tokens
+(each from `atom-encode` over the token's bytes) into the role fillers, the
+roles filled, the codebook entries, polarity and kind, and the relation vectors
+bound with a dimension or counted thing; its control row carries the form code,
+which picks the fixed circuit sequence (write, or the operators' circuits). The
+host copies the rows its masks select. Vocabulary, numeric bounds, whitespace classes, and grammar are
 explicit frozen seed data; none are compiled into `W_PROG`. Differential tests
 cover every seeded template and guard mutations, numeric and Unicode edge cases,
 and long names; block ablations establish that the circuits control recognition.
 Exported runs include the external tables for independent interpreter replay.
 The recognition-stage uniform gate reproduced all 140,692 recorded reasoning
 runs and 862 memory runs bit for bit, with zero host-scan violations. The
-milestone remains in progress because binding and dispatch are still pending.
+With `frame-bind` the pending list is empty (1,171 `frame-bind` runs among 141,941
+reasoning runs reproduced bit for bit) and the milestone is complete.
 
 `zerolm-wsp check` recompiles every spec and compares with `model/prog/pinned.json`.
 
 ## Not yet done
 
-- Mapping parsed structures to role bindings and dispatching by utterance
-  form remain host code. Bounded grammar recognition, question detection,
-  and numeric guards now run in compiled programs. The
-  byte tokenizer and case folder run in `language-lex`, and normalization runs
-  in `row-lookup` and `sequence-rewrite`; symbol vectors run in
-  `atom-encode`. Memory writes, fast-weight recall, and reasoning operator
-  decisions already run in their compiled circuits.
+- The host still sequences fixed circuit pipelines from the form and predicate codes the circuits emit, and copies bytes and masked rows between runs. Every content decision is a circuit output.
 - Full-model held-out BPB byte-permutation testing remains outstanding; the
   generic row-lookup circuit has a separate alphabet-renaming equivariance test.
 

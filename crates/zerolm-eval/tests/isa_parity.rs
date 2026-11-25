@@ -7,15 +7,15 @@ use zerolm_tensor::Rng;
 
 #[test]
 fn parser_normalization_replays_with_exported_seed_tables() {
-    let r = zerolm_reasoner::Reasoner::new(zerolm_reasoner::ReasonerConfig {
+    let mut r = zerolm_reasoner::Reasoner::new(zerolm_reasoner::ReasonerConfig {
         dim: 64, symbols: 32, slots: 32, number_range: 20, ..Default::default()
     }).unwrap();
     r.record_circuits(true);
-    for text in ["the dax lives in the zup", "is it true that dax is unable to jump right?", "a thing happened before dax", "right right", "dax has -0 nubs", "dax has 1000001 nubs", "if dax is wet then dax is cold", "dax is wet?\u{2003}"] {
-        r.parse(text);
+    for text in ["the dax lives in the zup", "is it true that dax is unable to jump right?", "a thing happened before dax", "right right", "dax has -0 nubs", "dax has 1000001 nubs", "if dax is wet then dax is cold", "dax is wet?\u{2003}", "dax is a zup", "dax has 3 nubs", "who is taller dax or zed?", "if dax is wet then dax is cold", "zed has 2 more nubs than dax"] {
+        r.observe(text, "parity").unwrap();
     }
     let runs = r.take_recorded();
-    for program in ["row-lookup", "sequence-rewrite", "byte-lookup", "token-number", "token-features", "masked-lookup", "question-tail", "row-compare", "template-match"] {
+    for program in ["row-lookup", "sequence-rewrite", "byte-lookup", "token-number", "token-features", "masked-lookup", "question-tail", "row-compare", "template-match", "frame-bind"] {
         assert!(runs.iter().any(|run| run.program == program));
     }
     for run in runs {

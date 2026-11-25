@@ -5,6 +5,7 @@
     "byte-lookup": "6334e368638b14d34114d0aa00defff928126d1b3bd7d254b3b786a1bbe7f879",
     "fast-recall": "0653978c84ac08c5cfadc1e4a48cf0e73a90bf92d8df139970b36ff8afd27723",
     "fast-write": "66d4e9f0c7ae3fb08cc470c033f6c3c81ac057344579864797c7bac0722b640a",
+    "frame-bind": "dfda56b1f2e152aeebfba0a34409f1cd5ddfcda22af7ee78fb3a68ef2a61fc4a",
     "language-lex": "b63ed152eb51d959e0b47dab093871b05676f49d06e962a1dcfd70442f8af2a1",
     "masked-lookup": "b317ca754e459f2bf6f8b352d64a40a7038acd7e3824d22f43cf16061844be3b",
     "memory-compact": "f853cde0c51409d08d33ade081dce10c437097067a677797197ee1e4a53edb64",

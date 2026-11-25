@@ -60,6 +60,26 @@ pub fn decide_spec(cfg: &ReasonerConfig, id: &str) -> Spec {
     Spec { id: id.into(), version: 1, seed_entry: "relation-decide-circuits".into(), description: String::new(), circuit }
 }
 
+pub const FRAME_ID: &str = "frame-bind";
+
+/// `frame-bind` (`zerolm_wsp::circuits::frame_bind`): the dimensions are the
+/// seeded dimension names; the template table has `TOKENS` tokens and `FIELDS` frame fields.
+pub fn frame_spec(cfg: &ReasonerConfig) -> Spec {
+    Spec {
+        id: FRAME_ID.into(),
+        version: 1,
+        seed_entry: "frame-bind-circuit".into(),
+        description: String::new(),
+        circuit: Circuit::FrameBind(zerolm_wsp::circuits::frame_bind::Params {
+            tokens: crate::parser_seed::TOKENS,
+            fields: crate::parser_seed::FIELDS,
+            dim: cfg.dim,
+            dimensions: crate::grammar_seed::DIMENSIONS,
+            relations: crate::RELATIONS.len(),
+        }),
+    }
+}
+
 pub const ATOM_ID: &str = "atom-encode";
 
 /// Atom encoder width: names up to `ATOM_BYTES - 1` bytes (longer names are cut).
@@ -232,11 +252,13 @@ pub struct Circuits {
     pub counts: Compiled,
     pub verdict: Compiled,
     pub lexer: Compiled,
+    pub frame: Compiled,
 }
 
 impl Circuits {
     pub fn new(cfg: &ReasonerConfig) -> Self {
         Circuits {
+            frame: compile(&frame_spec(cfg)).expect("valid reasoning config compiles"),
             lexer: zerolm_wsp::shipped("language-lex").expect("shipped lexer compiles"),
             graph: compile(&graph_spec(cfg)).expect("valid reasoning config compiles"),
             reach: compile(&reach_spec(cfg)).expect("valid reasoning config compiles"),
@@ -251,8 +273,8 @@ impl Circuits {
     }
 
     /// Every compiled program, in checkpoint order.
-    pub fn all(&self) -> [&Compiled; 10] {
-        [&self.graph, &self.reach, &self.probe, &self.cleanup, &self.join, &self.levels, &self.rules, &self.counts, &self.verdict, &self.lexer]
+    pub fn all(&self) -> [&Compiled; 11] {
+        [&self.graph, &self.reach, &self.probe, &self.cleanup, &self.join, &self.levels, &self.rules, &self.counts, &self.verdict, &self.lexer, &self.frame]
     }
 }
 

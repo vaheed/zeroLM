@@ -19,17 +19,20 @@ mod grammar;
 mod grammar_seed;
 mod parser_seed;
 mod parser;
+mod frame;
+mod render;
 pub mod lookup;
 pub mod operators;
 pub mod oracle;
 
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use zerolm_engine::binding::{bind, Hv};
-use zerolm_engine::semantic_state::{Fact, Pred, Rule, SemanticState, Term, Utterance};
+use zerolm_engine::binding::Hv;
+use zerolm_engine::semantic_state::SemanticState;
+use crate::frame::{Frame, FORM_COUNT, FORM_FACT, FORM_HOLDS, FORM_RULE, FORM_WHICH};
 use zerolm_memory::checkpoint::{self, CheckpointError, Tensor};
 use zerolm_tensor::sha256::Sha256;
-use zerolm_tensor::{fnv1a, Matrix};
+use zerolm_tensor::{fnv1a_label, Matrix};
 
 pub const SLOTS: &str = "memory.relations.slots";
 pub const META: &str = "memory.relations.meta";
@@ -50,7 +53,7 @@ pub mod field {
     /// +1 asserted, -1 negated.
     pub const POLARITY: usize = 1;
     pub const CONFIDENCE: usize = 2;
-    /// Predicate code (see `pred_code`), 9 for rules.
+    /// Predicate code (the template table's predicate code), 9 for rules.
     pub const KIND: usize = 3;
     pub const SEQ_LO: usize = 4;
     pub const SEQ_HI: usize = 5;
@@ -59,18 +62,6 @@ pub mod field {
     pub const COUNT: usize = 10;
 }
 
-pub fn pred_code(p: &Pred) -> f32 {
-    match p {
-        Pred::Isa(_) => 1.0,
-        Pred::Can(_) => 2.0,
-        Pred::In(_) => 3.0,
-        Pred::Prop(_) => 4.0,
-        Pred::Greater { .. } => 5.0,
-        Pred::Before(_) => 6.0,
-        Pred::Count { .. } => 7.0,
-        Pred::More { .. } => 8.0,
-    }
-}
 pub const RULE_KIND: f32 = 9.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Serialize, Deserialize)]
@@ -283,6 +274,8 @@ pub struct Reasoner {
     atoms: circuits::Atoms,
     roles: Vec<Hv>,
     rels: Vec<Hv>,
+    /// Atoms of the seeded dimension names (input of `frame-bind`).
+    dim_atoms: Matrix,
     slots: Matrix,
     meta: Matrix,
     codebook: Matrix,
@@ -302,11 +295,7 @@ pub struct Reasoner {
     recorder: circuits::Recorder,
 }
 
-pub(crate) const SUBJ: usize = 0;
-pub(crate) const REL: usize = 1;
-pub(crate) const OBJ: usize = 2;
-pub(crate) const QUANT: usize = 3;
-pub(crate) const SCOPE: usize = 4;
+// Role positions (subject, relation, object, quantity, scope) follow `ROLES`; `frame-bind` fills them in that order.
 
 pub(crate) fn rel_index(name: &str) -> usize {
     RELATIONS.iter().position(|r| *r == name).expect("known relation")
@@ -320,7 +309,10 @@ impl Reasoner {
         let atoms = circuits::Atoms::new(&cfg);
         let roles = ROLES.iter().map(|r| atoms.encode("role", r)).collect();
         let rels = RELATIONS.iter().map(|r| atoms.encode("rel", r)).collect();
+        let grammar = grammar_seed::Grammar::new();
+        let dim_atoms = Matrix { rows: grammar.dimensions.len(), cols: 2 * cfg.dim, data: grammar.dimensions.iter().flat_map(|d| atoms.encode("sym", d).data).collect() };
         Ok(Reasoner {
+            dim_atoms,
             ops: Ops::ALL,
             roles,
             rels,
@@ -340,7 +332,7 @@ impl Reasoner {
             recorder: Default::default(),
             atoms,
             numbers: circuits::Numbers::new(&cfg),
-            grammar: grammar_seed::Grammar::new(),
+            grammar,
             cfg,
         })
     }
@@ -412,10 +404,10 @@ impl Reasoner {
         self.find_symbol(&self.symbol(name))
     }
 
-    /// Intern a name: `symbol-cleanup` decides whether its vector is new (and
+    /// Intern a symbol vector: `symbol-cleanup` decides whether it is new (and
     /// `gate` is 1); the host appends the circuit's row at the codebook counter.
-    fn intern(&mut self, name: &str, gate: f32) -> Result<(), ReasonerError> {
-        let c = self.symbol_cleanup_full(&self.symbol(name), circuits::CleanupMode::Same, gate);
+    fn intern(&mut self, v: &Hv, gate: f32) -> Result<(), ReasonerError> {
+        let c = self.symbol_cleanup_full(v, circuits::CleanupMode::Same, gate);
         if c.added {
             if self.n_sym == self.cfg.symbols {
                 return Err(ReasonerError::Full("codebook"));
@@ -429,51 +421,14 @@ impl Reasoner {
 
     // ---- Language interface ----
 
-    /// Relation vector and role-filler parts of a predicate for subject `s`.
-    pub(crate) fn pred_parts(&self, s: &Hv, pred: &Pred) -> Vec<(usize, Hv)> {
-        let sym = |n: &str| self.symbol(n);
-        let mut p = vec![(SUBJ, s.clone())];
-        match pred {
-            Pred::Isa(c) => p.extend([(REL, self.rel("isa").clone()), (OBJ, sym(c))]),
-            Pred::Can(v) => p.extend([(REL, self.rel("can").clone()), (OBJ, sym(v))]),
-            Pred::In(y) => p.extend([(REL, self.rel("in").clone()), (OBJ, sym(y))]),
-            Pred::Prop(x) => p.extend([(REL, self.rel("prop").clone()), (OBJ, sym(x))]),
-            Pred::Greater { dim, other } => p.extend([(REL, bind(self.rel("gt"), &sym(dim))), (OBJ, sym(other))]),
-            Pred::Before(y) => p.extend([(REL, self.rel("before").clone()), (OBJ, sym(y))]),
-            Pred::Count { thing, n } => p.extend([(REL, bind(self.rel("has"), &sym(thing))), (QUANT, self.numbers.encode(*n))]),
-            Pred::More { thing, delta, other } => {
-                p.extend([(REL, bind(self.rel("more"), &sym(thing))), (OBJ, sym(other)), (QUANT, self.numbers.encode(*delta))])
-            }
+    /// Resolve "it": the codebook symbol nearest the discourse state
+    /// (`symbol-cleanup`, pronoun threshold). Returns (vector, resolved).
+    /// An unresolved "it" is the zero vector, which no circuit matches.
+    pub(crate) fn resolve_pronoun(&self) -> (Hv, f32) {
+        match self.symbol_cleanup(&self.state.context, circuits::CleanupMode::Pronoun) {
+            Some(i) => (self.code(i), 1.0),
+            None => (Hv::zeros(self.cfg.dim), 0.0),
         }
-        p
-    }
-
-    fn pred_symbols(pred: &Pred) -> Vec<&str> {
-        match pred {
-            Pred::Isa(x) | Pred::Can(x) | Pred::In(x) | Pred::Prop(x) | Pred::Before(x) => vec![x],
-            Pred::Greater { dim, other } => vec![dim, other],
-            Pred::Count { thing, .. } => vec![thing],
-            Pred::More { thing, other, .. } => vec![thing, other],
-        }
-    }
-
-    /// Resolve a subject term to (vector, via pronoun, resolved). An
-    /// unresolved "it" is the zero vector with `resolved` 0.
-    pub(crate) fn resolve_gated(&self, t: &Term) -> (Hv, bool, f32) {
-        match t {
-            Term::Name(n) => (self.symbol(n), false, 1.0),
-            // "it": the codebook symbol nearest the discourse state (`symbol-cleanup`, pronoun threshold).
-            Term::Pronoun => match self.symbol_cleanup(&self.state.context, circuits::CleanupMode::Pronoun) {
-                Some(i) => (self.code(i), true, 1.0),
-                None => (Hv::zeros(self.cfg.dim), true, 0.0),
-            },
-        }
-    }
-
-    /// Resolve a subject term to a codebook vector; `None` if "it" is unresolved.
-    pub(crate) fn resolve(&self, t: &Term) -> Option<(Hv, bool)> {
-        let (v, via, ok) = self.resolve_gated(t);
-        (ok == 1.0).then_some((v, via))
     }
 
     /// Store a statement: `relation-probe` decides (resolved and not a
@@ -481,7 +436,7 @@ impl Reasoner {
     /// them at the slot counter and logs the write.
     fn write(&mut self, parts: &[(usize, Hv)], polarity: f32, kind: f32, confidence: f32, gate: f32, stream: &str) -> Result<Observed, ReasonerError> {
         let seq = self.clock + 1;
-        let h = fnv1a(stream.as_bytes());
+        let h = fnv1a_label(stream);
         let m = (1u64 << 22) - 1;
         let mut record = vec![0.0f32; field::COUNT];
         record[field::ACTIVE] = 1.0;
@@ -529,58 +484,38 @@ impl Reasoner {
         Ok(Observed::Stored { slot: s })
     }
 
-    pub fn teach_fact(&mut self, f: &Fact, stream: &str) -> Result<Observed, ReasonerError> {
-        let (s, via_pronoun, gate) = self.resolve_gated(&f.subj);
-        if let Term::Name(n) = &f.subj {
-            self.intern(n, gate)?;
+    /// Store a bound statement (`frame-bind` chose the fillers and the codebook
+    /// entries; `relation-probe` decides the write).
+    fn teach(&mut self, f: &Frame, stream: &str) -> Result<Observed, ReasonerError> {
+        let mut parts = f.parts.clone();
+        let (mut gate, mut confidence) = (1.0, 1.0);
+        if f.form == FORM_FACT && f.pronoun {
+            let (s, resolved) = self.resolve_pronoun();
+            parts[0].1 = s;
+            (gate, confidence) = (resolved, self.cfg.pronoun_confidence);
         }
-        for n in Self::pred_symbols(&f.pred) {
-            self.intern(n, gate)?;
+        for v in &f.interns {
+            self.intern(v, gate)?;
         }
-        let parts = self.pred_parts(&s, &f.pred);
-        let conf = if via_pronoun { self.cfg.pronoun_confidence } else { 1.0 };
-        self.write(&parts, if f.negated { -1.0 } else { 1.0 }, pred_code(&f.pred), conf, gate, stream)
-    }
-
-    pub fn teach_rule(&mut self, r: &Rule, stream: &str) -> Result<Observed, ReasonerError> {
-        for n in [&r.premise, &r.conclusion].into_iter().chain(r.scope.as_ref()) {
-            self.intern(n, 1.0)?;
-        }
-        let scope = match &r.scope {
-            Some(x) => self.symbol(x),
-            None => self.rel("something").clone(),
-        };
-        let parts = vec![
-            (SUBJ, self.symbol(&r.premise)),
-            (REL, self.rel("implies").clone()),
-            (OBJ, self.symbol(&r.conclusion)),
-            (SCOPE, scope),
-        ];
-        self.write(&parts, 1.0, RULE_KIND, 1.0, 1.0, stream)
-    }
-
-    /// Parse with compiled byte segmentation, folding, and phrase rewrites.
-    /// Recognition runs in compiled programs; typed binding and dispatch remain host code.
-    pub fn parse(&self, text: &str) -> Option<Utterance> {
-        self.parse_circuits(text)
+        self.write(&parts, f.polarity, f.kind, confidence, gate, stream)
     }
 
     /// Process one line: statements are stored, questions are answered.
+    /// Recognition, binding, and every decision run in compiled programs; the
+    /// form code they emit picks the fixed circuit sequence.
     pub fn observe(&mut self, text: &str, stream: &str) -> Result<Observed, ReasonerError> {
-        match self.parse(text) {
-            None => Ok(Observed::Unparsed),
-            Some(Utterance::Fact(f)) => self.teach_fact(&f, stream),
-            Some(Utterance::Rule(r)) => self.teach_rule(&r, stream),
-            Some(Utterance::Query(q)) => Ok(Observed::Answer(self.answer(&q))),
+        let Some(f) = self.parse_frame(text) else { return Ok(Observed::Unparsed) };
+        match f.form {
+            FORM_FACT | FORM_RULE => self.teach(&f, stream),
+            FORM_HOLDS | FORM_COUNT | FORM_WHICH => Ok(Observed::Answer(self.answer_frame(&f))),
+            _ => Ok(Observed::Unparsed),
         }
     }
 
     /// Answer a question line (`None` if it is not a question in the language).
     pub fn ask(&self, text: &str) -> Option<Answer> {
-        match self.parse(text) {
-            Some(Utterance::Query(q)) => Some(self.answer(&q)),
-            _ => None,
-        }
+        let f = self.parse_frame(text)?;
+        matches!(f.form, FORM_HOLDS | FORM_COUNT | FORM_WHICH).then(|| self.answer_frame(&f))
     }
 
     // ---- Checkpoint ----
@@ -640,7 +575,7 @@ impl Reasoner {
                 return Err(ReasonerError::Format(format!("unexpected tensor {}", got.name)));
             }
             match got.name.as_str() {
-                name if name == ROLES_T || name == RELATIONS_T || name == NUMBER_DIGITS_T || name == NUMBER_CODEBOOK_T || name == ATOM_TABLE_T || name.starts_with("prog.") || name.starts_with("bootstrap.reasoning.") => {
+                _ if w.group != "relation_memory" => {
                     if got.data.iter().zip(&w.data).any(|(a, b)| a.to_bits() != b.to_bits()) {
                         return Err(ReasonerError::CoreMismatch(got.name));
                     }

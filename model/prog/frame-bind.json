@@ -1,0 +1,14 @@
+{
+  "id": "frame-bind",
+  "version": 1,
+  "seed_entry": "frame-bind-circuit",
+  "description": "Typed frame binding as a circuit: the template frame and the atom vectors of the clause's tokens become the role-filler structure of the utterance (fillers and roles filled, codebook entries, form, predicate, polarity, relation vectors bound with dimension or counted thing). Frame field positions are the interface to the seeded template table; no words or grammar in constants. Parameters equal model/specs/reasoning.json.",
+  "circuit": {
+    "kind": "frame_bind",
+    "tokens": 9,
+    "fields": 16,
+    "dim": 512,
+    "dimensions": 4,
+    "relations": 10
+  }
+}

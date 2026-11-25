@@ -9,9 +9,9 @@
 //! answers are never written back to memory.
 
 use crate::{field, Answer, Reasoner, Verdict};
-use zerolm_engine::binding::{bind, Hv};
+use crate::frame::{Frame, FORM_COUNT, FORM_WHICH};
+use zerolm_engine::binding::Hv;
 use zerolm_engine::isa::{Buf, Outputs};
-use zerolm_engine::semantic_state::{Pred, Query};
 
 /// Columns of `relation-verdict`'s one-hot output.
 const VERDICTS: [Kind; 4] = [Kind::Yes, Kind::No, Kind::Contradiction, Kind::Unknown];
@@ -84,67 +84,68 @@ impl Reasoner {
         self.finish(verdict, &o.get("premises").data, ops)
     }
 
-    pub fn answer(&self, q: &Query) -> Answer {
+    /// Answer a bound question: the form code picks the circuit sequence;
+    /// every vector comes from `frame-bind`.
+    pub(crate) fn answer_frame(&self, f: &Frame) -> Answer {
         if self.n_slots == 0 || self.n_sym == 0 {
             return self.unknown();
         }
-        // An unresolved "it" is the zero vector, which no circuit matches.
-        let subject = |t| self.resolve(t).map(|(v, _)| v).unwrap_or_else(|| Hv::zeros(self.cfg.dim));
-        match q {
-            Query::Holds { subj, pred } => self.holds(&subject(subj), pred),
-            Query::Count { subj, thing } => self.count_answer(&subject(subj), thing),
-            Query::Which { dim, higher, a, b } => {
-                let ans = self.holds(&self.symbol(a), &Pred::Greater { dim: dim.clone(), other: b.clone() });
+        let subject = if f.pronoun { self.resolve_pronoun().0 } else { f.subject.clone() };
+        match f.form {
+            FORM_COUNT => self.count_answer(&subject, f),
+            FORM_WHICH => {
+                let ans = self.holds(&f.name_a, f);
+                let (a, b) = &f.choices;
                 let pick = |first: bool| Verdict::Choice(if first { a.clone() } else { b.clone() });
                 let verdict = match ans.verdict {
-                    Verdict::Yes => pick(*higher),
-                    Verdict::No => pick(!*higher),
+                    Verdict::Yes => pick(f.higher),
+                    Verdict::No => pick(!f.higher),
                     other => other,
                 };
                 Answer { verdict, ..ans }
             }
+            _ => self.holds(&subject, f),
         }
     }
 
-    fn holds(&self, x: &Hv, pred: &Pred) -> Answer {
-        match pred {
-            Pred::Isa(c) => {
-                let (y, isa) = (self.symbol(c), self.rel("isa").clone());
-                let from_x = self.run_reach(x, &y, &isa, "class_inclusion");
-                let from_y = self.run_reach(&y, &y, &isa, "class_inclusion");
+    /// Yes/no question: the predicate code picks the circuits.
+    fn holds(&self, x: &Hv, f: &Frame) -> Answer {
+        let y = &f.object;
+        match f.pred {
+            1 => {
+                let isa = self.rel("isa").clone();
+                let from_x = self.run_reach(x, y, &isa, "class_inclusion");
+                let from_y = self.run_reach(y, y, &isa, "class_inclusion");
                 let pos = Self::chain(&from_x, "class_inclusion", false);
-                let j = self.run_join(x, &y, &isa, Some(&from_x), Some(&from_y));
+                let j = self.run_join(x, y, &isa, Some(&from_x), Some(&from_y));
                 let mut ops = vec!["negation"];
                 if j.scalar("len") > 1.0 {
                     ops.push("class_inclusion");
                 }
                 self.decide(pos, Finding { found: j.scalar("found"), proof: j.get("proof").clone(), ops })
             }
-            Pred::Can(v) => {
-                let o = self.run_levels(x, &self.symbol(v), self.rel("can"), self.rel("isa"));
+            2 => {
+                let o = self.run_levels(x, y, self.rel("can"), self.rel("isa"));
                 let tag = if o.scalar("level") > 0.0 { "attribute_inheritance" } else { "direct" };
                 let pos = Finding { found: o.scalar("pos_found"), proof: o.get("pos_proof").clone(), ops: vec![tag] };
                 let neg = Finding { found: o.scalar("neg_found"), proof: o.get("neg_proof").clone(), ops: vec![tag, "negation"] };
                 self.decide(pos, neg)
             }
-            Pred::In(y) => {
-                let (y, rel) = (self.symbol(y), self.rel("in").clone());
-                let pos = Self::chain(&self.run_reach(x, &y, &rel, "transitivity"), "transitivity", false);
-                self.decide(pos, self.direct_negation(x, &y, &rel))
+            3 => {
+                let rel = self.rel("in").clone();
+                let pos = Self::chain(&self.run_reach(x, y, &rel, "transitivity"), "transitivity", false);
+                self.decide(pos, self.direct_negation(x, y, &rel))
             }
-            Pred::Prop(p) => {
-                let (p, rel) = (self.symbol(p), self.rel("prop").clone());
-                let o = self.run_rules(x, &p, &rel, self.rel("implies"), self.rel("something"));
+            4 => {
+                let rel = self.rel("prop").clone();
+                let o = self.run_rules(x, y, &rel, self.rel("implies"), self.rel("something"));
                 let tag = if o.scalar("level") > 0.0 { "conditionals" } else { "direct" };
                 let pos = Finding { found: o.scalar("found"), proof: o.get("proof").clone(), ops: vec![tag] };
-                self.decide(pos, self.direct_negation(x, &p, &rel))
+                self.decide(pos, self.direct_negation(x, y, &rel))
             }
-            Pred::Greater { dim, other } => {
-                let rel = bind(self.rel("gt"), &self.symbol(dim));
-                self.order(x, &self.symbol(other), &rel, self.ops.comparison, "comparison")
-            }
-            Pred::Before(other) => self.order(x, &self.symbol(other), &self.rel("before").clone(), self.ops.temporal_ordering, "temporal_ordering"),
-            Pred::Count { .. } | Pred::More { .. } => self.unknown(),
+            5 => self.order(x, y, &f.rel, self.ops.comparison, "comparison"),
+            6 => self.order(x, y, &self.rel("before").clone(), self.ops.temporal_ordering, "temporal_ordering"),
+            _ => self.unknown(),
         }
     }
 
@@ -163,9 +164,8 @@ impl Reasoner {
         self.decide(pos, neg)
     }
 
-    fn count_answer(&self, x: &Hv, thing: &str) -> Answer {
-        let sym = self.symbol(thing);
-        let o = self.run_counts(x, &bind(self.rel("has"), &sym), &bind(self.rel("more"), &sym));
+    fn count_answer(&self, x: &Hv, f: &Frame) -> Answer {
+        let o = self.run_counts(x, &f.rel, &f.rel_more);
         let ops = if o.scalar("arith") > 0.0 { vec!["arithmetic", "direct"] } else { vec!["direct"] };
         let premises = &o.get("premises").data;
         if o.scalar("found") == 0.0 {

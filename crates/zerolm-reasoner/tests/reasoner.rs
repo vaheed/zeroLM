@@ -191,6 +191,7 @@ fn default_config_compiles_to_the_shipped_pinned_circuits() {
         (atom_spec(&cfg), ATOM_ID),
         (number_encode_spec(&cfg), NUMBER_ENCODE_ID),
         (number_decode_spec(&cfg), NUMBER_DECODE_ID),
+        (frame_spec(&cfg), FRAME_ID),
         (probe_spec(&cfg), PROBE_ID),
         (cleanup_spec(&cfg), CLEANUP_ID),
         (decide_spec(&cfg, JOIN_ID), JOIN_ID),

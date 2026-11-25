@@ -204,6 +204,13 @@
       "description": "Generic template_match computation. Attribute keys, character classes, template requirements, and readouts are external bootstrap_grammar weights. Compiled constants contain only shape selectors and arithmetic scalars.",
       "source": "crates/zerolm-wsp/src/circuits/template_match.rs",
       "derived_from_corpus": false
+    },
+    {
+      "id": "frame-bind-circuit",
+      "kind": "structural_prior",
+      "description": "Generic frame_bind computation: one-hot token and dimension selectors, predicate and form selectors, and output stacking over the numeric frame of template-match and externally supplied atom vectors. Compiled constants are shape selectors and the scalar codes of the frame schema; no words, relations, or grammar.",
+      "source": "crates/zerolm-wsp/src/circuits/frame_bind.rs",
+      "derived_from_corpus": false
     }
   ]
 }
