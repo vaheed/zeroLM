@@ -1,10 +1,10 @@
-//! Real-text baselines (roadmap Phase 8): byte frequency and interpolated
-//! Witten-Bell orders 3 and 5 (sparse counts), and the online-learning
+//! Real-text baselines (roadmap Phase 8): byte frequency, interpolated
+//! Witten-Bell orders 3 and 5, PPM-C order 5, Kneser-Ney order 5 (sparse counts), and the online-learning
 //! milestone's delta-rule predictor, all learning chronologically from the
 //! same exposure bytes and scored on the hidden split's whole documents.
 //!
-//! `zerolm-realtext --root DATA_DIR [--manifest PATH] [--exposure N] [--hidden N] [--out DIR]`
-//! Not yet run here: PPM, Kneser-Ney, and the backpropagation CONTROL.
+//! `zerolm-realtext --root DATA_DIR [--manifest PATH] [--exposure N] [--hidden N] [--learner-limit N] [--out DIR]`
+//! Not yet run here: the backpropagation CONTROL.
 
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -53,11 +53,101 @@ impl Wb {
         p
     }
 
+    /// PPM-C with exclusion: escape through shorter contexts, never counting a
+    /// byte already ruled out by a longer context; the last resort is uniform
+    /// over the bytes not yet excluded.
+    fn ppm_prob(&self, hist: &[u8], b: u8) -> f64 {
+        let mut excluded = [false; 256];
+        let mut escape = 1.0;
+        for k in (0..self.order.min(hist.len() + 1)).rev() {
+            let Some(c) = self.counts.get(&key(k, &hist[hist.len() - k..])) else { continue };
+            let live: Vec<&(u8, u32)> = c.iter().filter(|x| !excluded[x.0 as usize]).collect();
+            if live.is_empty() {
+                continue;
+            }
+            let total: f64 = live.iter().map(|x| x.1 as f64).sum();
+            let d = live.len() as f64;
+            if let Some(x) = live.iter().find(|x| x.0 == b) {
+                return escape * x.1 as f64 / (total + d);
+            }
+            escape *= d / (total + d);
+            for x in live {
+                excluded[x.0 as usize] = true;
+            }
+        }
+        let left = 256 - excluded.iter().filter(|e| **e).count();
+        escape / left as f64
+    }
+
+    fn bpb(&self, bytes: &[u8], ppm: bool) -> f64 {
+        let bits: f64 = bytes
+            .iter()
+            .enumerate()
+            .map(|(i, &b)| {
+                let h = &bytes[i.saturating_sub(self.order - 1)..i];
+                -(if ppm { self.ppm_prob(h, b) } else { self.prob(h, b) }).log2()
+            })
+            .sum();
+        bits / bytes.len().max(1) as f64
+    }
+
+}
+
+/// Interpolated Kneser-Ney (fixed discount 0.75): the highest order uses raw
+/// counts, lower orders use continuation counts (distinct left extensions).
+struct Kn {
+    order: usize,
+    raw: HashMap<u64, Vec<(u8, u32)>>,
+    cont: Vec<HashMap<u64, Vec<(u8, u32)>>>,
+    seen: std::collections::HashSet<u64>,
+}
+
+const DISCOUNT: f64 = 0.75;
+
+fn bump(m: &mut HashMap<u64, Vec<(u8, u32)>>, k: u64, b: u8) {
+    let e = m.entry(k).or_default();
+    match e.iter_mut().find(|(x, _)| *x == b) {
+        Some((_, c)) => *c += 1,
+        None => e.push((b, 1)),
+    }
+}
+
+impl Kn {
+    fn new(order: usize) -> Self {
+        Kn { order, raw: HashMap::new(), cont: (0..order - 1).map(|_| HashMap::new()).collect(), seen: Default::default() }
+    }
+
+    fn observe(&mut self, hist: &[u8], b: u8) {
+        let top = self.order - 1;
+        if hist.len() < top {
+            return;
+        }
+        bump(&mut self.raw, key(top, &hist[hist.len() - top..]), b);
+        for j in 0..top {
+            let mut g = key(j + 1, &hist[hist.len() - j - 1..]).to_le_bytes().to_vec();
+            g.push(b);
+            if self.seen.insert(fnv1a(&g)) {
+                bump(&mut self.cont[j], key(j, &hist[hist.len() - j..]), b);
+            }
+        }
+    }
+
+    fn prob(&self, hist: &[u8], b: u8) -> f64 {
+        let mut p = 1.0 / 256.0;
+        for j in 0..self.order.min(hist.len() + 1) {
+            let table = if j == self.order - 1 { &self.raw } else { &self.cont[j] };
+            let Some(c) = table.get(&key(j, &hist[hist.len() - j..])) else { continue };
+            let total: f64 = c.iter().map(|x| x.1 as f64).sum();
+            let n = c.iter().find(|x| x.0 == b).map(|x| x.1 as f64).unwrap_or(0.0);
+            p = (n - DISCOUNT).max(0.0) / total + DISCOUNT * c.len() as f64 / total * p;
+        }
+        p
+    }
+
     fn bpb(&self, bytes: &[u8]) -> f64 {
         let bits: f64 = bytes.iter().enumerate().map(|(i, &b)| -self.prob(&bytes[i.saturating_sub(self.order - 1)..i], b).log2()).sum();
         bits / bytes.len().max(1) as f64
     }
-
 }
 
 fn arg(name: &str) -> Option<String> {
@@ -87,14 +177,27 @@ fn main() {
         for &p in &points {
             wb.learn_range(exposure, done, p);
             done = p;
-            rows.push((format!("witten-bell-{order}"), p, wb.bpb(hidden)));
+            rows.push((format!("witten-bell-{order}"), p, wb.bpb(hidden, false)));
+            if order == 5 {
+                rows.push(("ppm-c-5".into(), p, wb.bpb(hidden, true)));
+            }
         }
+    }
+    let mut kn = Kn::new(5);
+    let mut done = 0;
+    for &p in &points {
+        for i in done..p {
+            kn.observe(&exposure[i.saturating_sub(4)..i], exposure[i]);
+        }
+        done = p;
+        rows.push(("kneser-ney-5".into(), p, kn.bpb(hidden)));
     }
     println!("n-gram baselines {:.1}s", t.elapsed().as_secs_f64());
     let t = Instant::now();
     let mut m_delta = OnlinePredictor::new(1, Rule::Delta, Constants::default(), "real-text-exposure");
+    let learner_limit: usize = arg("--learner-limit").map(|v| v.parse().expect("number")).unwrap_or(1_000_000);
     let mut done = 0;
-    for &p in &points {
+    for &p in points.iter().filter(|p| **p <= learner_limit) {
         m_delta.observe_all(&exposure[done..p]).expect("finite");
         done = p;
         rows.push(("online-delta (phase 4 learner)".into(), p, m_delta.evaluate(hidden).expect("finite").bpb));
@@ -104,7 +207,7 @@ fn main() {
     for (n, p, b) in &rows {
         out += &format!("| {n} | {p} | {b:.3} |\n");
     }
-    out += "\nNot yet run: PPM, Kneser-Ney order 5, and the online-backpropagation CONTROL.\n";
+    out += "\nNot yet run: the online-backpropagation CONTROL.\n";
     print!("{out}");
     let dir = PathBuf::from(arg("--out").unwrap_or_else(|| "reports/real-text".into()));
     std::fs::create_dir_all(&dir).expect("out dir");
