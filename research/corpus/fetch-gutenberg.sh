@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# PROVENANCE ONLY. This script is how the shards were first built, but it is not reproducible: the mirror
+# times out on large files (falling back to other editions) and some files have changed since. The exact
+# bytes are archived in research/corpus/archive/ and unpacked by unpack-archive.sh; use that.
 # Usage: fetch-gutenberg.sh [OUT=data] [GROUP=fiction|nonfiction|fresh-fiction|fresh-nonfiction]
 # GROUP fresh-fiction / fresh-nonfiction write gutenberg/fresh-fiction.bin and fresh-nonfiction.bin: books held back entirely as the fresh held-out role of the
 # Gate A rerun (never in exposure, probe, or development, and never seen by any earlier run).
