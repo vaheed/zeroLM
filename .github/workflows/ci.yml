@@ -270,6 +270,12 @@ jobs:
       - name: Circuit report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/circuit-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/circuit/summary.json > /dev/null || { echo "circuit summary lacks $k"; exit 1; }; done
+      - name: Experiment GDM smoke, compiled gated-delta memory (tiny screening run; the screening and confirmatory runs are manual)
+        run: cargo run --release -p zerolm-eval --bin zerolm-gdm -- --root data --phase screening --seeds 9301,9302 --exposure 30000 --heldout 8000 --select-bytes 10000 --probe-trials 2 --threads 4 --out reports/gdm-smoke
+      - name: GDM report fields match the schema
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/gdm-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/gdm-smoke/summary.json > /dev/null || { echo "gdm summary lacks $k"; exit 1; }; done
+          jq -e '.verdict == "NOT CONFIRMATORY (screening)" and ([.jobs[] | .snapshot.exact_restore and .leakage.weights_unchanged_by_eval] | all)' reports/gdm-smoke/summary.json
       - name: Report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/real-text-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
@@ -287,6 +293,7 @@ jobs:
             reports/headroom/
             reports/hybrid/
             reports/circuit/
+            reports/gdm-smoke/
             reports/benchmarks/
           if-no-files-found: warn
           retention-days: 30

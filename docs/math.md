@@ -76,3 +76,13 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 - **Paired gain**: $\Delta=\overline{\text{bits}_{\text{base}}-\text{bits}_{\text{mixed}}}$ over the same positions; interval by block bootstrap over 10,000-byte blocks.
 - **Cohen's $d_z$**: $\bar\Delta/s_\Delta$ over seed-paired differences.
 - **ISA** (instruction set architecture), **BPTT** (backpropagation through time), **BPB** (bits per byte), **GRU** (gated recurrent unit), **WSP** (weight-space programming), **FLOPs** (floating-point operations): see `docs/neural-isa.md`.
+
+## Gated-delta memory terms (added 2026-11-26, experiment GDM)
+- **GDM** (gated-delta memory): a fast-weight matrix $S_t\in\mathbb{R}^{r\times r}$ updated per byte by the gated delta rule of Gated DeltaNet (Yang et al., arXiv:2412.06464): $S_t=\alpha_t S_{t-1}(I-\beta_t k_tk_t^\top)+\beta_t v_tk_t^\top$, read $o_t=S_tq_t$, with $\alpha_t=\sigma(a_0+w_a\cdot x_t)$ (decay gate) and $\beta_t=\sigma(b_0+w_b\cdot x_t)$ (write strength), unit-norm $k_t,q_t$. $I-\beta kk^\top$ removes the old value stored under $k$ before the new one is written ("delta": write the difference). Details and the exact construction: [gdm-experiment.md](gdm-experiment.md).
+- **Fast weights**: weights that change at inference time as a function of the input (here $S$), as opposed to *slow weights* changed only by the optimiser.
+- **Compiled (WSP) versus random initialisation**: the same tensors $U,V,D$ either equal one seeded unit-row table or are three independent ones.
+- **Recall $R$**: $1-\mathrm{bits}_{\text{shown}}/\mathrm{bits}_{\text{control}}$ on the first letter of a value; 1 is perfect recall of an association, 0 none.
+- **Forgetting**: $\mathrm{BPB}_A(\text{after training on }B)-\mathrm{BPB}_A(\text{before})$.
+- **Genome / Snapshot**: canonical architecture-and-provenance description with a SHA-256; byte-exact state image (weights, optimiser, recurrent and fast-weight state) with a SHA-256 ([gdm-experiment.md](gdm-experiment.md), section 8).
+- **Student-$t$ interval**: $\bar d\pm t_{1-\alpha/2,\,n-1}\,s/\sqrt n$ over $n$ seed-paired differences.
+- **RSS**: resident set size, the physical memory a process occupies.

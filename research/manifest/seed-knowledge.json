@@ -211,6 +211,13 @@
       "description": "Generic frame_bind computation: one-hot token and dimension selectors, predicate and form selectors, and output stacking over the numeric frame of template-match and externally supplied atom vectors. Compiled constants are shape selectors and the scalar codes of the frame schema; no words, relations, or grammar.",
       "source": "crates/zerolm-wsp/src/circuits/frame_bind.rs",
       "derived_from_corpus": false
+    },
+    {
+      "id": "gdm-code-table",
+      "kind": "structural_prior",
+      "description": "Experiment GDM compiled initialization (docs/gdm-experiment.md): one seeded table of 256 unit rows of 32 floats (SplitMix64 stream tag gdm-code-table-v1, seed 0) used as the key/query table, value table and decoder of the gated delta-rule memory, plus fixed position-tag sign vectors (tag gdm-position-tags-v1) and initial gate constants a0=5, b0 and gamma0 from the frozen grid. Encodes an algorithm (bundle the last three bytes, store the next byte's code under it, decode a retrieved code), no vocabulary, grammar, fact, or corpus statistic; the random arm uses the same shapes and norms.",
+      "source": "crates/zerolm-eval/src/bptt.rs",
+      "derived_from_corpus": false
     }
   ]
 }

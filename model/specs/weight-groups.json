@@ -96,6 +96,12 @@
       "description": "Mainline online-gradient learner (Gate A rerun, constitution invariant 4 as amended by research/decisions/gate-a-2026-11-26.md): the byte embedding, the selected GRU core, and a readout, trained in one chronological pass by truncated backpropagation through time with Adam; every update chunk is logged (input stream, signal, rule, changed tensors, checkpoint hash). Same seeded initialization as the other arms. Not part of any memory checkpoint; no offline pretraining.",
       "init_source": "seeded_prng",
       "update_path": "online_gradient"
+    },
+    {
+      "id": "gdm_memory",
+      "description": "Experiment GDM research arm (docs/gdm-experiment.md): one-head gated delta-rule fast-weight memory beside the gradient_core GRU: tables gdm.u, gdm.v, gdm.d (256 x 32), scalars gdm.a0, gdm.b0, gdm.gamma0 and gate vectors gdm.wa, gdm.wb, trained with the rest of the core by single-pass truncated backpropagation (every update logged, changed tensors named); the fast-weight state S (32 x 32) is persistent session state written by the gated delta rule, not a parameter. Initial value either a compiled content-independent code table (seed entry gdm-code-table) or seeded random rows. Research code only; not part of any checkpoint.",
+      "init_source": "seeded_prng",
+      "update_path": "online_gradient"
     }
   ]
 }

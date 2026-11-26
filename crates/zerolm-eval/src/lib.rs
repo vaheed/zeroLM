@@ -253,3 +253,5 @@ pub const P95_LATENCY_BUDGET_US: f64 = 2_000.0;
 pub fn within_cpu_budget(r: &CandidateResult) -> bool {
     r.cpu.iter().all(|c| c.p95_us <= P95_LATENCY_BUDGET_US)
 }
+pub mod stats;
+pub mod gdm;

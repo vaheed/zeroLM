@@ -23,3 +23,5 @@ Where a hypothesis could be true only at scale, the design says why and how it w
 
 Update (N2 pilot, `research/decisions/novelty-n2-2026-11-26.md`): the central comparison was run at 10^6 bytes and does not support H2-H4 at the frozen floors; the circuit is not scaled. 
 Nothing here supports a novelty claim. H1 is measured and small. The central comparison (H2, H3, H4) has not been run because arms D, E, F need a trainable compiled circuit inside the learned core, which does not exist yet. Outcome today: **INCONCLUSIVE** for H0, for a stated engineering reason, and **not forced either way**.
+
+Update (GDM, `research/decisions/novelty-gdm-2026-11-26.md`): a second compiled family, a gated-delta memory, was tested confirmatorily (hidden role, 8 new seeds, 10^6 bytes): compiled initialization gave no advantage over random tables on BPB (-0.020, interval includes 0), retention (+0.005), or forgetting (interval includes 0), and a parameter-matched GRU was 0.117 BPB better. Verdict **FAIL**; H2-H5 are not supported by N2 or GDM at this scale. The next step is the project lead's decision whether to retire H0 (recommended).

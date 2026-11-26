@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "registered_on": "2026-11-26",
+  "status": "screening complete; thresholds unchanged from registration; configuration frozen; confirmatory not run",
+  "design": "docs/gdm-experiment.md",
+  "command_screening": "cargo run --release -p zerolm-eval --bin zerolm-gdm -- --root data --phase screening --seeds 9301,9302,9303 --exposure 300000 --heldout 100000 --out reports/gdm-screening",
+  "command_confirmatory": "cargo run --release -p zerolm-eval --bin zerolm-gdm -- --root data --phase confirmatory --seeds 9401,9402,9403,9404,9405,9406,9407,9408 --exposure 1000000 --heldout 100000 --out reports/gdm-confirmatory",
+  "architecture": {
+    "memory": "one-head gated delta rule, rank 32, 3 position-tagged lags, byte-level",
+    "a0": 5.0,
+    "grids": {
+      "gru_and_memory_off_lr": [
+        0.0005,
+        0.001,
+        0.0015,
+        0.002,
+        0.003,
+        0.004
+      ],
+      "gdm_lr_b0_gamma0": [
+        [
+          0.001,
+          -1.0,
+          6.0
+        ],
+        [
+          0.002,
+          -1.0,
+          6.0
+        ],
+        [
+          0.003,
+          -1.0,
+          6.0
+        ],
+        [
+          0.001,
+          1.0,
+          12.0
+        ],
+        [
+          0.002,
+          1.0,
+          12.0
+        ],
+        [
+          0.003,
+          1.0,
+          12.0
+        ]
+      ],
+      "mixer_lr": [
+        0.01,
+        0.03,
+        0.1,
+        0.3,
+        1.0
+      ]
+    },
+    "selection": "seed 9300, 150000 exposure bytes, probe role (50000 bytes), 6 configurations per arm (equal budgets); the confirmatory phase never re-selects"
+  },
+  "arms": [
+    "GRU",
+    "GDM-random",
+    "GDM-wsp",
+    "GDM-wsp-off"
+  ],
+  "registration": {
+    "family_size": 4,
+    "confidence_level_note": "each primary uses a two-sided Student-t interval over seed-paired differences at 1 - 0.05/family_size",
+    "thresholds": {
+      "p1_bytes_ratio_max": 0.8,
+      "p2_bpb_gain_min": 0.02,
+      "p3_recall_gain_min": 0.15,
+      "p4_forgetting_reduction_min": 0.02,
+      "max_bpb_regression": 0.01,
+      "min_throughput_ratio_vs_gru": 0.5
+    },
+    "thresholds_status": "final: unchanged from the provisional values (no change after screening, see screening_rounds)",
+    "confirmatory": {
+      "seeds": 8,
+      "exposure_bytes": 1000000,
+      "role": "hidden"
+    }
+  },
+  "chosen": {
+    "GDM-random": {
+      "lr": 0.003,
+      "b0": -1.0,
+      "gamma0": 6.0,
+      "mixer_lr": 0.03
+    },
+    "GDM-wsp": {
+      "lr": 0.003,
+      "b0": -1.0,
+      "gamma0": 6.0,
+      "mixer_lr": 0.1
+    },
+    "GDM-wsp-off": {
+      "lr": 0.003,
+      "b0": 0.0,
+      "gamma0": 4.0,
+      "mixer_lr": 0.1
+    },
+    "GRU": {
+      "lr": 0.002,
+      "b0": 0.0,
+      "gamma0": 4.0,
+      "mixer_lr": 0.1
+    }
+  },
+  "probe": {
+    "facts": 4,
+    "value_letters": 3,
+    "distractor_lengths": [
+      0,
+      10,
+      30,
+      100
+    ],
+    "p3_distractor_length": 10,
+    "trials": 40,
+    "validity": "instrument validity: the untrained compiled memory must reach recall >= 0.1 at L=0 (full state) and the untrained random one <= 0.05; otherwise P3 is not evaluated as met"
+  },
+  "screening_rounds": [
+    {
+      "round": 1,
+      "seeds": [
+        9301,
+        9302,
+        9303
+      ],
+      "exposure_bytes": 300000,
+      "report": "research/decisions/gdm-evidence/screening-r1.json",
+      "findings": [
+        "GDM arms were tuned only on (b0, gamma0) with lr fixed at 1e-3 while the GRU arms chose lr 2e-3..3e-3: an unequal search that favoured the GRU arms and confounded forgetting with lr. Grids rewritten to 6 configurations per arm, each including lr.",
+        "Probe with 8 five-letter-value lines (96 writes into a 32-dimensional memory) gave recall ~0 for every arm, including the untrained compiled memory at 8 facts: over capacity. Probe resized to 4 facts with 3-letter values; distractor lengths 0,10,30,100 (100 and 300 gave ~0 for the untrained compiled memory too). The registered P3 length is 10, chosen from the untrained positive control only (recall 0.12-0.38 at L=10 against 0.00-0.03 for the random negative control), before any trained-arm result of round 2.",
+        "Round 1 reading, exploratory: GDM-wsp was 0.019 BPB worse than GDM-random on all 3 seeds (same lr), the GRU arm 0.117 better than GDM-wsp (lr confounded)."
+      ]
+    },
+    {
+      "round": 2,
+      "seeds": [
+        9301,
+        9302,
+        9303
+      ],
+      "exposure_bytes": 300000,
+      "report": "research/decisions/gdm-evidence/screening-r2.json",
+      "findings": [
+        "Equal 6-configuration grids including lr; chosen settings written to `chosen` above and frozen for the confirmatory run.",
+        "Exploratory reading (3 seeds, dev role, 300000 bytes): C1 (wsp over random, same lr 0.003) BPB gain 0.0144 (seeds 0.015, 0.011, 0.018), below the 0.02 floor; P1 bytes ratio 0.79 (0.84, 0.935, 0.608); P3 and P4 effects about zero (recall after training is near zero for every arm although the untrained compiled memory has recall 0.108 at L=10: training did not strengthen the memory); C2 (wsp over memory-off) 0.008 +- 0.011; C3 (wsp vs GRU) -0.069 (the plain GRU is better).",
+        "No threshold was changed after seeing results: a floor lowered to 0.014 would be fitting to the observation. Caveat recorded: P3's floor 0.15 exceeds the untrained compiled memory's own recall at L=10 (0.108), so P3 can pass only if training strengthens the memory beyond its compiled prior."
+      ]
+    }
+  ]
+}
