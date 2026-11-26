@@ -112,3 +112,24 @@ After the FAIL / PIVOT above, the project lead chose option (a) on 2026-11-26: c
 cargo run --release -p zerolm-eval --bin zerolm-gradient-gate -- --root data --mode smoke   # tiny end-to-end check
 cargo run --release -p zerolm-eval --bin zerolm-gradient-gate -- --root data --mode main    # reads the fresh held-out books once
 ```
+
+### Rerun result: PASS
+
+Main run 2026-11-26, commit `ebde394` (clean tree), spec `model/specs/representation-gradient.json` version 1, seeds 20261211-20261213, the fresh held-out books read once. Report: `research/decisions/gate-a-evidence/rerun-summary.json` (SHA-256 `4eb6119539d912e268551b0e1b1ac47802d289cdbee542bdc5c074c03ca48d98`). **All of V1, V3, V4 and P1-P5 passed.**
+
+| arm | probe BPB | $\Delta R$ (per seed) | end-to-end held-out BPB | novel-context BPB | ECE |
+|---|---|---|---|---|---|
+| A0 frozen (zero readout) | 4.494 | 0 | 8.000 | 8.000 | 0.004 |
+| A1 random features | 4.494 | 0 | 4.453 | 4.657 | 0.17-0.26 |
+| A2 online gradient (mainline) | 2.948 | +1.361, +1.445, +1.831 (mean 1.546) | 2.708 | 2.980 | 0.07-0.08 |
+| A2-perturbed | 4.377 | -0.018, -0.037, +0.406 (mean 0.117) | | | |
+
+- **P1:** probe gain 1.55 BPB, significant, 3x the floor, and 13x the perturbed control's mean. The perturbed control is noisy (one seed gained 0.41, because the large random change shifted a poorly scaled initial core); V3 holds because its mean minus two standard deviations is below zero, and it is reported rather than hidden.
+- **P2:** held-out BPB 2.71 against byte frequency 4.52 (gap 1.81, floor 1.0). **P3:** 1.68 BPB better than A1 on novel-context positions (44% of the fresh held-out text). **P4:** retention $\kappa$ = 0.94, 0.96, 0.95. **P5:** weights finite and bounded; the worst regression of held-out BPB between milestones was 0.006.
+- **Update log:** every one of the 312,500 updates per seed is logged (offset, bytes, bits before the update, gradient and update norm) in 313 checkpoint blocks (signal `observed_next_byte`, rule `truncated_bptt_adam`, changed tensors, targets hash, weights SHA-256); the log covers the stream exactly, the blocks tile the update sequence, and the last block's hash equals the final weights' hash, on all seeds. In-process checks: a rerun reproduces every weight; a disabled model changes nothing; scores before a changed byte are unchanged.
+- **Cost:** about 5,000 bytes/s per seed (about 129,000 multiply-adds per byte, analytic), 34 minutes for 10^7 bytes.
+- **Baselines on the same held-out text:** Kneser-Ney order 5 2.10 BPB, PPM-C 2.13, Witten-Bell order 5 2.17.
+
+What this establishes: with single-pass online gradient learning, the architecture builds features that a fresh readout can use (probe BPB 2.95 against 4.49 for random features) and that survive a domain shift, on text never seen by any run, with new seeds and a verified update log. What it does not: the gate's own thresholds were set knowing the earlier measurements of this rule (spec rationale), so this confirms rather than discovers; the model is still far from Level L1 (2.71 against 2.10 for Kneser-Ney order 5, a gap of 0.6 BPB); one corpus family, 10^7 bytes, 20,000 cell parameters.
+
+**What Phase 10 adopts** (the Gate A decision record for a PASS): the rule is single-pass truncated BPTT (windows of 32 bytes, Adam with $\beta_1 = 0.9$, $\beta_2 = 0.999$, learning rate 0.001, gradient-norm clip 1.0), the starting core is the 20,000-parameter GRU ($d = 74$; the pilot showed a larger probe gain at 200,000 parameters, 1.3 against 1.1 BPB, to be tested at scale), logged under the existing event contract.
