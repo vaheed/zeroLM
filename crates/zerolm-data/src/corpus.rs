@@ -18,8 +18,10 @@ pub enum Role {
 /// fractions and seed, the source id, and the index only, so a document never
 /// changes role when other documents or shards change.
 pub fn role_of(m: &Manifest, source: &str, index: usize) -> Role {
+    let src = m.source(source);
+    let (seed, s) = (src.and_then(|x| x.split_seed).unwrap_or(m.split_seed), src.and_then(|x| x.splits).unwrap_or(m.splits));
     let mut key = Vec::new();
-    key.extend_from_slice(&m.split_seed.to_le_bytes());
+    key.extend_from_slice(&seed.to_le_bytes());
     key.extend_from_slice(source.as_bytes());
     key.push(0);
     key.extend_from_slice(&(index as u64).to_le_bytes());
@@ -29,7 +31,6 @@ pub fn role_of(m: &Manifest, source: &str, index: usize) -> Role {
     h = h.wrapping_mul(0xff51_afd7_ed55_8ccd);
     h ^= h >> 33;
     let r = (h % 100) as u32;
-    let s = m.splits;
     if r < s.exposure {
         Role::Exposure
     } else if r < s.exposure + s.probe {
@@ -90,6 +91,19 @@ pub fn role_stream(m: &Manifest, root: &Path, role: Role) -> Result<Vec<u8>, Str
                 out.extend_from_slice(d);
                 out.extend_from_slice(b"\n\n");
             }
+        }
+    }
+    Ok(out)
+}
+
+/// Like [`role_stream`] for one source only (used by the two-source retention test).
+pub fn source_role_stream(m: &Manifest, root: &Path, source: &str, role: Role) -> Result<Vec<u8>, String> {
+    let src = m.source(source).ok_or_else(|| format!("unknown source {source}"))?;
+    let mut out = Vec::new();
+    for (i, d) in documents(m, src, root)?.iter().enumerate() {
+        if role_of(m, source, i) == role {
+            out.extend_from_slice(d);
+            out.extend_from_slice(b"\n\n");
         }
     }
     Ok(out)

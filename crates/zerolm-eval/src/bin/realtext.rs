@@ -3,7 +3,7 @@
 //! milestone's delta-rule predictor, all learning chronologically from the
 //! same exposure bytes and scored on the hidden split's whole documents.
 //!
-//! `zerolm-realtext --root DATA_DIR [--manifest PATH] [--exposure N] [--hidden N] [--learner-limit N] [--control] [--control-limit N] [--out DIR]`
+//! `zerolm-realtext --root DATA_DIR [--manifest PATH] [--exposure N] [--hidden N] [--learner-limit N] [--control] [--control-limit N] [--all-sources] [--out DIR]`
 //! With `--control`, also the online-backpropagation CONTROL (labelled, excluded from strict results).
 
 use std::path::PathBuf;
@@ -28,8 +28,12 @@ fn main() {
     assert!(problems.is_empty(), "{problems:?}");
     let n_exp: usize = arg("--exposure").map(|v| v.parse().expect("number")).unwrap_or(1_000_000);
     let n_hid: usize = arg("--hidden").map(|v| v.parse().expect("number")).unwrap_or(200_000);
-    let exposure_all = corpus::role_stream(&m, &root, corpus::Role::Exposure).expect("exposure");
-    let hidden_all = corpus::role_stream(&m, &root, corpus::Role::Hidden).expect("hidden");
+    // Default: the first exposure source only (the Phase 8 table); `--all-sources` streams every source.
+    let all = std::env::args().any(|a| a == "--all-sources");
+    let first = m.exposure_order[0].clone();
+    let role = |r| if all { corpus::role_stream(&m, &root, r) } else { corpus::source_role_stream(&m, &root, &first, r) };
+    let exposure_all = role(corpus::Role::Exposure).expect("exposure");
+    let hidden_all = role(corpus::Role::Hidden).expect("hidden");
     let exposure = &exposure_all[..n_exp.min(exposure_all.len())];
     let hidden = &hidden_all[..n_hid.min(hidden_all.len())];
     println!("exposure {} of {} bytes (sha256 {}), hidden {} of {} bytes", exposure.len(), exposure_all.len(), corpus::sha256_hex(exposure), hidden.len(), hidden_all.len());
@@ -70,7 +74,7 @@ fn main() {
     println!("online learner {:.1}s", t.elapsed().as_secs_f64());
     if std::env::args().any(|a| a == "--control") {
         // Learning rate chosen on the dev role only (first 200k exposure bytes in, first 200k dev bytes scored).
-        let dev_all = corpus::role_stream(&m, &root, corpus::Role::Dev).expect("dev");
+        let dev_all = role(corpus::Role::Dev).expect("dev");
         let dev = &dev_all[..dev_all.len().min(200_000)];
         let pilot = &exposure[..exposure.len().min(200_000)];
         let mut best = (f64::INFINITY, 3e-3f32);

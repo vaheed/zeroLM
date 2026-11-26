@@ -24,10 +24,34 @@
           "bytes": 14524075
         }
       ]
+    },
+    {
+      "id": "gutenberg-nonfiction",
+      "description": "23 English-language non-fiction books (science, philosophy, history, essays) from Project Gutenberg, header and footer removed, one document per book; ids listed in research/corpus/fetch-gutenberg.sh (group nonfiction). The second exposure source: a domain shift from fiction for the retention test; own split (60/15/10/15, seed 1: the first seed >= 1 giving at least 8 MB exposure, 0.6 MB probe, 0.4 MB development, and 1.2 MB held-out, chosen from document sizes only because 23 large books leave lumpy roles under the global 80/5/5/10 split)",
+      "license": "Public domain in the United States (Project Gutenberg texts of works published before 1929)",
+      "license_url": "https://www.gutenberg.org/policy/permission.html",
+      "origin_url": "https://gutenberg.pglaf.org (Project Gutenberg mirror)",
+      "generated_by_model": false,
+      "benchmark": false,
+      "shards": [
+        {
+          "path": "gutenberg/nonfiction.bin",
+          "sha256": "a075b7d3d6e626d70aa3f8405f2ef4f53137bb2ef03878beebf9483b7f4bd6c5",
+          "bytes": 17877674
+        }
+      ],
+      "splits": {
+        "exposure": 60,
+        "probe": 15,
+        "dev": 10,
+        "hidden": 15
+      },
+      "split_seed": 1
     }
   ],
   "exposure_order": [
-    "gutenberg-books"
+    "gutenberg-books",
+    "gutenberg-nonfiction"
   ],
   "evaluation_sets": [
     {

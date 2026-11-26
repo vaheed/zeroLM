@@ -40,6 +40,13 @@ pub struct Source {
     /// Must be false: no benchmark or evaluation data in exposure sources.
     pub benchmark: bool,
     pub shards: Vec<Shard>,
+    /// Optional per-source split percentages and seed. A source with few, large documents can
+    /// need its own split to leave usable probe and held-out roles; the choice is made from
+    /// document sizes only, before any model is run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub splits: Option<Splits>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub split_seed: Option<u64>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -85,9 +92,10 @@ impl Manifest {
         if self.version != 1 {
             return Err(format!("unsupported manifest version {}", self.version));
         }
-        let s = self.splits;
-        if s.exposure + s.probe + s.dev + s.hidden != 100 || s.exposure == 0 || s.probe == 0 || s.dev == 0 || s.hidden == 0 {
-            return Err("splits must be positive and sum to 100".into());
+        for s in std::iter::once(self.splits).chain(self.sources.iter().filter_map(|x| x.splits)) {
+            if s.exposure + s.probe + s.dev + s.hidden != 100 || s.exposure == 0 || s.probe == 0 || s.dev == 0 || s.hidden == 0 {
+                return Err("splits must be positive and sum to 100".into());
+            }
         }
         let mut ids = BTreeSet::new();
         for src in &self.sources {

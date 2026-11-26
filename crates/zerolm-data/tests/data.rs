@@ -99,3 +99,15 @@ fn contamination_check_finds_a_shared_thirteen_word_window_and_nothing_else() {
     let short = overlap(&index, b"two three four", 13);
     assert_eq!(short.windows, 0);
 }
+
+#[test]
+fn a_source_can_override_the_split_and_the_override_is_validated() {
+    let shard = docs(40, "a");
+    let base = manifest(&shard, "");
+    let with = manifest(&shard, r#","splits":{"exposure":40,"probe":20,"dev":20,"hidden":20},"split_seed":3"#);
+    let (m0, m1) = (Manifest::parse(&base).unwrap(), Manifest::parse(&with).unwrap());
+    let count = |m: &Manifest, role: Role| (0..40).filter(|i| role_of(m, "books", *i) == role).count();
+    // 20% probe roles are far more common than 5% ones over 40 documents.
+    assert!(count(&m1, Role::Probe) > count(&m0, Role::Probe));
+    assert!(Manifest::parse(&manifest(&shard, r#","splits":{"exposure":40,"probe":20,"dev":20,"hidden":30}"#)).is_err());
+}
