@@ -1,0 +1,96 @@
+select GRU config 0: probe BPB 3.4570
+select GRU config 1: probe BPB 3.3096
+select GRU config 2: probe BPB 3.2083
+select GRU config 3: probe BPB 3.1898
+select GRU config 4: probe BPB 3.2009
+select GRU config 5: probe BPB 3.2491
+chosen GRU: lr 0.002 b0 0 gamma0 4 mixer lr 0.1
+select GDM-random config 0: probe BPB 3.3275
+select GDM-random config 1: probe BPB 3.2348
+select GDM-random config 2: probe BPB 3.1834
+select GDM-random config 3: probe BPB 3.3501
+select GDM-random config 4: probe BPB 3.2648
+select GDM-random config 5: probe BPB 3.2480
+chosen GDM-random: lr 0.003 b0 -1 gamma0 6 mixer lr 0.03
+select GDM-wsp config 0: probe BPB 3.3312
+select GDM-wsp config 1: probe BPB 3.2512
+select GDM-wsp config 2: probe BPB 3.1968
+select GDM-wsp config 3: probe BPB 3.3291
+select GDM-wsp config 4: probe BPB 3.2436
+select GDM-wsp config 5: probe BPB 3.2155
+chosen GDM-wsp: lr 0.003 b0 -1 gamma0 6 mixer lr 0.1
+select GDM-wsp-off config 0: probe BPB 3.5230
+select GDM-wsp-off config 1: probe BPB 3.3733
+select GDM-wsp-off config 2: probe BPB 3.2893
+select GDM-wsp-off config 3: probe BPB 3.2560
+select GDM-wsp-off config 4: probe BPB 3.2124
+select GDM-wsp-off config 5: probe BPB 3.2673
+chosen GDM-wsp-off: lr 0.003 b0 0 gamma0 4 mixer lr 0.1
+seed 9301 GRU          e1 fiction/nonfiction alone 2.714/3.025  recall(reset_h, L=10) 0.003  forgetting +0.398  train 49s
+seed 9301 GDM-random   e1 fiction/nonfiction alone 2.776/3.094  recall(reset_h, L=10) 0.023  forgetting +0.456  train 62s
+seed 9301 GDM-wsp      e1 fiction/nonfiction alone 2.765/3.076  recall(reset_h, L=10) 0.032  forgetting +0.460  train 65s
+seed 9301 GDM-wsp-off  e1 fiction/nonfiction alone 2.785/3.094  recall(reset_h, L=10) 0.018  forgetting +0.391  train 34s
+seed 9302 GRU          e1 fiction/nonfiction alone 2.789/2.908  recall(reset_h, L=10) -0.011  forgetting +0.348  train 52s
+seed 9302 GDM-random   e1 fiction/nonfiction alone 2.879/2.992  recall(reset_h, L=10) 0.018  forgetting +0.369  train 70s
+seed 9302 GDM-wsp      e1 fiction/nonfiction alone 2.875/2.974  recall(reset_h, L=10) -0.044  forgetting +0.391  train 64s
+seed 9302 GDM-wsp-off  e1 fiction/nonfiction alone 2.868/2.974  recall(reset_h, L=10) -0.003  forgetting +0.437  train 39s
+seed 9303 GRU          e1 fiction/nonfiction alone 2.779/3.052  recall(reset_h, L=10) -0.020  forgetting +0.626  train 53s
+seed 9303 GDM-random   e1 fiction/nonfiction alone 2.876/3.148  recall(reset_h, L=10) 0.018  forgetting +0.719  train 56s
+seed 9303 GDM-wsp      e1 fiction/nonfiction alone 2.859/3.130  recall(reset_h, L=10) -0.013  forgetting +0.687  train 64s
+seed 9303 GDM-wsp-off  e1 fiction/nonfiction alone 2.858/3.151  recall(reset_h, L=10) 0.004  forgetting +0.722  train 35s
+
+primary rules, C1 wsp over random: [
+  {
+    "ci_hi": 1.6540066265445572,
+    "ci_lo": -0.0650465155697133,
+    "instrument_valid": true,
+    "mean": 0.794480055487422,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "p1_bytes_ratio",
+    "pass": false,
+    "primary": "P1_learning_efficiency",
+    "threshold": 0.8
+  },
+  {
+    "ci_hi": 0.030967722337057038,
+    "ci_lo": -0.0022629147578627166,
+    "instrument_valid": true,
+    "mean": 0.01435240378959716,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "e1_bpb_mean",
+    "pass": false,
+    "primary": "P2_heldout_bpb",
+    "threshold": 0.02
+  },
+  {
+    "ci_hi": 0.15094124984397575,
+    "ci_lo": -0.2067140040511822,
+    "instrument_valid": true,
+    "mean": -0.027886377103603237,
+    "memory_attribution_ok": false,
+    "met": false,
+    "metric": "probe_recall_L10_reset_h",
+    "pass": false,
+    "primary": "P3_retention_recall",
+    "threshold": 0.15
+  },
+  {
+    "ci_hi": 0.14029931451546757,
+    "ci_lo": -0.13605869815574112,
+    "instrument_valid": true,
+    "mean": 0.002120308179863232,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "e2_forgetting_fiction",
+    "pass": false,
+    "primary": "P4_forgetting",
+    "threshold": 0.02
+  }
+]
+primary rules, C3 wsp over GRU: "P1_learning_efficiency"=false "P2_heldout_bpb"=false "P3_retention_recall"=false "P4_forgetting"=false
+protected: bpb false throughput true (ratio 0.80) snapshot true leakage true
+instrument validation (untrained positive/negative control): valid true {"arm":"GDM-wsp","recall":{"0":{"full":0.13461990572210547,"reset_h":0.13494645333844157},"10":{"full":0.10789576331914574,"reset_h":0.10814721105714242},"100":{"full":0.03376617121776815,"reset_h":0.034265580839919374},"30":{"full":0.08103566546517849,"reset_h":0.07916714804059333}},"untrained":true} {"arm":"GDM-random","recall":{"0":{"full":0.0007439981744290503,"reset_h":0.0010359092428368077},"10":{"full":0.0003614113783846351,"reset_h":0.002292577800100948},"100":{"full":-0.005835408869583336,"reset_h":-0.005036876647714461},"30":{"full":0.003120466322621307,"reset_h":0.002799581564540854}},"untrained":true}
+lr equal for C1: true
+VERDICT: NOT CONFIRMATORY (screening)

@@ -1,0 +1,88 @@
+seed 9401 GRU          e1 fiction/nonfiction alone 3.184/3.207  recall(reset_h, L=10) 0.007  forgetting -0.068  train 170s
+seed 9401 GDM-random   e1 fiction/nonfiction alone 3.278/3.300  recall(reset_h, L=10) 0.013  forgetting +0.109  train 207s
+seed 9401 GDM-wsp      e1 fiction/nonfiction alone 3.309/3.292  recall(reset_h, L=10) -0.008  forgetting +0.059  train 218s
+seed 9401 GDM-wsp-off  e1 fiction/nonfiction alone 3.237/3.276  recall(reset_h, L=10) -0.047  forgetting +0.042  train 138s
+seed 9402 GRU          e1 fiction/nonfiction alone 3.305/2.937  recall(reset_h, L=10) -0.022  forgetting +0.462  train 188s
+seed 9402 GDM-random   e1 fiction/nonfiction alone 3.346/3.022  recall(reset_h, L=10) 0.030  forgetting +0.381  train 246s
+seed 9402 GDM-wsp      e1 fiction/nonfiction alone 3.500/3.065  recall(reset_h, L=10) 0.017  forgetting +0.378  train 248s
+seed 9402 GDM-wsp-off  e1 fiction/nonfiction alone 3.418/3.037  recall(reset_h, L=10) 0.014  forgetting +0.390  train 126s
+seed 9403 GRU          e1 fiction/nonfiction alone 3.424/3.309  recall(reset_h, L=10) 0.018  forgetting -0.221  train 164s
+seed 9403 GDM-random   e1 fiction/nonfiction alone 3.602/3.463  recall(reset_h, L=10) 0.010  forgetting -0.152  train 239s
+seed 9403 GDM-wsp      e1 fiction/nonfiction alone 3.648/3.456  recall(reset_h, L=10) 0.022  forgetting -0.232  train 213s
+seed 9403 GDM-wsp-off  e1 fiction/nonfiction alone 3.475/3.434  recall(reset_h, L=10) -0.007  forgetting -0.210  train 132s
+seed 9404 GRU          e1 fiction/nonfiction alone 2.956/2.943  recall(reset_h, L=10) -0.024  forgetting +0.489  train 173s
+seed 9404 GDM-random   e1 fiction/nonfiction alone 3.012/2.991  recall(reset_h, L=10) 0.006  forgetting +0.678  train 209s
+seed 9404 GDM-wsp      e1 fiction/nonfiction alone 3.019/2.999  recall(reset_h, L=10) -0.017  forgetting +0.638  train 205s
+seed 9404 GDM-wsp-off  e1 fiction/nonfiction alone 3.017/3.014  recall(reset_h, L=10) -0.064  forgetting +0.646  train 123s
+seed 9405 GRU          e1 fiction/nonfiction alone 2.898/2.853  recall(reset_h, L=10) -0.026  forgetting +0.850  train 189s
+seed 9405 GDM-random   e1 fiction/nonfiction alone 3.016/2.969  recall(reset_h, L=10) -0.041  forgetting +1.149  train 241s
+seed 9405 GDM-wsp      e1 fiction/nonfiction alone 2.944/2.948  recall(reset_h, L=10) -0.005  forgetting +0.998  train 245s
+seed 9405 GDM-wsp-off  e1 fiction/nonfiction alone 3.054/2.977  recall(reset_h, L=10) -0.021  forgetting +1.105  train 124s
+seed 9406 GRU          e1 fiction/nonfiction alone 3.130/2.931  recall(reset_h, L=10) -0.010  forgetting -0.062  train 189s
+seed 9406 GDM-random   e1 fiction/nonfiction alone 3.125/2.991  recall(reset_h, L=10) 0.001  forgetting -0.023  train 215s
+seed 9406 GDM-wsp      e1 fiction/nonfiction alone 3.298/3.093  recall(reset_h, L=10) -0.014  forgetting -0.064  train 242s
+seed 9406 GDM-wsp-off  e1 fiction/nonfiction alone 3.275/3.055  recall(reset_h, L=10) 0.002  forgetting -0.091  train 134s
+seed 9407 GRU          e1 fiction/nonfiction alone 3.401/3.060  recall(reset_h, L=10) 0.023  forgetting +0.073  train 167s
+seed 9407 GDM-random   e1 fiction/nonfiction alone 3.579/3.171  recall(reset_h, L=10) -0.037  forgetting +0.127  train 203s
+seed 9407 GDM-wsp      e1 fiction/nonfiction alone 3.490/3.134  recall(reset_h, L=10) -0.012  forgetting +0.135  train 208s
+seed 9407 GDM-wsp-off  e1 fiction/nonfiction alone 3.396/3.119  recall(reset_h, L=10) -0.022  forgetting +0.264  train 132s
+seed 9408 GRU          e1 fiction/nonfiction alone 2.783/2.764  recall(reset_h, L=10) 0.008  forgetting +0.361  train 177s
+seed 9408 GDM-random   e1 fiction/nonfiction alone 2.905/2.878  recall(reset_h, L=10) -0.015  forgetting +0.390  train 213s
+seed 9408 GDM-wsp      e1 fiction/nonfiction alone 2.897/2.869  recall(reset_h, L=10) 0.025  forgetting +0.271  train 189s
+seed 9408 GDM-wsp-off  e1 fiction/nonfiction alone 2.949/2.901  recall(reset_h, L=10) -0.001  forgetting +0.420  train 113s
+
+primary rules, C1 wsp over random: [
+  {
+    "ci_hi": 1.0166489393242375,
+    "ci_lo": 0.0804046106504337,
+    "instrument_valid": true,
+    "mean": 0.5485267749873356,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "p1_bytes_ratio",
+    "pass": false,
+    "primary": "P1_learning_efficiency",
+    "threshold": 0.8
+  },
+  {
+    "ci_hi": 0.06056969818801286,
+    "ci_lo": -0.09959652040586223,
+    "instrument_valid": true,
+    "mean": -0.019513411108924683,
+    "memory_attribution_ok": false,
+    "met": false,
+    "metric": "e1_bpb_mean",
+    "pass": false,
+    "primary": "P2_heldout_bpb",
+    "threshold": 0.02
+  },
+  {
+    "ci_hi": 0.036312333126348094,
+    "ci_lo": -0.025879592845485487,
+    "instrument_valid": true,
+    "mean": 0.005216370140431303,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "probe_recall_L10_reset_h",
+    "pass": false,
+    "primary": "P3_retention_recall",
+    "threshold": 0.15
+  },
+  {
+    "ci_hi": 0.12404326489462508,
+    "ci_lo": -0.0047540549404839205,
+    "instrument_valid": true,
+    "mean": 0.05964460497707058,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "e2_forgetting_fiction",
+    "pass": false,
+    "primary": "P4_forgetting",
+    "threshold": 0.02
+  }
+]
+primary rules, C3 wsp over GRU: "P1_learning_efficiency"=false "P2_heldout_bpb"=false "P3_retention_recall"=false "P4_forgetting"=false
+protected: bpb false throughput true (ratio 0.81) snapshot true leakage true
+instrument validation (untrained positive/negative control): valid true {"arm":"GDM-wsp","recall":{"0":{"full":0.13461990572210547,"reset_h":0.13494645333844157},"10":{"full":0.1037944571666759,"reset_h":0.11053985524823884},"100":{"full":0.03485425368133099,"reset_h":0.03693878303141285},"30":{"full":0.07644560574536285,"reset_h":0.07945361777268212}},"untrained":true} {"arm":"GDM-random","recall":{"0":{"full":0.009091631313859372,"reset_h":0.010262635711839496},"10":{"full":0.0025222974123205733,"reset_h":0.0036033110134634505},"100":{"full":0.002344502577306673,"reset_h":0.001360276984268216},"30":{"full":0.006388204272458453,"reset_h":0.008882875320901817}},"untrained":true}
+lr equal for C1: true
+VERDICT: FAIL

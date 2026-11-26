@@ -1,0 +1,86 @@
+select GRU config 0: probe BPB 3.4570
+select GRU config 1: probe BPB 3.3096
+select GRU config 2: probe BPB 3.1898
+select GRU config 3: probe BPB 3.2009
+chosen GRU: lr 0.002 b0 0 gamma0 4 mixer lr 0.1
+select GDM-random config 0: probe BPB 3.3337
+select GDM-random config 1: probe BPB 3.3275
+select GDM-random config 2: probe BPB 3.3369
+select GDM-random config 3: probe BPB 3.3320
+chosen GDM-random: lr 0.001 b0 -1 gamma0 6 mixer lr 0.1
+select GDM-wsp config 0: probe BPB 3.3283
+select GDM-wsp config 1: probe BPB 3.3312
+select GDM-wsp config 2: probe BPB 3.3659
+select GDM-wsp config 3: probe BPB 3.3515
+chosen GDM-wsp: lr 0.001 b0 -1 gamma0 3 mixer lr 0.1
+select GDM-wsp-off config 0: probe BPB 3.5230
+select GDM-wsp-off config 1: probe BPB 3.3733
+select GDM-wsp-off config 2: probe BPB 3.2560
+select GDM-wsp-off config 3: probe BPB 3.2124
+chosen GDM-wsp-off: lr 0.003 b0 0 gamma0 4 mixer lr 0.1
+seed 9301 GRU          e1 fiction/nonfiction alone 2.714/3.025  recall(reset_h, L=100) 0.019  forgetting +0.398  train 46s
+seed 9301 GDM-random   e1 fiction/nonfiction alone 2.809/3.089  recall(reset_h, L=100) -0.005  forgetting +0.243  train 58s
+seed 9301 GDM-wsp      e1 fiction/nonfiction alone 2.818/3.123  recall(reset_h, L=100) -0.008  forgetting +0.177  train 57s
+seed 9301 GDM-wsp-off  e1 fiction/nonfiction alone 2.785/3.094  recall(reset_h, L=100) 0.003  forgetting +0.391  train 32s
+seed 9302 GRU          e1 fiction/nonfiction alone 2.789/2.908  recall(reset_h, L=100) -0.024  forgetting +0.348  train 47s
+seed 9302 GDM-random   e1 fiction/nonfiction alone 2.892/3.036  recall(reset_h, L=100) 0.010  forgetting +0.237  train 58s
+seed 9302 GDM-wsp      e1 fiction/nonfiction alone 2.911/3.056  recall(reset_h, L=100) 0.001  forgetting +0.203  train 57s
+seed 9302 GDM-wsp-off  e1 fiction/nonfiction alone 2.868/2.974  recall(reset_h, L=100) -0.001  forgetting +0.437  train 34s
+seed 9303 GRU          e1 fiction/nonfiction alone 2.779/3.052  recall(reset_h, L=100) -0.006  forgetting +0.626  train 47s
+seed 9303 GDM-random   e1 fiction/nonfiction alone 2.865/3.162  recall(reset_h, L=100) 0.004  forgetting +0.490  train 58s
+seed 9303 GDM-wsp      e1 fiction/nonfiction alone 2.895/3.163  recall(reset_h, L=100) 0.000  forgetting +0.389  train 59s
+seed 9303 GDM-wsp-off  e1 fiction/nonfiction alone 2.858/3.151  recall(reset_h, L=100) -0.032  forgetting +0.722  train 35s
+
+primary rules, C1 wsp over random: [
+  {
+    "ci_hi": 1.0,
+    "ci_lo": 1.0,
+    "mean": 1.0,
+    "memory_attribution_ok": false,
+    "met": false,
+    "metric": "p1_bytes_ratio",
+    "pass": false,
+    "primary": "P1_learning_efficiency",
+    "threshold": 0.8
+  },
+  {
+    "ci_hi": -0.001936504839130427,
+    "ci_lo": -0.035891338689477484,
+    "mean": -0.018913921764303954,
+    "memory_attribution_ok": false,
+    "met": false,
+    "metric": "e1_bpb_mean",
+    "pass": false,
+    "primary": "P2_heldout_bpb",
+    "threshold": 0.02
+  },
+  {
+    "ci_hi": 0.009224768410024894,
+    "ci_lo": -0.02017151289072255,
+    "mean": -0.005473372240348828,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "probe_recall_L100_reset_h",
+    "pass": false,
+    "primary": "P3_retention_recall",
+    "threshold": 0.15
+  },
+  {
+    "ci_hi": 0.2386966610300127,
+    "ci_lo": -0.10455573681109169,
+    "mean": 0.06707046210946051,
+    "memory_attribution_ok": true,
+    "met": false,
+    "metric": "e2_forgetting_fiction",
+    "pass": false,
+    "primary": "P4_forgetting",
+    "threshold": 0.02
+  }
+]
+primary rules, C3 wsp over GRU: "P1_learning_efficiency"=false "P2_heldout_bpb"=false "P3_retention_recall"=false "P4_forgetting"=false
+protected: bpb false throughput true (ratio 0.81) snapshot true leakage true
+VERDICT: NOT CONFIRMATORY (screening)
+
+real	3m36.192s
+user	39m37.287s
+sys	0m6.716s
