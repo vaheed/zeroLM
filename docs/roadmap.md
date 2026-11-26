@@ -754,6 +754,8 @@ These arms are research code, as in the online-learning milestone. The rule that
 - Sustained throughput is at least 1,650 bytes/s including updates, so that 10^9 bytes fit in 7 days on the reference machine.
 - Gate B shows a good online compressor with learned representations. It does not show an LLM.
 
+**Revision 4 note (2026-11-26): Gate N.** Before the 10^8-byte run of this phase, a novelty decision gate (Gate N) separates engineering success from scientific contribution: arms A-H plus controls X1 and X2, a pre-registered primary metric, and four possible outcomes. Design: `docs/experimental-design.md`; hypotheses: `docs/research-hypotheses.md`; literature: `docs/novelty-analysis.md`; record: `research/decisions/novelty-n0-2026-11-26.md`. Experiment N0 (match-prior headroom over Kneser-Ney 5) showed at most about 0.01 BPB on fiction at 10^7 bytes, so held-out BPB cannot carry a novelty claim for that prior. Gate B's own thresholds are unchanged. Gate N does not block Gate B; it blocks any *novelty* claim and any spending on 10^8+ bytes justified by one.
+
 ### Phase 11 — Scaling run and forgetting (Gate C, Level L2)
 
 **Goal:** Show that capability keeps improving with exposure and model size, without catastrophic forgetting.

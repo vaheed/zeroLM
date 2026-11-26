@@ -14,6 +14,7 @@ pub mod ngram_lean;
 pub mod representation;
 pub mod benchmarks;
 pub mod levels;
+pub mod headroom;
 
 use serde::{Deserialize, Serialize};
 use std::time::Instant;

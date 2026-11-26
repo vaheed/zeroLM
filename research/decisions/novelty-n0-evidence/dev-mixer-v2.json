@@ -1,0 +1,347 @@
+{
+  "exposure_sha256": "397db46bd7929c8152e77cf31e78d9d2f6ddd9d5a84d0d31d198a097771f4833",
+  "manifest_sha256": "f3fc19e0cdce253e7976fc02d6cbe0baf9fde9b722444e42d91a3eb4fcacab3b",
+  "min_len": 5,
+  "mixer": "v2",
+  "report": "headroom",
+  "rows": [
+    {
+      "base_bpb": 2.4983610420902314,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.12032621120706109,
+      "gain_ci95": [
+        0.11175279878906515,
+        0.12855297978618563
+      ],
+      "heldout_bytes": 575815,
+      "history": "in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.378034830823357
+    },
+    {
+      "base_bpb": 2.5916065763962086,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.18684240784177603,
+      "gain_ci95": [
+        0.17710184656292688,
+        0.19623786680395033
+      ],
+      "heldout_bytes": 575815,
+      "history": "in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.4047641685361656
+    },
+    {
+      "base_bpb": 2.4983610420902314,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.11665177276614436,
+      "gain_ci95": [
+        0.1063182708845027,
+        0.12608281846248062
+      ],
+      "heldout_bytes": 575815,
+      "history": "exposure+in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.3817092692864454
+    },
+    {
+      "base_bpb": 2.5916065763962086,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.1855563210124444,
+      "gain_ci95": [
+        0.17446472111457306,
+        0.1960341299203137
+      ],
+      "heldout_bytes": 575815,
+      "history": "exposure+in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.406050255369153
+    },
+    {
+      "base_bpb": 2.6376957600403674,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.3547623778628745,
+      "gain_ci95": [
+        0.3368631227458311,
+        0.3756851104638593
+      ],
+      "heldout_bytes": 1000000,
+      "history": "in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.282933382184382
+    },
+    {
+      "base_bpb": 2.769175502765149,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.45327586143801735,
+      "gain_ci95": [
+        0.4325615068998663,
+        0.47796778789407385
+      ],
+      "heldout_bytes": 1000000,
+      "history": "in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.315899641331405
+    },
+    {
+      "base_bpb": 2.6376957600403674,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.3528094944377577,
+      "gain_ci95": [
+        0.3339562746562946,
+        0.37433945345099057
+      ],
+      "heldout_bytes": 1000000,
+      "history": "exposure+in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.284886265640404
+    },
+    {
+      "base_bpb": 2.769175502765149,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 100000,
+      "gain_bpb": 0.45231714266717526,
+      "gain_ci95": [
+        0.431245637535193,
+        0.47765064350534414
+      ],
+      "heldout_bytes": 1000000,
+      "history": "exposure+in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.316858360087653
+    },
+    {
+      "base_bpb": 2.1967124173364994,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.0442346431936091,
+      "gain_ci95": [
+        0.037584971853272794,
+        0.050522289433434855
+      ],
+      "heldout_bytes": 575815,
+      "history": "in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.152477774225625
+    },
+    {
+      "base_bpb": 2.2569023799069865,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.0772718127513167,
+      "gain_ci95": [
+        0.06999579208305051,
+        0.08425261796101105
+      ],
+      "heldout_bytes": 575815,
+      "history": "in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.179630567232497
+    },
+    {
+      "base_bpb": 2.1967124173364994,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.03473479360224293,
+      "gain_ci95": [
+        0.027695192103654932,
+        0.04199460999001464
+      ],
+      "heldout_bytes": 575815,
+      "history": "exposure+in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.1619776237304316
+    },
+    {
+      "base_bpb": 2.2569023799069865,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.07241600616037003,
+      "gain_ci95": [
+        0.06482221915448007,
+        0.08006292551097652
+      ],
+      "heldout_bytes": 575815,
+      "history": "exposure+in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.184486373704108
+    },
+    {
+      "base_bpb": 2.3449904739505536,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.2270263039006847,
+      "gain_ci95": [
+        0.21224118819156548,
+        0.24359063994026153
+      ],
+      "heldout_bytes": 1000000,
+      "history": "in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.117964169957189
+    },
+    {
+      "base_bpb": 2.4242766304278276,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.277906391937878,
+      "gain_ci95": [
+        0.2613847220809095,
+        0.2961518137275996
+      ],
+      "heldout_bytes": 1000000,
+      "history": "in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.1463702385366106
+    },
+    {
+      "base_bpb": 2.3449904739505536,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.22195998571613496,
+      "gain_ci95": [
+        0.206139979314475,
+        0.23894689152678517
+      ],
+      "heldout_bytes": 1000000,
+      "history": "exposure+in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.12303048822552
+    },
+    {
+      "base_bpb": 2.4242766304278276,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 1000000,
+      "gain_bpb": 0.2746804739151576,
+      "gain_ci95": [
+        0.25790643780357964,
+        0.29355338031957706
+      ],
+      "heldout_bytes": 1000000,
+      "history": "exposure+in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.149596156586576
+    },
+    {
+      "base_bpb": 2.020576749014084,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.010572754812775004,
+      "gain_ci95": [
+        0.004393676347226926,
+        0.01634307513640638
+      ],
+      "heldout_bytes": 575815,
+      "history": "in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.0100039941799146
+    },
+    {
+      "base_bpb": 2.044683767201551,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.02174961536931453,
+      "gain_ci95": [
+        0.015426818615690981,
+        0.027866565621737265
+      ],
+      "heldout_bytes": 575815,
+      "history": "in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.0229341518607113
+    },
+    {
+      "base_bpb": 2.020576749014084,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.00013742580125036642,
+      "gain_ci95": [
+        -0.005627308201073638,
+        0.006085303292666877
+      ],
+      "heldout_bytes": 575815,
+      "history": "exposure+in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.0204393232803253
+    },
+    {
+      "base_bpb": 2.044683767201551,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.014600917177474049,
+      "gain_ci95": [
+        0.008617205786536892,
+        0.020833471891588577
+      ],
+      "heldout_bytes": 575815,
+      "history": "exposure+in-context",
+      "role": "fiction",
+      "with_match_bpb": 2.0300828500372217
+    },
+    {
+      "base_bpb": 2.128837497474291,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.14773442258261868,
+      "gain_ci95": [
+        0.13581326865989904,
+        0.16053342510818375
+      ],
+      "heldout_bytes": 1000000,
+      "history": "in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 1.9811030748987553
+    },
+    {
+      "base_bpb": 2.157059633825338,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.16021443995997925,
+      "gain_ci95": [
+        0.14830026353681955,
+        0.17328489807584607
+      ],
+      "heldout_bytes": 1000000,
+      "history": "in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 1.9968451938989078
+    },
+    {
+      "base_bpb": 2.128837497474291,
+      "count_model": "kneser-ney-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.14199442972142998,
+      "gain_ci95": [
+        0.129395825361752,
+        0.15534430114284686
+      ],
+      "heldout_bytes": 1000000,
+      "history": "exposure+in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 1.9868430677429592
+    },
+    {
+      "base_bpb": 2.157059633825338,
+      "count_model": "ppm-c-5",
+      "exposure_bytes": 10000000,
+      "gain_bpb": 0.15612024433855068,
+      "gain_ci95": [
+        0.14371777991452236,
+        0.16960065649214814
+      ],
+      "heldout_bytes": 1000000,
+      "history": "exposure+in-context",
+      "role": "nonfiction",
+      "with_match_bpb": 2.0009393894613767
+    }
+  ],
+  "scope_note": "Host-side reference match model mixed with frozen count models; paired block-bootstrap (10,000-byte blocks) over one held-out stream. Not a ZeroLM model result.",
+  "split_role": "dev"
+}

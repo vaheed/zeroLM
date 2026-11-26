@@ -70,3 +70,9 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 | Memory | trigram key encoder, attention read, coverage, nearest-code cleanup, kWTA, fast-weight delta rule, 24-bit integer packing | [memory-format.md](memory-format.md#mathematics) |
 | Reasoning | FHRR bind/unbind/bundle, similarity statistics, probe threshold, cleanup, fractional-power numbers, discourse state, operator semantics | [reasoning.md](reasoning.md#mathematics) |
 | Neural ISA and circuits | operation semantics, masking with a large penalty, the memory-read circuit as equations, exactness of the zero-skip | [neural-isa.md](neural-isa.md) |
+
+## Novelty-gate terms (added 2026-11-26)
+- **Match model**: predicts the byte that followed the longest earlier occurrence of the current context. Mixed with a count model as $p(b)=(1-c)\,p_{\text{count}}(b)+c\,[b=b^*]$, where $c$ is the running hit rate for the match-length bucket (and, in mixer v2, for the count model's own probability of $b^*$).
+- **Paired gain**: $\Delta=\overline{\text{bits}_{\text{base}}-\text{bits}_{\text{mixed}}}$ over the same positions; interval by block bootstrap over 10,000-byte blocks.
+- **Cohen's $d_z$**: $\bar\Delta/s_\Delta$ over seed-paired differences.
+- **ISA** (instruction set architecture), **BPTT** (backpropagation through time), **BPB** (bits per byte), **GRU** (gated recurrent unit), **WSP** (weight-space programming), **FLOPs** (floating-point operations): see `docs/neural-isa.md`.

@@ -255,6 +255,11 @@ jobs:
       - name: Curves report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/real-text-curves-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text-curves/summary.json > /dev/null || { echo "curves summary lacks $k"; exit 1; }; done
+      - name: Novelty experiment N0, match-prior headroom on the development role (research/decisions/novelty-n0-2026-11-26.md)
+        run: cargo run --release -p zerolm-eval --bin zerolm-headroom -- --root data --points 100000,1000000 --mixer v2 --out reports/headroom
+      - name: Headroom report fields match the schema
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/headroom-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/headroom/summary.json > /dev/null || { echo "headroom summary lacks $k"; exit 1; }; done
       - name: Report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/real-text-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
@@ -269,6 +274,7 @@ jobs:
           path: |
             reports/real-text/
             reports/real-text-curves/
+            reports/headroom/
             reports/benchmarks/
           if-no-files-found: warn
           retention-days: 30

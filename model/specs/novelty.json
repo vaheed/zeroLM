@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "frozen_on": "2026-11-26",
+  "status": "preregistered_thresholds_pending_pilot",
+  "design": "docs/experimental-design.md",
+  "n0": {
+    "command": "cargo run --release -p zerolm-eval --bin zerolm-headroom -- --root data --mixer v2",
+    "role_for_pilot": "dev",
+    "hidden_role_read": false,
+    "min_match_len": 5,
+    "max_match_len": 32,
+    "bootstrap_block_bytes": 10000,
+    "bootstrap_seed": 20261127,
+    "history": "mixer v1 was run first on the dev role and lost up to 0.11 BPB on fiction at 1e6-1e7 bytes; v2 (confidence conditioned on the count model's probability of the predicted byte) was written after seeing it. Both reports are kept."
+  },
+  "arms": ["A", "B", "C", "D", "E", "F", "G", "H", "X1", "X2"],
+  "budgets_bytes": [100000, 1000000, 10000000, 100000000],
+  "primary_metrics": ["bytes_to_target_bpb", "novel_context_bpb"],
+  "protected": {"max_overall_bpb_regression_vs_G": 0.02, "kappa_min": 0.5, "min_throughput_ratio_vs_G": 0.5},
+  "thresholds": {"delta_floor_bytes_ratio": null, "delta_floor_novel_bpb": null, "seeds": null, "set_from": "pilot seeds only, before any hidden-role read"},
+  "outcomes": ["NOVELTY SUPPORTED", "ENGINEERING SUCCESS ONLY", "HYPOTHESIS REJECTED", "INCONCLUSIVE"]
+}
