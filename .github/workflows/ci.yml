@@ -217,11 +217,42 @@ jobs:
           path: reports/uniform-engine/
           if-no-files-found: warn
           retention-days: 30
+  real-text:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Data-pipeline and baseline invariants (manifest, splits, contamination, n-gram models, levels spec, report fields)
+        run: cargo test -p zerolm-data && cargo test -p zerolm-eval --test realtext --test bptt
+      - name: Manifest validation
+        run: cargo run -q -p zerolm-data -- check
+      - name: Fetch the corpus and verify every shard hash (fails on any mismatch)
+        run: |
+          bash research/corpus/fetch-gutenberg.sh data
+          cargo run -q --release -p zerolm-data -- verify --root data
+      - name: Contamination check (13-word windows, exposure against every evaluation set)
+        run: cargo run -q --release -p zerolm-data -- contamination --root data --n 13
+      - name: Baseline table on a pinned prefix (10^6 exposure bytes; the full table is a manual run, see docs/data.md)
+        run: cargo run --release -p zerolm-eval --bin zerolm-realtext -- --root data --exposure 1000000 --hidden 400000 --learner-limit 0 --out reports/real-text
+      - name: Report fields match the schema
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/real-text-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
+      - name: Job summary
+        if: always()
+        run: |
+          { if [ -s reports/real-text/brief.md ]; then cat reports/real-text/brief.md; else echo "## real-text: report **not produced**"; fi; echo; echo "Full report: artifact \`zerolm-real-text-${{ github.sha }}\`."; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-real-text-${{ github.sha }}
+          path: reports/real-text/
+          if-no-files-found: warn
+          retention-days: 30
   # Last stage: runs only after every test and gate job above has passed.
   # Pull requests build and smoke-test the image; pushes to main and v* tags
   # also publish it to ghcr.io/<owner>/zerolm (latest, sha-<short>, version).
   docker-image:
-    needs: [engine-unit, architecture-bakeoff, policy-and-provenance, bootstrap-cli, online-learning, weight-memory, compositional-reasoning, uniform-engine]
+    needs: [engine-unit, architecture-bakeoff, policy-and-provenance, bootstrap-cli, online-learning, weight-memory, compositional-reasoning, uniform-engine, real-text]
     permissions:
       contents: read
       packages: write

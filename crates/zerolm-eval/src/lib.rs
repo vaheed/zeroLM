@@ -9,6 +9,8 @@ pub mod reasoning;
 pub mod uniform;
 pub mod online;
 pub mod bptt;
+pub mod ngram;
+pub mod levels;
 
 use serde::{Deserialize, Serialize};
 use std::time::Instant;

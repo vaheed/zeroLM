@@ -49,6 +49,14 @@ One seed and one split, with only 33 books (a few in the hidden role), so differ
 
 Readings, one seed, a small hidden split: (1) the control reaches 2.95 held-out BPB, well ahead of the Phase 4 learner (4.6) and of byte frequency (4.47), but behind every order-5 n-gram baseline (best 2.17), and its held-out numbers are not monotone in exposure (3.205 to 3.189 to 2.950), so differences of a few tenths are within the noise of a few hidden books; (2) at this size (about 74 hidden units, 20,000 cell parameters) a stronger learner on this architecture has not caught a Kneser-Ney n-gram model. The Phase 9 headroom number is the gap between the local rule and this control, so this table is its reference. This control is excluded from strict results (constitution rule 2).
 
+## Frozen level thresholds
+
+`model/specs/levels.json` (frozen 2026-11-26, validated by `crates/zerolm-eval/src/levels.rs`) records the thresholds of section 7.1 of the roadmap: L1 is "hidden BPB at or below the better of PPM-C order 5 and Kneser-Ney order 5, re-measured at equal exposure" (with today's measured values listed for reference); L2 and L3 carry the BLiMP, LAMBADA, and Wikipedia-BPB thresholds. The L2 and L3 numbers are the roadmap's values. They are **not yet checked against their published sources** (the GPT-2 paper's small-model results, the BLiMP paper), and they cannot be measured until a Wikipedia source, a BLiMP file, and a LAMBADA file are in the manifest.
+
+## Report and CI
+
+`zerolm-realtext` writes `reports/real-text/summary.json` (schema: `research/schemas/real-text-report.schema.json`; it records the manifest, exposure, hidden-role, and levels hashes plus the L1 bar at each exposure point). The `real-text` CI job runs the unit tests, fetches the corpus and verifies every shard hash, runs the contamination check, and runs the baselines on a 10^6-byte prefix. The count-based models live in `crates/zerolm-eval/src/ngram.rs` and are unit-tested (distributions sum to 1, no future leak).
+
 ## Remaining Phase 8 work
 
-More sources, the BLiMP and LAMBADA harnesses, `model/specs/levels.json`, a report schema and CI job, and learning curves at 10^6, 10^7, and 10^8 bytes.
+More sources (so the hidden role is not a few books), the BLiMP and LAMBADA harnesses with hashed evaluation files, checking the L2 and L3 thresholds against their sources, and learning curves at 10^7 and 10^8 bytes in CI or a scheduled run. The `real-text` milestone stays `planned` until these exist.

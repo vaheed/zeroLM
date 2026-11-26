@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "frozen_on": "2026-11-26",
+  "status": "frozen before any Gate A or Gate B main run; never changed after a main run starts (a change needs a new version and a new hidden split)",
+  "claim_rule": "A level is claimed only on 3 seeds, hidden evaluation data, and a clean commit.",
+  "levels": {
+    "L1": {
+      "name": "Compressor-grade",
+      "bpb_rule": "held-out real-text BPB at or below min(PPM-C order 5, Kneser-Ney order 5) re-measured on the same stream at equal exposure bytes",
+      "reference_corpus": "gutenberg-books (research/corpus/manifest.json, split_seed 20261125), hidden role 1,264,223 bytes",
+      "reference_bpb": {
+        "1000000": {"ppm-c-5": 2.444, "kneser-ney-5": 2.391},
+        "10000000": {"ppm-c-5": 2.221, "kneser-ney-5": 2.190},
+        "12532967": {"ppm-c-5": 2.194, "kneser-ney-5": 2.170}
+      },
+      "reference_note": "Measured 2026-11-26 (docs/data.md). The rule re-measures the baselines at claim time; these values only show where the bar sits today. With 33 books the hidden role is a few books, so differences under about 0.05 BPB are not reliable."
+    },
+    "L2": {
+      "name": "Fluent",
+      "blimp_min": 0.75,
+      "wikipedia_heldout_bpb_max": 1.5,
+      "blind_rating": "blind raters judge generated sentences locally grammatical",
+      "pending": ["the Wikipedia corpus is not in the manifest yet; the BPB threshold applies once a licensed Wikipedia held-out role exists", "the BLiMP harness and file are not added yet"]
+    },
+    "L3": {
+      "name": "Small LLM (1.0 target)",
+      "blimp_min": 0.80,
+      "lambada_accuracy_min": 0.35,
+      "wikipedia_heldout_bpb_max": 1.2,
+      "read_then_answer": "frozen in the read-and-reason milestone",
+      "blind_rating": "coherent multi-sentence generation under blind rating",
+      "pending": ["same as L2", "the LAMBADA harness and file are not added yet"]
+    },
+    "L4": {
+      "name": "Assistant",
+      "requires": "L3 plus instruction following and multi-turn dialogue on hidden human-written prompts, with calibrated abstention; thresholds frozen in the generation milestone"
+    }
+  },
+  "source_check": "Thresholds are the roadmap's section 7.1 values. They have not yet been checked against the GPT-2 paper's small-model numbers or the BLiMP paper; that check is listed in docs/data.md as open work."
+}

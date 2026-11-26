@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM real-text baseline report (reports/real-text/summary.json)",
+  "type": "object",
+  "required": ["report", "exposure_sha256", "hidden_sha256", "hidden_bytes", "manifest_sha256", "levels_sha256", "control_included", "rows", "l1_bars", "scope_note"],
+  "properties": {
+    "report": {"const": "real-text"},
+    "exposure_sha256": {"$ref": "#/$defs/sha256"},
+    "hidden_sha256": {"$ref": "#/$defs/sha256"},
+    "hidden_bytes": {"type": "integer", "minimum": 1},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "levels_sha256": {"$ref": "#/$defs/sha256"},
+    "control_included": {"type": "boolean"},
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["baseline", "exposure_bytes", "hidden_bpb"],
+        "properties": {
+          "baseline": {"type": "string"},
+          "exposure_bytes": {"type": "integer", "minimum": 1},
+          "hidden_bpb": {"type": "number", "exclusiveMinimum": 0, "maximum": 16}
+        }
+      }
+    },
+    "l1_bars": {
+      "type": "array",
+      "description": "per exposure point: the better of PPM-C order 5 and Kneser-Ney order 5 (the L1 bar)",
+      "items": {"type": "object", "required": ["exposure_bytes", "bar_bpb"]}
+    },
+    "scope_note": {"type": "string"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}
