@@ -39,6 +39,10 @@ This page fixes the notation used across the ZeroLM docs, explains every abbrevi
 | **L0-L4** | Language-model levels | Capability levels defined in roadmap section 7.1; the system is at L0. |
 | **Gate A / B / C** | | Pre-registered tests for the representation-feasibility (a decision gate: PASS, FAIL / PIVOT, or INCONCLUSIVE), scalable-core, and scaling milestones (roadmap section 5). |
 | **Representation probe** | | Freeze a core, train a fresh delta-rule readout on a probe split, and score hidden text; $\Delta R_x = \mathrm{BPB}^{\text{probe}}_{\text{random}} - \mathrm{BPB}^{\text{probe}}_x$ is how much better core $x$'s features are than random features (roadmap Phase 9). |
+| **RTRL** | Real-time recurrent learning | Exact online gradients for a recurrent network by carrying the full Jacobian of the state with respect to every weight (cubic cost). e-prop approximates it by keeping only the diagonal part; the Gate A tests compare the two on a tiny network ([representation-learning.md](representation-learning.md)). |
+| **Feedback alignment** | | Sending the learning signal back through a fixed random matrix $B$ instead of the transposed readout weights; the readout can learn to align with $B$. |
+| **Eligibility trace** | | Per-weight running record $\varepsilon_t = (1 - z_t)\varepsilon_{t-1} + \partial h_t/\partial W$ of how the weight recently influenced its unit; multiplied by the learning signal to give the update. |
+| **$\kappa$, $\rho$** | Retention, headroom ratio | $\rho = \Delta R_{A2}/\Delta R_{A3}$: the fraction of the backpropagation probe gain that local learning captures. $\kappa$: the probe gain on first-source text after the second source over the gain after the first. |
 | **e-prop** | Eligibility propagation | An online, local-in-time rule for recurrent networks: per-weight eligibility traces times a broadcast learning signal (roadmap section 2.7). |
 
 ## Notation
