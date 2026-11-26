@@ -1,0 +1,95 @@
+    Finished release [optimized] target(s) in 0.29s
+     Running `target/release/zerolm-circuit --root data --exposure 1000000 --heldout 100000 --seeds 9201,9202,9203 --out reports/circuit-dev-1e6`
+select F beta 8 s0 20 lr_mult 1: probe BPB 3.2595
+select F beta 8 s0 20 lr_mult 10: probe BPB 3.2893
+select F beta 4 s0 4 lr_mult 1: probe BPB 3.2650
+select F beta 4 s0 4 lr_mult 10: probe BPB 3.3073
+select F beta 2 s0 0 lr_mult 1: probe BPB 3.2800
+select F beta 2 s0 0 lr_mult 10: probe BPB 3.3054
+chosen F: beta 8 s0 20 lr_mult 1
+select E beta 8 s0 20 lr_mult 1: probe BPB 3.3113
+select E beta 8 s0 20 lr_mult 10: probe BPB 3.3081
+select E beta 4 s0 4 lr_mult 1: probe BPB 3.2934
+select E beta 4 s0 4 lr_mult 10: probe BPB 3.2905
+select E beta 2 s0 0 lr_mult 1: probe BPB 3.2998
+select E beta 2 s0 0 lr_mult 10: probe BPB 3.3007
+chosen E: beta 4 s0 4 lr_mult 10
+parameters: A 47594, A+ 56218 (budget 26000), F/D/E 55863
+mixer lr grid [0.01, 0.03, 0.1, 0.3] probe BPB [2.2472035240252084, 2.2415022386005794, 2.239117520303292, 2.2385486474380047] -> 0.3
+seed 9201 A: trained 1000000 bytes in 113s (incl. curve evals), curve ["3.396", "3.202", "3.048", "3.013", "2.945"]
+   fiction: alone 2.742  +KN 2.207  +KN+match 2.159
+   nonfiction: alone 3.045  +KN 2.362  +KN+match 2.231
+seed 9201 A+: trained 1000000 bytes in 136s (incl. curve evals), curve ["3.355", "3.183", "3.028", "2.988", "2.931"]
+   fiction: alone 2.706  +KN 2.204  +KN+match 2.158
+   nonfiction: alone 3.042  +KN 2.362  +KN+match 2.231
+seed 9201 D: trained 1000000 bytes in 186s (incl. curve evals), curve ["3.325", "3.145", "2.991", "2.936", "2.885"]
+   fiction: alone 2.718  +KN 2.202  +KN+match 2.158
+   nonfiction: alone 2.975  +KN 2.349  +KN+match 2.224
+seed 9201 F: trained 1000000 bytes in 194s (incl. curve evals), curve ["3.306", "3.135", "3.005", "2.942", "2.878"]
+   fiction: alone 2.715  +KN 2.200  +KN+match 2.158
+   nonfiction: alone 2.973  +KN 2.350  +KN+match 2.224
+seed 9201 E: trained 1000000 bytes in 178s (incl. curve evals), curve ["3.324", "3.142", "3.027", "2.966", "2.902"]
+   fiction: alone 2.717  +KN 2.203  +KN+match 2.158
+   nonfiction: alone 2.983  +KN 2.353  +KN+match 2.225
+seed 9202 A: trained 1000000 bytes in 115s (incl. curve evals), curve ["3.428", "3.236", "3.084", "3.025", "2.945"]
+   fiction: alone 2.745  +KN 2.208  +KN+match 2.162
+   nonfiction: alone 3.049  +KN 2.362  +KN+match 2.231
+seed 9202 A+: trained 1000000 bytes in 147s (incl. curve evals), curve ["3.369", "3.194", "3.044", "2.996", "2.926"]
+   fiction: alone 2.729  +KN 2.206  +KN+match 2.160
+   nonfiction: alone 3.037  +KN 2.364  +KN+match 2.232
+seed 9202 D: trained 1000000 bytes in 176s (incl. curve evals), curve ["3.351", "3.165", "3.002", "2.947", "2.895"]
+   fiction: alone 2.720  +KN 2.201  +KN+match 2.158
+   nonfiction: alone 2.999  +KN 2.355  +KN+match 2.228
+seed 9202 F: trained 1000000 bytes in 187s (incl. curve evals), curve ["3.341", "3.152", "3.016", "2.927", "2.867"]
+   fiction: alone 2.703  +KN 2.199  +KN+match 2.156
+   nonfiction: alone 2.958  +KN 2.350  +KN+match 2.223
+seed 9202 E: trained 1000000 bytes in 183s (incl. curve evals), curve ["3.346", "3.147", "3.013", "2.963", "2.897"]
+   fiction: alone 2.708  +KN 2.204  +KN+match 2.159
+   nonfiction: alone 2.992  +KN 2.355  +KN+match 2.227
+seed 9203 A: trained 1000000 bytes in 119s (incl. curve evals), curve ["3.402", "3.208", "3.059", "2.994", "2.922"]
+   fiction: alone 2.746  +KN 2.206  +KN+match 2.160
+   nonfiction: alone 3.010  +KN 2.360  +KN+match 2.231
+seed 9203 A+: trained 1000000 bytes in 137s (incl. curve evals), curve ["3.365", "3.179", "3.023", "2.950", "2.883"]
+   fiction: alone 2.712  +KN 2.205  +KN+match 2.159
+   nonfiction: alone 2.981  +KN 2.362  +KN+match 2.230
+seed 9203 D: trained 1000000 bytes in 172s (incl. curve evals), curve ["3.336", "3.158", "3.016", "2.947", "2.866"]
+   fiction: alone 2.715  +KN 2.197  +KN+match 2.151
+   nonfiction: alone 2.954  +KN 2.344  +KN+match 2.216
+seed 9203 F: trained 1000000 bytes in 172s (incl. curve evals), curve ["3.337", "3.136", "2.997", "2.946", "2.880"]
+   fiction: alone 2.700  +KN 2.197  +KN+match 2.153
+   nonfiction: alone 2.981  +KN 2.349  +KN+match 2.221
+seed 9203 E: trained 1000000 bytes in 184s (incl. curve evals), curve ["3.344", "3.149", "3.013", "2.947", "2.885"]
+   fiction: alone 2.725  +KN 2.201  +KN+match 2.156
+   nonfiction: alone 2.975  +KN 2.352  +KN+match 2.225
+fiction    all           F vs E (compiled init over random init, same architecture)     gain +0.0107 seeds [0.0014, 0.0050, 0.0256]
+fiction    all           F vs A (circuit over plain GRU)                                gain +0.0381 seeds [0.0264, 0.0415, 0.0465]
+fiction    all           F vs A+ (circuit over parameter-matched GRU)                   gain +0.0096 seeds [-0.0098, 0.0261, 0.0124]
+fiction    all           F vs D (training the compiled circuit over freezing it)        gain +0.0116 seeds [0.0023, 0.0168, 0.0155]
+fiction    all           D vs A (frozen compiled circuit over plain GRU)                gain +0.0266 seeds [0.0241, 0.0246, 0.0310]
+fiction    all           F+KN vs A+KN = G (circuit inside the hybrid)                   gain +0.0081 seeds [0.0068, 0.0085, 0.0091]
+fiction    all           F+KN+match vs A+KN+match = H                                   gain +0.0048 seeds [0.0013, 0.0060, 0.0071]
+fiction    all           E+KN vs A+KN = G (random circuit inside the hybrid)            gain +0.0042 seeds [0.0036, 0.0038, 0.0052]
+fiction    novel-context F vs E (compiled init over random init, same architecture)     gain +0.0119 seeds [0.0075, 0.0049, 0.0232]
+fiction    novel-context F vs A (circuit over plain GRU)                                gain +0.0434 seeds [0.0316, 0.0468, 0.0519]
+fiction    novel-context F vs A+ (circuit over parameter-matched GRU)                   gain +0.0166 seeds [-0.0010, 0.0325, 0.0181]
+fiction    novel-context F vs D (training the compiled circuit over freezing it)        gain +0.0134 seeds [0.0110, 0.0162, 0.0132]
+fiction    novel-context D vs A (frozen compiled circuit over plain GRU)                gain +0.0300 seeds [0.0206, 0.0306, 0.0388]
+fiction    novel-context F+KN vs A+KN = G (circuit inside the hybrid)                   gain +0.0097 seeds [0.0084, 0.0098, 0.0109]
+fiction    novel-context F+KN+match vs A+KN+match = H                                   gain +0.0056 seeds [0.0017, 0.0068, 0.0083]
+fiction    novel-context E+KN vs A+KN = G (random circuit inside the hybrid)            gain +0.0051 seeds [0.0043, 0.0042, 0.0070]
+nonfiction all           F vs E (compiled init over random init, same architecture)     gain +0.0127 seeds [0.0096, 0.0346, -0.0062]
+nonfiction all           F vs A (circuit over plain GRU)                                gain +0.0640 seeds [0.0722, 0.0910, 0.0290]
+nonfiction all           F vs A+ (circuit over parameter-matched GRU)                   gain +0.0492 seeds [0.0688, 0.0792, -0.0003]
+nonfiction all           F vs D (training the compiled circuit over freezing it)        gain +0.0053 seeds [0.0017, 0.0417, -0.0274]
+nonfiction all           D vs A (frozen compiled circuit over plain GRU)                gain +0.0587 seeds [0.0705, 0.0493, 0.0564]
+nonfiction all           F+KN vs A+KN = G (circuit inside the hybrid)                   gain +0.0118 seeds [0.0120, 0.0116, 0.0119]
+nonfiction all           F+KN+match vs A+KN+match = H                                   gain +0.0082 seeds [0.0064, 0.0075, 0.0106]
+nonfiction all           E+KN vs A+KN = G (random circuit inside the hybrid)            gain +0.0082 seeds [0.0088, 0.0071, 0.0087]
+nonfiction novel-context F vs E (compiled init over random init, same architecture)     gain +0.0160 seeds [0.0235, 0.0366, -0.0120]
+nonfiction novel-context F vs A (circuit over plain GRU)                                gain +0.0775 seeds [0.0899, 0.1058, 0.0370]
+nonfiction novel-context F vs A+ (circuit over parameter-matched GRU)                   gain +0.0599 seeds [0.0946, 0.0853, -0.0001]
+nonfiction novel-context F vs D (training the compiled circuit over freezing it)        gain +0.0070 seeds [0.0109, 0.0420, -0.0317]
+nonfiction novel-context D vs A (frozen compiled circuit over plain GRU)                gain +0.0705 seeds [0.0790, 0.0638, 0.0687]
+nonfiction novel-context F+KN vs A+KN = G (circuit inside the hybrid)                   gain +0.0147 seeds [0.0155, 0.0140, 0.0147]
+nonfiction novel-context F+KN+match vs A+KN+match = H                                   gain +0.0095 seeds [0.0081, 0.0086, 0.0119]
+nonfiction novel-context E+KN vs A+KN = G (random circuit inside the hybrid)            gain +0.0106 seeds [0.0100, 0.0100, 0.0117]
