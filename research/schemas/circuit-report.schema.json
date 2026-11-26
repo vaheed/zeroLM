@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM novelty experiment N2: the trainable compiled circuit, arms A, A+, D, E, F (reports/circuit/summary.json)",
+  "type": "object",
+  "required": [
+    "report",
+    "split_role",
+    "exposure_bytes",
+    "exposure_sha256",
+    "manifest_sha256",
+    "heldout_bytes_per_role",
+    "seeds",
+    "params",
+    "selection",
+    "chosen",
+    "mixer_lr",
+    "arms",
+    "contrasts",
+    "curves",
+    "bytes_to_target",
+    "train_wall",
+    "scope_note"
+  ],
+  "properties": {
+    "report": {
+      "const": "circuit"
+    },
+    "split_role": {
+      "enum": [
+        "dev",
+        "hidden"
+      ]
+    },
+    "exposure_bytes": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "exposure_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "manifest_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "integer"
+      }
+    },
+    "arms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "seed",
+          "arm",
+          "role",
+          "bpb_alone",
+          "bpb_with_kn",
+          "bpb_with_kn_and_match"
+        ]
+      }
+    },
+    "contrasts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "role",
+          "scope",
+          "contrast",
+          "mean_gain_bpb",
+          "sd_over_seeds",
+          "seed_gains"
+        ]
+      }
+    },
+    "scope_note": {
+      "type": "string"
+    }
+  }
+}

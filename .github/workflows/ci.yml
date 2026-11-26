@@ -265,6 +265,11 @@ jobs:
       - name: Hybrid report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/hybrid-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/hybrid/summary.json > /dev/null || { echo "hybrid summary lacks $k"; exit 1; }; done
+      - name: Novelty experiment N2 smoke, the trainable compiled circuit on the development role (small budget; the 10^6 pilot is a manual run)
+        run: cargo run --release -p zerolm-eval --bin zerolm-circuit -- --root data --exposure 100000 --heldout 50000 --seeds 9201,9202 --out reports/circuit
+      - name: Circuit report fields match the schema
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/circuit-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/circuit/summary.json > /dev/null || { echo "circuit summary lacks $k"; exit 1; }; done
       - name: Report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/real-text-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
@@ -281,6 +286,7 @@ jobs:
             reports/real-text-curves/
             reports/headroom/
             reports/hybrid/
+            reports/circuit/
             reports/benchmarks/
           if-no-files-found: warn
           retention-days: 30

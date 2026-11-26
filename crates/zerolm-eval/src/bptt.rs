@@ -22,6 +22,41 @@ pub const VOCAB: usize = 256;
 /// The byte assumed before the first observed byte (as in the predictor).
 pub const START_BYTE: u8 = b'\n';
 
+/// How the circuit's two tables start.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum CircuitInit {
+    /// `U = V = C`, one seeded unit-row code table `C` (a closed-form induction construction: content-independent).
+    Compiled,
+    /// `U` and `V` independent seeded unit-row tables (same shapes and norms, no alignment).
+    Random,
+}
+
+/// The soft induction circuit (novelty experiment N2, `docs/experimental-design.md`): attention over the last
+/// `window` positions, scoring candidate `j` for the byte at position `n` by
+/// `s_j = beta * sum_{i<lags} <U[x_{n-1-i}], V[x_{j-1-i}]>`, a null slot with score `s0`, and a copy
+/// distribution `o[k] = sum_j a_j [x_j = k]` added to the logits as `gamma * o[k]`, `gamma = gamma0 + w.h`.
+/// Research arm; the host loops here are the reference of what a compiled circuit would have to match.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Circuit {
+    pub rank: usize,
+    pub lags: usize,
+    pub window: usize,
+    pub beta: f32,
+    pub s0: f32,
+    pub gamma0: f32,
+    pub init: CircuitInit,
+    /// Learning-rate multiplier of the circuit tensors (`U`, `V`, `beta`, `s0`, `gamma0`).
+    pub lr_mult: f32,
+    /// Freeze `U`, `V`, `beta`, `s0`, `gamma0`; `w` (the hidden-state gate) still learns.
+    pub frozen: bool,
+}
+
+impl Circuit {
+    pub fn compiled() -> Self {
+        Circuit { rank: 16, lags: 3, window: 256, beta: 8.0, s0: 20.0, gamma0: 4.0, init: CircuitInit::Compiled, lr_mult: 1.0, frozen: false }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct Config {
     pub window: usize,
@@ -29,11 +64,12 @@ pub struct Config {
     pub clip: f32,
     pub beta1: f32,
     pub beta2: f32,
+    pub circuit: Option<Circuit>,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Config { window: 32, lr: 3e-3, clip: 1.0, beta1: 0.9, beta2: 0.999 }
+        Config { window: 32, lr: 3e-3, clip: 1.0, beta1: 0.9, beta2: 0.999, circuit: None }
     }
 }
 
@@ -47,11 +83,18 @@ struct Layout {
     b: [usize; 3],
     ro: usize,
     rb: usize,
+    /// Circuit tensors (equal to `total` when there is no circuit): U, V, beta, s0, gamma0, then w.
+    cu: usize,
+    cv: usize,
+    cbeta: usize,
+    cs0: usize,
+    cg0: usize,
+    cw: usize,
     total: usize,
 }
 
 impl Layout {
-    fn new(e: usize, d: usize) -> Self {
+    fn new(e: usize, d: usize, rank: Option<usize>) -> Self {
         let mut at = 0;
         let mut take = |n: usize| {
             let o = at;
@@ -64,7 +107,11 @@ impl Layout {
         let b = [take(d), take(d), take(d)];
         let ro = take(VOCAB * (d + e));
         let rb = take(VOCAB);
-        Layout { e, d, embed, w, u, b, ro, rb, total: at }
+        let (cu, cv, cbeta, cs0, cg0, cw) = match rank {
+            Some(r) => (take(VOCAB * r), take(VOCAB * r), take(1), take(1), take(1), take(d)),
+            None => (at, at, at, at, at, at),
+        };
+        Layout { e, d, embed, w, u, b, ro, rb, cu, cv, cbeta, cs0, cg0, cw, total: at }
     }
 }
 
@@ -118,13 +165,25 @@ pub struct Bptt {
     steps: u64,
     state: Vec<f32>,
     prev: u8,
+    /// Recent bytes (starting with the start byte), kept for the circuit's attention window.
+    tail: Vec<u8>,
     /// Total bits and bytes of the prequential pass so far.
     bits: f64,
     seen: usize,
 }
 
 /// Cached forward values of one step.
+struct CircStep {
+    js: Vec<usize>,
+    /// Raw similarity sum per candidate (before `beta`).
+    c: Vec<f32>,
+    a: Vec<f32>,
+    o: Vec<f32>,
+    gamma: f32,
+}
+
 struct Step {
+    circ: Option<CircStep>,
     prev: u8,
     hp: Vec<f32>,
     z: Vec<f32>,
@@ -132,6 +191,34 @@ struct Step {
     c: Vec<f32>,
     h: Vec<f32>,
     p: Vec<f32>,
+}
+
+fn unit_rows(rng: &mut zerolm_tensor::Rng, rank: usize) -> Vec<f32> {
+    let mut v = Vec::with_capacity(VOCAB * rank);
+    for _ in 0..VOCAB {
+        let mut row: Vec<f32> = (0..rank).map(|_| rng.uniform(1.0)).collect();
+        let n = row.iter().map(|x| x * x).sum::<f32>().sqrt().max(1e-6);
+        row.iter_mut().for_each(|x| *x /= n);
+        v.extend(row);
+    }
+    v
+}
+
+fn init_circuit(p: &mut [f32], l: &Layout, c: &Circuit, seed: u64) {
+    let n = VOCAB * c.rank;
+    let (u, v) = match c.init {
+        CircuitInit::Compiled => {
+            let code = unit_rows(&mut zerolm_tensor::Rng::from_tag(0, "circuit-code-table-v1"), c.rank);
+            (code.clone(), code)
+        }
+        CircuitInit::Random => (unit_rows(&mut zerolm_tensor::Rng::from_tag(seed, "circuit-random-u"), c.rank), unit_rows(&mut zerolm_tensor::Rng::from_tag(seed, "circuit-random-v"), c.rank)),
+    };
+    p[l.cu..l.cu + n].copy_from_slice(&u);
+    p[l.cv..l.cv + n].copy_from_slice(&v);
+    p[l.cbeta] = c.beta;
+    p[l.cs0] = c.s0;
+    p[l.cg0] = c.gamma0;
+    // w starts at zero: the hidden state does not modulate the copy gain until it learns to.
 }
 
 fn matvec_acc(w: &[f32], rows: usize, cols: usize, x: &[f32], out: &mut [f32]) {
@@ -173,7 +260,7 @@ impl Bptt {
     pub fn with_budget(seed: u64, cfg: Config, budget: usize) -> Self {
         let model = Model::new(DEFAULT_KIND, seed, EMBED_DIM, budget);
         let d = model.cell.hidden_dim();
-        let l = Layout::new(EMBED_DIM, d);
+        let l = Layout::new(EMBED_DIM, d, cfg.circuit.map(|c| c.rank));
         let mut p = vec![0.0f32; l.total];
         p[l.embed..l.embed + VOCAB * EMBED_DIM].copy_from_slice(&model.embed.data);
         for (name, data) in model.cell.groups() {
@@ -191,7 +278,10 @@ impl Bptt {
             };
             p[at..at + data.len()].copy_from_slice(data);
         }
-        Bptt { learning: true, log: None, cfg, m: vec![0.0; l.total], v: vec![0.0; l.total], steps: 0, state: vec![0.0; d], prev: START_BYTE, bits: 0.0, seen: 0, l, p }
+        if let Some(c) = cfg.circuit {
+            init_circuit(&mut p, &l, &c, seed);
+        }
+        Bptt { learning: true, log: None, tail: vec![START_BYTE], cfg, m: vec![0.0; l.total], v: vec![0.0; l.total], steps: 0, state: vec![0.0; d], prev: START_BYTE, bits: 0.0, seen: 0, l, p }
     }
 
     /// The embedding and GRU tensors as a plastic core (same flat layout).
@@ -204,11 +294,47 @@ impl Bptt {
         (&self.p[self.l.ro..self.l.rb], &self.p[self.l.rb..self.l.total])
     }
 
+    /// Indices of the circuit tensors (U, V, beta, s0, gamma0, w); empty without a circuit.
+    pub fn circuit_param_range(&self) -> std::ops::Range<usize> {
+        self.l.cu..self.l.total
+    }
+
     pub fn param_count(&self) -> usize {
         self.l.total
     }
 
-    fn forward_step(&self, params: &[f32], h: &[f32], prev: u8) -> Step {
+    /// Circuit attention for the byte after `hist` (all earlier bytes, last = the input byte).
+    fn circuit_forward(&self, params: &[f32], c: &Circuit, hist: &[u8]) -> CircStep {
+        let (r, m, n) = (c.rank, c.lags, hist.len());
+        let mut o = vec![0.0f32; VOCAB];
+        if n < m + 1 {
+            return CircStep { js: vec![], c: vec![], a: vec![], o, gamma: 0.0 };
+        }
+        let (beta, s0) = (params[self.l.cbeta], params[self.l.cs0]);
+        let lo = m.max(n.saturating_sub(c.window));
+        let js: Vec<usize> = (lo..n).collect();
+        let mut sims = Vec::with_capacity(js.len());
+        for &j in &js {
+            let mut acc = 0.0f32;
+            for i in 0..m {
+                let (qb, kb) = (hist[n - 1 - i] as usize, hist[j - 1 - i] as usize);
+                let (u, v) = (&params[self.l.cu + qb * r..self.l.cu + (qb + 1) * r], &params[self.l.cv + kb * r..self.l.cv + (kb + 1) * r]);
+                acc += u.iter().zip(v).map(|(a, b)| a * b).sum::<f32>();
+            }
+            sims.push(acc);
+        }
+        let mx = sims.iter().map(|x| beta * x).fold(s0, f32::max);
+        let mut a: Vec<f32> = sims.iter().map(|x| (beta * x - mx).exp()).collect();
+        let z: f32 = a.iter().sum::<f32>() + (s0 - mx).exp();
+        a.iter_mut().for_each(|x| *x /= z);
+        for (&j, &aj) in js.iter().zip(&a) {
+            o[hist[j] as usize] += aj;
+        }
+        CircStep { js, c: sims, a, o, gamma: 0.0 }
+    }
+
+    fn forward_step(&self, params: &[f32], h: &[f32], hist: &[u8]) -> Step {
+        let prev = *hist.last().expect("history starts with the start byte");
         let (e, d) = (self.l.e, self.l.d);
         let x = &params[self.l.embed + prev as usize * e..self.l.embed + (prev as usize + 1) * e];
         let mut z = params[self.l.b[0]..self.l.b[0] + d].to_vec();
@@ -232,24 +358,32 @@ impl Bptt {
             let row = &params[self.l.ro + k * f..self.l.ro + (k + 1) * f];
             *lg += row[..d].iter().zip(&hn).map(|(a, b)| a * b).sum::<f32>() + row[d..].iter().zip(x).map(|(a, b)| a * b).sum::<f32>();
         }
+        let circ = self.cfg.circuit.map(|c| {
+            let mut cs = self.circuit_forward(params, &c, hist);
+            cs.gamma = params[self.l.cg0] + params[self.l.cw..self.l.cw + d].iter().zip(&hn).map(|(a, b)| a * b).sum::<f32>();
+            for (lg, ok) in logits.iter_mut().zip(&cs.o) {
+                *lg += cs.gamma * ok;
+            }
+            cs
+        });
         zerolm_tensor::softmax_inplace(&mut logits);
-        Step { prev, hp: h.to_vec(), z, r, c, h: hn, p: logits }
+        Step { circ, prev, hp: h.to_vec(), z, r, c, h: hn, p: logits }
     }
 
     /// Mean cross entropy (nats) of `bytes` from state `h0`, and the gradient
     /// of that mean with respect to every parameter.
-    fn loss_and_grad(&self, params: &[f32], h0: &[f32], prev0: u8, bytes: &[u8]) -> (f64, Vec<f32>, Vec<Step>) {
+    fn loss_and_grad(&self, params: &[f32], h0: &[f32], tail: &[u8], bytes: &[u8]) -> (f64, Vec<f32>, Vec<Step>) {
         let (e, d) = (self.l.e, self.l.d);
         let f = d + e;
         let mut steps: Vec<Step> = Vec::with_capacity(bytes.len());
         let mut h = h0.to_vec();
-        let mut prev = prev0;
+        let mut buf = tail.to_vec();
+        buf.extend_from_slice(bytes);
         let mut loss = 0.0f64;
-        for &y in bytes {
-            let s = self.forward_step(params, &h, prev);
+        for (t, &y) in bytes.iter().enumerate() {
+            let s = self.forward_step(params, &h, &buf[..tail.len() + t]);
             loss -= (s.p[y as usize].max(1e-30) as f64).ln();
             h = s.h.clone();
-            prev = y;
             steps.push(s);
         }
         let n = bytes.len() as f32;
@@ -272,6 +406,38 @@ impl Bptt {
             transpose_acc(&params[self.l.ro..self.l.ro + VOCAB * f], f, &dlogit, &mut dphi);
             for i in 0..d {
                 dh[i] += dphi[i];
+            }
+            if let (Some(cs), Some(c)) = (&s.circ, &self.cfg.circuit) {
+                let hist = &buf[..tail.len() + t];
+                let (r, m, n) = (c.rank, c.lags, hist.len());
+                let dgamma: f32 = dlogit.iter().zip(&cs.o).map(|(a, b)| a * b).sum();
+                g[self.l.cg0] += dgamma;
+                for i in 0..d {
+                    g[self.l.cw + i] += dgamma * s.h[i];
+                    dh[i] += dgamma * params[self.l.cw + i];
+                }
+                if !cs.js.is_empty() {
+                    let da: Vec<f32> = cs.js.iter().map(|&j| cs.gamma * dlogit[hist[j] as usize]).collect();
+                    let dot: f32 = cs.a.iter().zip(&da).map(|(a, b)| a * b).sum();
+                    let a_null = 1.0 - cs.a.iter().sum::<f32>();
+                    g[self.l.cs0] += -a_null * dot;
+                    let beta = params[self.l.cbeta];
+                    for (idx, &j) in cs.js.iter().enumerate() {
+                        let ds = cs.a[idx] * (da[idx] - dot);
+                        g[self.l.cbeta] += ds * cs.c[idx];
+                        let w = beta * ds;
+                        if w == 0.0 {
+                            continue;
+                        }
+                        for i in 0..m {
+                            let (qb, kb) = (hist[n - 1 - i] as usize, hist[j - 1 - i] as usize);
+                            for k in 0..r {
+                                g[self.l.cu + qb * r + k] += w * params[self.l.cv + kb * r + k];
+                                g[self.l.cv + kb * r + k] += w * params[self.l.cu + qb * r + k];
+                            }
+                        }
+                    }
+                }
             }
             let mut dx: Vec<f32> = dphi[d..].to_vec();
             // GRU step backward.
@@ -313,16 +479,26 @@ impl Bptt {
     /// Score the chunk with the current weights (prequential), then take one
     /// Adam step on it. Returns the chunk's bits.
     pub fn train_chunk(&mut self, bytes: &[u8]) -> f64 {
-        let (loss, mut g, steps) = self.loss_and_grad(&self.p, &self.state, self.prev, bytes);
+        let (loss, mut g, steps) = self.loss_and_grad(&self.p, &self.state, &self.tail, bytes);
         let bits = loss * bytes.len() as f64 / std::f64::consts::LN_2;
         self.bits += bits;
         let offset = self.seen;
         self.seen += bytes.len();
+        self.tail.extend_from_slice(bytes);
+        if let Some(c) = self.cfg.circuit {
+            let keep = c.window + c.lags + 2;
+            if self.tail.len() > keep {
+                self.tail.drain(..self.tail.len() - keep);
+            }
+        }
         if !self.learning {
             // Scored only: carry the state, change nothing.
             self.state = steps.last().expect("non-empty chunk").h.clone();
             self.prev = *bytes.last().expect("non-empty chunk");
             return bits;
+        }
+        if self.cfg.circuit.is_some_and(|c| c.frozen) {
+            g[self.l.cu..self.l.cw].iter_mut().for_each(|x| *x = 0.0);
         }
         let norm = g.iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt() as f32;
         let before = if self.log.is_some() { Some(self.p.clone()) } else { None };
@@ -333,10 +509,12 @@ impl Bptt {
         self.steps += 1;
         let (b1, b2) = (self.cfg.beta1, self.cfg.beta2);
         let (c1, c2) = (1.0 - b1.powi(self.steps as i32), 1.0 - b2.powi(self.steps as i32));
+        let mult = self.cfg.circuit.map_or(1.0, |c| c.lr_mult);
         for (i, &gi) in g.iter().enumerate() {
             self.m[i] = b1 * self.m[i] + (1.0 - b1) * gi;
             self.v[i] = b2 * self.v[i] + (1.0 - b2) * gi * gi;
-            self.p[i] -= self.cfg.lr * (self.m[i] / c1) / ((self.v[i] / c2).sqrt() + 1e-8);
+            let lr = if i >= self.l.cu && i < self.l.cw { self.cfg.lr * mult } else { self.cfg.lr };
+            self.p[i] -= lr * (self.m[i] / c1) / ((self.v[i] / c2).sqrt() + 1e-8);
         }
         // Carry the state forward, detached, as computed before the update.
         self.state = steps.last().expect("non-empty chunk").h.clone();
@@ -425,14 +603,15 @@ impl Bptt {
     /// Per position `[bits, confidence (max probability), 1.0 if the argmax is the byte else 0.0]`.
     pub fn score_detail(&self, bytes: &[u8]) -> Vec<[f32; 3]> {
         let mut h = vec![0.0f32; self.l.d];
-        let mut prev = START_BYTE;
+        let mut buf = Vec::with_capacity(bytes.len() + 1);
+        buf.push(START_BYTE);
+        buf.extend_from_slice(bytes);
         let mut out = Vec::with_capacity(bytes.len());
-        for &y in bytes {
-            let s = self.forward_step(&self.p, &h, prev);
+        for (i, &y) in bytes.iter().enumerate() {
+            let s = self.forward_step(&self.p, &h, &buf[..i + 1]);
             let (am, conf) = s.p.iter().enumerate().fold((0usize, 0.0f32), |a, (i, v)| if *v > a.1 { (i, *v) } else { a });
             out.push([-(s.p[y as usize].max(1e-30)).log2(), conf, (am == y as usize) as u8 as f32]);
             h = s.h;
-            prev = y;
         }
         out
     }
@@ -441,25 +620,27 @@ impl Bptt {
     /// state; changes no weight. Used by the hybrid arms, which mix this with other predictors.
     pub fn score_probs(&self, bytes: &[u8], mut f: impl FnMut(usize, &[f32])) {
         let mut h = vec![0.0f32; self.l.d];
-        let mut prev = START_BYTE;
-        for (i, &y) in bytes.iter().enumerate() {
-            let s = self.forward_step(&self.p, &h, prev);
+        let mut buf = Vec::with_capacity(bytes.len() + 1);
+        buf.push(START_BYTE);
+        buf.extend_from_slice(bytes);
+        for i in 0..bytes.len() {
+            let s = self.forward_step(&self.p, &h, &buf[..i + 1]);
             f(i, &s.p);
             h = s.h;
-            prev = y;
         }
     }
 
     /// Held-out BPB from a fresh state; changes no weight.
     pub fn evaluate(&self, bytes: &[u8]) -> f64 {
         let mut h = vec![0.0f32; self.l.d];
-        let mut prev = START_BYTE;
+        let mut buf = Vec::with_capacity(bytes.len() + 1);
+        buf.push(START_BYTE);
+        buf.extend_from_slice(bytes);
         let mut bits = 0.0f64;
-        for &y in bytes {
-            let s = self.forward_step(&self.p, &h, prev);
+        for (i, &y) in bytes.iter().enumerate() {
+            let s = self.forward_step(&self.p, &h, &buf[..i + 1]);
             bits -= (s.p[y as usize].max(1e-30) as f64).log2();
             h = s.h;
-            prev = y;
         }
         bits / bytes.len().max(1) as f64
     }
@@ -467,7 +648,7 @@ impl Bptt {
     /// For tests: gradient of the mean loss on `bytes` from a fresh state.
     pub fn gradient_for_test(&self, bytes: &[u8]) -> (f64, Vec<f32>) {
         let h0 = vec![0.0f32; self.l.d];
-        let (l, g, _) = self.loss_and_grad(&self.p, &h0, START_BYTE, bytes);
+        let (l, g, _) = self.loss_and_grad(&self.p, &h0, &[START_BYTE], bytes);
         (l, g)
     }
 
@@ -476,6 +657,6 @@ impl Bptt {
     }
 
     pub fn loss_for_test(&self, bytes: &[u8]) -> f64 {
-        self.loss_and_grad(&self.p, &vec![0.0; self.l.d], START_BYTE, bytes).0
+        self.loss_and_grad(&self.p, &vec![0.0; self.l.d], &[START_BYTE], bytes).0
     }
 }

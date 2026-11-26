@@ -87,6 +87,61 @@
     "B",
     "C",
     "G",
-    "H"
-  ]
+    "H",
+    "A+",
+    "D",
+    "E",
+    "F"
+  ],
+  "n2": {
+    "command": "cargo run --release -p zerolm-eval --bin zerolm-circuit -- --root data --exposure 1000000 --heldout 100000 --seeds 9201,9202,9203",
+    "role": "dev",
+    "hidden_role_read": false,
+    "pilot_seeds": [
+      9201,
+      9202,
+      9203
+    ],
+    "grids": {
+      "scalars_beta_s0": [
+        [
+          8,
+          20
+        ],
+        [
+          4,
+          4
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "circuit_lr_mult": [
+        1,
+        10
+      ],
+      "mixer_lr": [
+        0.01,
+        0.03,
+        0.1,
+        0.3
+      ]
+    },
+    "chosen": {
+      "F": {
+        "beta": 8,
+        "s0": 20,
+        "lr_mult": 1
+      },
+      "E": {
+        "beta": 4,
+        "s0": 4,
+        "lr_mult": 10
+      },
+      "mixer_lr": 0.3
+    },
+    "note": "selected mixer lr 0.3 is the grid edge (probe BPB 2.2385 vs 2.2391 at 0.1); widen before the confirmatory run",
+    "evidence": "research/decisions/novelty-n2-evidence/dev-1e6.json"
+  }
 }

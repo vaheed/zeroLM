@@ -71,4 +71,20 @@ Paired gains (BPB, mean over seeds): G over A 0.51 / 0.64; G over B 0.025 / 0.02
 
 Caveats, all binding: (1) seeds vary only the GRU initialization; the count model and the match model are deterministic, so per-seed intervals and the $d_z$ over three seeds describe GRU-initialization variance, not data variance (data variance needs more held-out roles). (2) Equal exposure only; equal-compute accounting is not reported (GRU training took about 100 s per 10^6 bytes against seconds for the count model). (3) The selected mixer rate is the grid edge (0.1), and the probe BPB differs by 0.0001 from 0.03; the grid should be widened before the confirmatory run. (4) The mixer and match confidences adapt on the held-out stream, prequentially. (5) The GRU is scored from a fresh state with frozen weights; it does not adapt on held-out text (dynamic evaluation would be a further arm). (6) Dev role, one budget; the hidden role is unread. (7) Arm E also needs a stronger conventional neural baseline than a 20,000-parameter GRU before 'conventional' is a fair word.
 
-Next (N2): the trainable compiled circuit (arms D, E, F, X1).
+## Experiment N2 (done, pilot): the trainable compiled circuit
+
+`cargo run --release -p zerolm-eval --bin zerolm-circuit -- --root data --exposure 1000000 --heldout 100000 --seeds 9201,9202,9203` (schema `research/schemas/circuit-report.schema.json`; a small smoke run is in the `real-text` CI job). Dev role, 10^6 exposure bytes, 100,000 held-out bytes per role, 3 GRU seeds. Evidence: `research/decisions/novelty-n2-evidence/dev-1e6.json`. Arms: A plain GRU (47,594 parameters); A+ GRU with parameters matched to the circuit arms (56,218 vs 55,863); D compiled circuit, frozen; F compiled circuit as initial value, then trained; E same architecture with random tables (E also serves as the scrambled-weights control X1: same shapes, no alignment). Init scalars and the circuit learning-rate multiplier were chosen per arm (F, E) from one grid on a probe-role slice. Mean held-out BPB over seeds (alone / + Kneser-Ney 5 / + KN + match):
+
+| arm | fiction | non-fiction |
+|---|---|---|
+| A | 2.744 / 2.207 / 2.160 | 3.035 / 2.361 / 2.231 |
+| A+ | 2.716 / 2.205 / 2.159 | 3.020 / 2.363 / 2.231 |
+| D | 2.718 / 2.200 / 2.156 | 2.976 / 2.349 / 2.222 |
+| F | 2.706 / 2.199 / 2.155 | 2.971 / 2.350 / 2.223 |
+| E | 2.717 / 2.202 / 2.158 | 2.983 / 2.353 / 2.226 |
+
+Paired gains (BPB, mean over seeds, fiction / non-fiction): F over E 0.011 / 0.013 (non-fiction seed gains 0.010, 0.035, -0.006); F over A+ 0.010 / 0.049 (one seed per role is zero or negative); F over D 0.012 / 0.005; F inside the hybrid over G 0.008 / 0.012; inside H 0.005 / 0.008; a random circuit inside the hybrid over G 0.004 / 0.008. Bytes to reach A's final held-out BPB: A+ 830-925 kB, E 780-820 kB, F 640-810 kB, D 650-800 kB.
+
+Reading: the circuit architecture helps (D beats A by 0.03 / 0.06 BPB with no training of the circuit), but most of the gain over a plain GRU is architecture, not the compiled values: F beats the same architecture with random tables (E) by only about 0.01 BPB, with seed-to-seed spread of the same size, and F is not reliably better than the frozen circuit D. Inside the Kneser-Ney plus match hybrid the whole effect shrinks to 0.005-0.012 BPB, and the random circuit gets about half of it. This pilot does not meet the pre-registered bar for NOVELTY SUPPORTED.
+
+Caveats, all binding: (1) three seeds that vary only GRU initialization; intervals describe initialization variance, not data variance. (2) Dev role, one budget; the hidden role is unread. (3) Training wall time was not equalised (A about 110 s, circuit arms 180-195 s per seed at 10^6 bytes). (4) The selected mixer rate 0.3 is the grid edge; widen before the confirmatory run. (5) The circuit is a host-side reference, not yet compiled onto the neural ISA, so no mainline claim follows. (6) The 20,000-parameter-class GRU is a weak neural baseline.

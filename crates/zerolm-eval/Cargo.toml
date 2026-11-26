@@ -65,3 +65,7 @@ path = "src/bin/headroom.rs"
 [[bin]]
 name = "zerolm-hybrid"
 path = "src/bin/hybrid.rs"
+
+[[bin]]
+name = "zerolm-circuit"
+path = "src/bin/circuit.rs"
