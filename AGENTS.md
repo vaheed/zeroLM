@@ -28,7 +28,7 @@ All of these must pass before every commit. In Docker: `docker compose run --rm 
 
 ## Non-negotiable rules
 1. No pretrained weights, tokenizers, or model downloads. No files with extensions listed in `update-policy.json`.
-2. No online backpropagation in the mainline.
+2. Online backpropagation in the mainline only as single-pass, fully logged truncated BPTT (constitution invariant 4 as amended 2026-11-26, `research/decisions/gate-a-2026-11-26.md`); never offline pretraining.
 3. Never train on hidden evaluation data; never use the model's own output as a teacher.
 4. Every update logs input stream, signal, rule, changed tensors, checkpoint hash.
 5. No arbitrary-code execution from self-modification.

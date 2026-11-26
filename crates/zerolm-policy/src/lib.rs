@@ -42,6 +42,11 @@ pub fn audit(root: &Path) -> Report {
     let policy = match manifest::load_update_policy(root) {
         Ok(p) => {
             violations.extend(manifest::validate_update_policy(&p));
+            if let Some(g) = &p.online_gradient {
+                if !root.join(&g.decision_record).is_file() {
+                    violations.push(Violation::new("update-policy-schema", format!("decision record '{}' not found", g.decision_record)));
+                }
+            }
             Some(p)
         }
         Err(v) => {

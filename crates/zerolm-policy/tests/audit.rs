@@ -41,9 +41,20 @@ fn repository_passes() {
 }
 
 #[test]
-fn backprop_flag_fails() {
-    let d = scratch("backprop");
-    edit(&d, "research/manifest/update-policy.json", "\"online_backprop_in_mainline\": false", "\"online_backprop_in_mainline\": true");
+fn online_gradient_needs_its_terms_and_its_decision_record() {
+    // Allowed only with the single-pass, no-pretraining, fully-logged block.
+    let d = scratch("backprop-offline");
+    edit(&d, "research/manifest/update-policy.json", "\"offline_pretraining\": false", "\"offline_pretraining\": true");
+    assert!(checks(&d).contains(&"update-policy-schema"));
+    let d = scratch("backprop-unlogged");
+    edit(&d, "research/manifest/update-policy.json", "\"every_update_logged\": true", "\"every_update_logged\": false");
+    assert!(checks(&d).contains(&"update-policy-schema"));
+    let d = scratch("backprop-norecord");
+    edit(&d, "research/manifest/update-policy.json", "research/decisions/gate-a-2026-11-26.md", "research/decisions/missing.md");
+    assert!(checks(&d).contains(&"update-policy-schema"));
+    // The flag without its block fails.
+    let d = scratch("backprop-flag");
+    edit(&d, "research/manifest/update-policy.json", "\"online_backprop_in_mainline\": true", "\"online_backprop_in_mainline\": false");
     assert!(checks(&d).contains(&"update-policy-schema"));
 }
 

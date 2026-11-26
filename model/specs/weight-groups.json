@@ -90,6 +90,12 @@
       "description": "Representation-feasibility research arm (roadmap Gate A): a plastic copy of the byte embedding and the selected GRU core (tensors embed, gru.wz..gru.bh) changed by the candidate local rule (e-prop with fixed random feedback; eligibility traces are session state, not weights). The frozen core of the memory milestone is a separate copy and stays byte-identical. Research code only; not part of any checkpoint.",
       "init_source": "seeded_prng",
       "update_path": "local_plasticity"
+    },
+    {
+      "id": "gradient_core",
+      "description": "Mainline online-gradient learner (Gate A rerun, constitution invariant 4 as amended by research/decisions/gate-a-2026-11-26.md): the byte embedding, the selected GRU core, and a readout, trained in one chronological pass by truncated backpropagation through time with Adam; every update chunk is logged (input stream, signal, rule, changed tensors, checkpoint hash). Same seeded initialization as the other arms. Not part of any memory checkpoint; no offline pretraining.",
+      "init_source": "seeded_prng",
+      "update_path": "online_gradient"
     }
   ]
 }

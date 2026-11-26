@@ -1,6 +1,13 @@
 {
-  "version": 1,
-  "online_backprop_in_mainline": false,
+  "version": 2,
+  "online_backprop_in_mainline": true,
+  "online_gradient": {
+    "single_pass": true,
+    "offline_pretraining": false,
+    "every_update_logged": true,
+    "amends": "constitution invariant 4",
+    "decision_record": "research/decisions/gate-a-2026-11-26.md"
+  },
   "allowed_signals": [
     "observed_next_byte",
     "user_correction",
@@ -17,6 +24,7 @@
   "update_paths": [
     "none",
     "local_plasticity",
+    "online_gradient",
     "memory_write",
     "wsp_patch"
   ],
