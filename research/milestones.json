@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "order": "roadmap order (docs/roadmap.md); a milestone may be complete only if every earlier one is. Novelty track (not a milestone): CLOSED 2026-11-26, outcome ENGINEERING SUCCESS ONLY, H0 retired by the project lead after N2 (inconclusive) and GDM (confirmatory FAIL); see research/decisions/novelty-gdm-2026-11-26.md. No milestone status was changed.",
+  "order": "roadmap order (docs/roadmap.md); a milestone may be complete only if every earlier one is. Novelty track (not a milestone): CLOSED 2026-11-26, outcome ENGINEERING SUCCESS ONLY, H0 retired by the project lead after N2 (inconclusive) and GDM (confirmatory FAIL); see research/decisions/novelty-gdm-2026-11-26.md. DCNM, a separate exploratory hypothesis, CLOSED 2026-11-27 before any experiment ran (known-mechanism match plus a bounded-memory impossibility result); see research/decisions/novelty-dcnm-close-2026-11-27.md. No milestone status was changed by either closure.",
   "milestones": [
     {
       "id": "constitution",

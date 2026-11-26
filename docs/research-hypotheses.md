@@ -33,3 +33,7 @@ The project lead retired H0 after experiment GDM. Outcome: **ENGINEERING SUCCESS
 - "Retired" means not supported by the evidence at this scale and mechanism; it does not mean disproved for other mechanisms, larger memories or longer exposure, which were not tested. No registered threshold was changed.
 - What stands: the engineering results (online GRU learning, neural ISA, compiled circuits with reference-interpreter parity, weight-resident memory, exact snapshot restore). No novelty claim is made, and no further novelty experiments are run.
 - Record: `research/decisions/novelty-gdm-2026-11-26.md`.
+
+## DCNM, a separate hypothesis, closed before an experiment (2026-11-27)
+
+A distinct exploratory hypothesis, Drift-Corrected Neural Memory (DCNM) — whether transporting a weight-resident associative memory across representation drift preserves knowledge under bounded memory and no replay — was reviewed and closed at the literature/mathematics stage, without reopening H0 or running an experiment. The proposed mechanism matches known methods (DPCR, LDC, SDC/ADC, OWM); exact preservation under arbitrary drift with bounded memory is provably impossible; the best honest outcome of running the proposed experiment would have been KNOWN MECHANISM WITH ENGINEERING VALUE, not a novel result. This is the fourth attempt (after e-prop, N2, GDM) to find a mechanism with a measurable edge over matched-budget baselines or known methods, and the fourth not to find one. See `research/decisions/novelty-dcnm-close-2026-11-27.md` and `docs/research-pivot-dcnm.md`.
