@@ -14,4 +14,5 @@
 
 pub mod contamination;
 pub mod corpus;
+pub mod evalsets;
 pub mod manifest;

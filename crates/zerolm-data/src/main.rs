@@ -32,11 +32,30 @@ fn main() {
             let exposure = corpus::role_stream(&m, &root, corpus::Role::Exposure).unwrap_or_else(|e| fail(&e));
             let index = contamination::ngram_hashes(&exposure, n);
             let mut bad = false;
+            let mut lower_index = None;
             for e in &m.evaluation_sets {
                 let data = std::fs::read(root.join(&e.path)).unwrap_or_else(|e| fail(&e.to_string()));
-                let o = contamination::overlap(&index, &data, n);
-                println!("{}: {}/{} {n}-word windows shared with exposure", e.id, o.shared, o.windows);
-                bad |= o.shared > 0;
+                use zerolm_data::{evalsets, manifest::EvalKind};
+                let (what, shared, total) = match e.kind {
+                    EvalKind::Blimp => {
+                        let pairs = evalsets::parse_blimp(&data).unwrap_or_else(|e| fail(&e));
+                        let all: Vec<&[u8]> = pairs.iter().flat_map(|p| [p.good.as_bytes(), p.bad.as_bytes()]).collect();
+                        ("sentences found verbatim in exposure".to_string(), evalsets::verbatim_overlap(&exposure, &all), all.len())
+                    }
+                    EvalKind::Lambada => {
+                        // LAMBADA is lower-cased and word-tokenized: compare detokenized, lower-cased text.
+                        let text = String::from_utf8_lossy(&data).lines().map(evalsets::detokenize).collect::<Vec<_>>().join("\n");
+                        let lower = lower_index.get_or_insert_with(|| contamination::ngram_hashes(&exposure.to_ascii_lowercase(), n));
+                        let o = contamination::overlap(lower, text.as_bytes(), n);
+                        (format!("{n}-word windows shared with exposure"), o.shared, o.windows)
+                    }
+                    EvalKind::HeldoutBpb => {
+                        let o = contamination::overlap(&index, &data, n);
+                        (format!("{n}-word windows shared with exposure"), o.shared, o.windows)
+                    }
+                };
+                println!("{}: {shared}/{total} {what}", e.id);
+                bad |= shared > 0;
             }
             if bad {
                 fail("contamination: an evaluation set overlaps exposure");

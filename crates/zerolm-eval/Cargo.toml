@@ -41,3 +41,7 @@ path = "src/bin/uniform.rs"
 [[bin]]
 name = "zerolm-realtext"
 path = "src/bin/realtext.rs"
+
+[[bin]]
+name = "zerolm-benchmarks"
+path = "src/bin/benchmarks.rs"

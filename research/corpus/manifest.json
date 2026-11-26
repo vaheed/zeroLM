@@ -29,5 +29,22 @@
   "exposure_order": [
     "gutenberg-books"
   ],
-  "evaluation_sets": []
+  "evaluation_sets": [
+    {
+      "id": "blimp",
+      "kind": "blimp",
+      "license": "CC BY 4.0 (github.com/alexwarstadt/blimp, Warstadt et al. 2020); 67 paradigm files concatenated in name order",
+      "path": "eval/blimp.jsonl",
+      "sha256": "93e7675caabd9d0d81e7145ab25f59ae8a2528fb69c5394e6e52707b427c3397",
+      "bytes": 29576684
+    },
+    {
+      "id": "lambada-test",
+      "kind": "lambada",
+      "license": "CC BY 4.0 (zenodo.org/records/2630551, Paperno et al. 2016); lambada_test_plain_text.txt",
+      "path": "eval/lambada_test.txt",
+      "sha256": "4ab6062b68422bf2e83653d367c9765d42404f7ec21b8b59b6518b45606aaef2",
+      "bytes": 1755107
+    }
+  ]
 }

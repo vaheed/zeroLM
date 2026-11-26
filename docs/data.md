@@ -1,6 +1,6 @@
 # Real-text data pipeline (Phase 8, in progress)
 
-Status: the `real-text` milestone is **planned**, not complete. This page describes the part that exists: the manifest, verification, whole-document splits, and the contamination check. No corpus is fetched yet, and no baseline has been run on real text.
+Status: the `real-text` milestone is **planned**, not complete. This page describes the part that exists: the manifest, verification, whole-document splits, and the contamination check. 
 
 ## Manifest
 
@@ -51,7 +51,16 @@ Readings, one seed, a small hidden split: (1) the control reaches 2.95 held-out 
 
 ## Frozen level thresholds
 
-`model/specs/levels.json` (frozen 2026-11-26, validated by `crates/zerolm-eval/src/levels.rs`) records the thresholds of section 7.1 of the roadmap: L1 is "hidden BPB at or below the better of PPM-C order 5 and Kneser-Ney order 5, re-measured at equal exposure" (with today's measured values listed for reference); L2 and L3 carry the BLiMP, LAMBADA, and Wikipedia-BPB thresholds. The L2 and L3 numbers are the roadmap's values. They are **not yet checked against their published sources** (the GPT-2 paper's small-model results, the BLiMP paper), and they cannot be measured until a Wikipedia source, a BLiMP file, and a LAMBADA file are in the manifest.
+`model/specs/levels.json` (frozen 2026-11-26, validated by `crates/zerolm-eval/src/levels.rs`) records the thresholds of section 7.1 of the roadmap: L1 is "hidden BPB at or below the better of PPM-C order 5 and Kneser-Ney order 5, re-measured at equal exposure" (with today's measured values listed for reference); L2 and L3 carry the BLiMP, LAMBADA, and Wikipedia-BPB thresholds. The L2 and L3 numbers are the roadmap's values. They are **not yet checked against their published sources** (the GPT-2 paper's small-model results, the BLiMP paper), and the Wikipedia BPB part cannot be measured until a Wikipedia source is in the manifest. BLiMP and LAMBADA are measurable now.
+
+## BLiMP and LAMBADA harnesses
+
+Both are evaluation-only and listed in the manifest with license and SHA-256 (`research/corpus/fetch-benchmarks.sh` fetches them into `data/eval/`; both are CC BY 4.0).
+
+- **BLiMP** (`blimp.jsonl`: 67 paradigm files, 67,000 pairs): a model passes a pair when it gives the acceptable sentence the higher total log-probability (each sentence scored after a newline start byte; ties count as wrong). Seven pairs in the published data have identical sentences; they are kept, so no model scores 100%. Reported: pair accuracy, paradigm mean (BLiMP's own aggregate), and per-field accuracy.
+- **LAMBADA** (`lambada_test.txt`: 5,153 passages): the target is the last word, punctuation removed. The file is word-tokenized and lower-cased, so a fixed rule-based detokenizer (`evalsets::detokenize`, no model) restores spacing and quotes; case cannot be restored. An item is correct when greedy byte decoding spells exactly the target and the next greedy byte ends the word. Also reported: mean bits the model gives the target's bytes.
+- **Contamination:** `zerolm-data contamination` checks BLiMP by whole-sentence verbatim match (BLiMP sentences are under 13 words, so a 13-gram check would be vacuous) and LAMBADA by 13-word windows on detokenized, lower-cased text against lower-cased exposure. Result on the current corpus: 0 of 134,000 BLiMP sentences and 0 of 306,591 LAMBADA windows shared with exposure.
+- **Baselines** (`zerolm-benchmarks --root data --exposure 1000000`, order-5 models after 10^6 exposure bytes): BLiMP 0.521 Witten-Bell, 0.512 PPM-C, 0.517 Kneser-Ney (chance 0.5); LAMBADA accuracy 0.000 for all three. These are far below the L2 and L3 bars, as expected for byte 5-gram models on 1 MB; the harness tests (`crates/zerolm-eval/tests/benchmarks.rs`) check the mechanics on small fixtures, not grammatical knowledge.
 
 ## Report and CI
 
@@ -59,4 +68,4 @@ Readings, one seed, a small hidden split: (1) the control reaches 2.95 held-out 
 
 ## Remaining Phase 8 work
 
-More sources (so the hidden role is not a few books), the BLiMP and LAMBADA harnesses with hashed evaluation files, checking the L2 and L3 thresholds against their sources, and learning curves at 10^7 and 10^8 bytes in CI or a scheduled run. The `real-text` milestone stays `planned` until these exist.
+More sources (so the hidden role is not a few books), checking the L2 and L3 thresholds against their sources, and learning curves at 10^7 and 10^8 bytes in CI or a scheduled run. The `real-text` milestone stays `planned` until these exist.

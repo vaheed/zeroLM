@@ -20,7 +20,7 @@
       "blimp_min": 0.75,
       "wikipedia_heldout_bpb_max": 1.5,
       "blind_rating": "blind raters judge generated sentences locally grammatical",
-      "pending": ["the Wikipedia corpus is not in the manifest yet; the BPB threshold applies once a licensed Wikipedia held-out role exists", "the BLiMP harness and file are not added yet"]
+      "pending": ["the Wikipedia corpus is not in the manifest yet; the BPB threshold applies once a licensed Wikipedia held-out role exists"]
     },
     "L3": {
       "name": "Small LLM (1.0 target)",
@@ -29,7 +29,7 @@
       "wikipedia_heldout_bpb_max": 1.2,
       "read_then_answer": "frozen in the read-and-reason milestone",
       "blind_rating": "coherent multi-sentence generation under blind rating",
-      "pending": ["same as L2", "the LAMBADA harness and file are not added yet"]
+      "pending": ["same as L2"]
     },
     "L4": {
       "name": "Assistant",

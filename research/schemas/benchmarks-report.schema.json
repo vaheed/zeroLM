@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM BLiMP and LAMBADA report (reports/benchmarks/summary.json)",
+  "type": "object",
+  "required": ["report", "manifest_sha256", "levels_sha256", "exposure_sha256", "blimp_sha256", "lambada_sha256", "lambada_skipped", "rows", "scope_note"],
+  "properties": {
+    "report": {"const": "benchmarks"},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "levels_sha256": {"$ref": "#/$defs/sha256"},
+    "exposure_sha256": {"$ref": "#/$defs/sha256"},
+    "blimp_sha256": {"$ref": "#/$defs/sha256"},
+    "lambada_sha256": {"$ref": "#/$defs/sha256"},
+    "lambada_skipped": {"type": "integer", "minimum": 0},
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["model", "exposure_bytes", "blimp", "lambada"],
+        "properties": {
+          "model": {"type": "string"},
+          "exposure_bytes": {"type": "integer", "minimum": 1},
+          "blimp": {"type": "object", "required": ["pairs", "correct", "ties", "accuracy", "paradigm_mean", "per_field_accuracy", "meets_l2", "meets_l3"]},
+          "lambada": {"type": "object", "required": ["items", "correct", "accuracy", "mean_target_bits", "meets_l3"]}
+        }
+      }
+    },
+    "scope_note": {"type": "string"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}
