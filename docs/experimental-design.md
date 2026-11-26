@@ -12,8 +12,8 @@ Pre-registration. Frozen values are in `model/specs/novelty.json` (version 1, `s
 | D | A plus compiled match circuit, circuit frozen, learned mixer | A's weights, mixer | not implemented |
 | E | A plus the *same circuit architecture*, random init, trained by gradient | all | not implemented |
 | F | A plus compiled circuit as the *initial value*, then trained; plus weight-resident memory | all | not implemented |
-| G | A mixed with B (log-linear), the conventional hybrid | A, mixer | not implemented |
-| H | G plus fixed-code match model (the PAQ-style hybrid) | A, mixer | not implemented |
+| G | A mixed with B by an online mixture of experts (`hybrid.rs`: 4 contexts from the GRU's max probability, softmax weights, gradient step on $-\ln p$) | A, 8 mixer numbers | implemented (N1) |
+| H | G plus fixed-code match model (the PAQ-style hybrid), v2 confidence rule | A, mixer, counters | implemented (N1) |
 | X1 | F with compiled values scrambled (same shapes, same norm) | all | not implemented |
 | X2 | A, E, G, H scaled to equal FLOPs (floating-point operations) with F | | not implemented |
 
@@ -53,4 +53,22 @@ Effect sizes are reported as paired mean difference and Cohen's $d_z=\bar\Delta/
 
 ## Experiment N0 (done)
 
-`cargo run --release -p zerolm-eval --bin zerolm-headroom -- --root data --mixer v2` (schema `research/schemas/headroom-report.schema.json`; CI step in the `real-text` job). Results and caveats: `docs/novelty-analysis.md` and `research/decisions/novelty-n0-2026-11-26.md`. Next step N1: implement arms G and H (needs per-byte distributions from the GRU, which `bptt.rs` exposes through `score`), because they set the bar every ZeroLM-specific claim must beat. N2: the trainable compiled circuit (arms D, E, F, X1).
+`cargo run --release -p zerolm-eval --bin zerolm-headroom -- --root data --mixer v2` (schema `research/schemas/headroom-report.schema.json`; CI step in the `real-text` job). Results and caveats: `docs/novelty-analysis.md` and `research/decisions/novelty-n0-2026-11-26.md`.
+
+## Experiment N1 (done, pilot): the bars
+
+`cargo run --release -p zerolm-eval --bin zerolm-hybrid -- --root data --exposure 1000000 --heldout 200000` (schema `research/schemas/hybrid-report.schema.json`; a small smoke run is in the `real-text` CI job). Dev role, 3 GRU seeds (9201-9203), 10^6 exposure bytes, 200,000 held-out bytes per role. Evidence: `research/decisions/novelty-n1-evidence/dev-1e6.json`. Mean held-out BPB over seeds:
+
+| arm | fiction | non-fiction |
+|---|---|---|
+| A online GRU alone | 2.706 | 2.963 |
+| B Kneser-Ney 5 | 2.221 | 2.350 |
+| Bm B + match model | 2.171 | 2.205 |
+| G GRU + B mixture | 2.196 | 2.321 |
+| H G + match model | 2.144 | 2.176 |
+
+Paired gains (BPB, mean over seeds): G over A 0.51 / 0.64; G over B 0.025 / 0.029; H over G 0.052 / 0.145; **H over Bm 0.027 / 0.029** (what the GRU adds to a count-plus-match compressor); Bm over B 0.050 / 0.145. **The bar for any ZeroLM-specific claim at 10^6 bytes is H: 2.144 fiction, 2.176 non-fiction.** Reading: the online GRU alone is 0.5-0.6 BPB behind Kneser-Ney 5 at this budget; it adds only about 0.03 BPB to count-plus-match, which is the whole room a learned core has on this metric at 10^6 bytes.
+
+Caveats, all binding: (1) seeds vary only the GRU initialization; the count model and the match model are deterministic, so per-seed intervals and the $d_z$ over three seeds describe GRU-initialization variance, not data variance (data variance needs more held-out roles). (2) Equal exposure only; equal-compute accounting is not reported (GRU training took about 100 s per 10^6 bytes against seconds for the count model). (3) The selected mixer rate is the grid edge (0.1), and the probe BPB differs by 0.0001 from 0.03; the grid should be widened before the confirmatory run. (4) The mixer and match confidences adapt on the held-out stream, prequentially. (5) The GRU is scored from a fresh state with frozen weights; it does not adapt on held-out text (dynamic evaluation would be a further arm). (6) Dev role, one budget; the hidden role is unread. (7) Arm E also needs a stronger conventional neural baseline than a 20,000-parameter GRU before 'conventional' is a fair word.
+
+Next (N2): the trainable compiled circuit (arms D, E, F, X1).

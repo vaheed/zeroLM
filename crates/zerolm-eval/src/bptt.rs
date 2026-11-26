@@ -437,6 +437,19 @@ impl Bptt {
         out
     }
 
+    /// Per position, call `f(i, probabilities)` with the full next-byte distribution from a fresh
+    /// state; changes no weight. Used by the hybrid arms, which mix this with other predictors.
+    pub fn score_probs(&self, bytes: &[u8], mut f: impl FnMut(usize, &[f32])) {
+        let mut h = vec![0.0f32; self.l.d];
+        let mut prev = START_BYTE;
+        for (i, &y) in bytes.iter().enumerate() {
+            let s = self.forward_step(&self.p, &h, prev);
+            f(i, &s.p);
+            h = s.h;
+            prev = y;
+        }
+    }
+
     /// Held-out BPB from a fresh state; changes no weight.
     pub fn evaluate(&self, bytes: &[u8]) -> f64 {
         let mut h = vec![0.0f32; self.l.d];

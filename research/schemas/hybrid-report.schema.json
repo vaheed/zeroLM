@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM novelty experiment N1: arms G and H, the hybrid bars (reports/hybrid/summary.json)",
+  "type": "object",
+  "required": ["report", "split_role", "exposure_bytes", "exposure_sha256", "manifest_sha256", "heldout_bytes_per_role", "seeds", "mixer_lr", "arms", "paired_per_seed", "contrasts", "scope_note"],
+  "properties": {
+    "report": {"const": "hybrid-bars"},
+    "split_role": {"enum": ["dev", "hidden"]},
+    "exposure_bytes": {"type": "integer", "minimum": 1},
+    "exposure_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "seeds": {"type": "array", "minItems": 1, "items": {"type": "integer"}},
+    "arms": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["seed", "role", "bpb", "score_wall_s", "bytes_per_s"]}},
+    "paired_per_seed": {"type": "array", "minItems": 1},
+    "contrasts": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["role", "contrast", "mean_gain_bpb", "sd_over_seeds", "seed_gains", "cohens_dz"]}},
+    "scope_note": {"type": "string"}
+  }
+}

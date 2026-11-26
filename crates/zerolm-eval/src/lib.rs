@@ -15,6 +15,7 @@ pub mod representation;
 pub mod benchmarks;
 pub mod levels;
 pub mod headroom;
+pub mod hybrid;
 
 use serde::{Deserialize, Serialize};
 use std::time::Instant;

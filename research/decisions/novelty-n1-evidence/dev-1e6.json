@@ -1,0 +1,533 @@
+{
+  "arms": [
+    {
+      "bpb": {
+        "A": 2.698725561685195,
+        "B": 2.2208311308481745,
+        "Bm": 2.170579625672539,
+        "G": 2.194913461270669,
+        "H": 2.1412368754220115
+      },
+      "bytes_per_s": 16000.024518437573,
+      "role": "fiction",
+      "score_wall_s": 12.499980845,
+      "seed": 9201
+    },
+    {
+      "bpb": {
+        "A": 2.968371687035386,
+        "B": 2.3500010109922935,
+        "Bm": 2.2047355499327272,
+        "G": 2.321258602904886,
+        "H": 2.175795062942515
+      },
+      "bytes_per_s": 21917.494872259886,
+      "role": "nonfiction",
+      "score_wall_s": 9.125130457,
+      "seed": 9201
+    },
+    {
+      "bpb": {
+        "A": 2.7055554450735158,
+        "B": 2.2208311308481745,
+        "Bm": 2.170579625672539,
+        "G": 2.196622445011442,
+        "H": 2.1447283969898208
+      },
+      "bytes_per_s": 15206.812502913717,
+      "role": "fiction",
+      "score_wall_s": 13.152000129,
+      "seed": 9202
+    },
+    {
+      "bpb": {
+        "A": 2.975555339764352,
+        "B": 2.3500010109922935,
+        "Bm": 2.2047355499327272,
+        "G": 2.321544710352918,
+        "H": 2.176572810065492
+      },
+      "bytes_per_s": 17836.219438145545,
+      "role": "nonfiction",
+      "score_wall_s": 11.213138563,
+      "seed": 9202
+    },
+    {
+      "bpb": {
+        "A": 2.712406836893523,
+        "B": 2.2208311308481745,
+        "Bm": 2.170579625672539,
+        "G": 2.1967182047240095,
+        "H": 2.1449949024093686
+      },
+      "bytes_per_s": 18727.37883976786,
+      "role": "fiction",
+      "score_wall_s": 10.679551138,
+      "seed": 9203
+    },
+    {
+      "bpb": {
+        "A": 2.9458236951101013,
+        "B": 2.3500010109922935,
+        "Bm": 2.2047355499327272,
+        "G": 2.320279649926169,
+        "H": 2.176144961617753
+      },
+      "bytes_per_s": 17988.687472817204,
+      "role": "nonfiction",
+      "score_wall_s": 11.118098544,
+      "seed": 9203
+    }
+  ],
+  "contrasts": [
+    {
+      "cohens_dz": 85.52610436271837,
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "mean_gain_bpb": 0.5094779108574636,
+      "role": "fiction",
+      "sd_over_seeds": 0.005956987222249186,
+      "seed_gains": [
+        0.50381210048617,
+        0.5089329999744878,
+        0.5156886321117332
+      ]
+    },
+    {
+      "cohens_dz": 24.369789707124657,
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "mean_gain_bpb": 0.02474642717934881,
+      "role": "fiction",
+      "sd_over_seeds": 0.0010154550973459587,
+      "seed_gains": [
+        0.025917669581628344,
+        0.024208685838826464,
+        0.024112926117591627
+      ]
+    },
+    {
+      "cohens_dz": 48.46616728132463,
+      "contrast": "H vs G (match layer over hybrid)",
+      "mean_gain_bpb": 0.052431312077926916,
+      "role": "fiction",
+      "sd_over_seeds": 0.0010818126338232271,
+      "seed_gains": [
+        0.05367658584084454,
+        0.051894048003856025,
+        0.0517233023890802
+      ]
+    },
+    {
+      "cohens_dz": 12.84034477453899,
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "mean_gain_bpb": 0.02692623406466098,
+      "role": "fiction",
+      "sd_over_seeds": 0.002097002419907975,
+      "seed_gains": [
+        0.02934275025224241,
+        0.025851228683666714,
+        0.025584723258073833
+      ]
+    },
+    {
+      "cohens_dz": 5913072422933299.0,
+      "contrast": "Bm vs B (match over counts)",
+      "mean_gain_bpb": 0.05025150520806123,
+      "role": "fiction",
+      "sd_over_seeds": 8.498374721940739e-18,
+      "seed_gains": [
+        0.05025150520806122,
+        0.05025150520806122,
+        0.05025150520806122
+      ]
+    },
+    {
+      "cohens_dz": 43.247132584368714,
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "mean_gain_bpb": 0.6422225862870312,
+      "role": "nonfiction",
+      "sd_over_seeds": 0.01485006167828932,
+      "seed_gains": [
+        0.6471130842344254,
+        0.6540106294208858,
+        0.6255440452057822
+      ]
+    },
+    {
+      "cohens_dz": 43.67414620081026,
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "mean_gain_bpb": 0.028973356603708044,
+      "role": "nonfiction",
+      "sd_over_seeds": 0.0006633983517500456,
+      "seed_gains": [
+        0.02874240809638519,
+        0.028456300649925832,
+        0.0297213610648131
+      ]
+    },
+    {
+      "cohens_dz": 215.60130876913686,
+      "contrast": "H vs G (match layer over hybrid)",
+      "mean_gain_bpb": 0.1448567095014637,
+      "role": "nonfiction",
+      "sd_over_seeds": 0.0006718730527585731,
+      "seed_gains": [
+        0.1454635399646446,
+        0.14497190027883625,
+        0.14413468826091033
+      ]
+    },
+    {
+      "cohens_dz": 73.3320684286989,
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "mean_gain_bpb": 0.028564605057297982,
+      "role": "nonfiction",
+      "sd_over_seeds": 0.0003895240604739177,
+      "seed_gains": [
+        0.02894048699055362,
+        0.028162739868392527,
+        0.028590588312947803
+      ]
+    },
+    {
+      "cohens_dz": null,
+      "contrast": "Bm vs B (match over counts)",
+      "mean_gain_bpb": 0.14526546093589598,
+      "role": "nonfiction",
+      "sd_over_seeds": 0.0,
+      "seed_gains": [
+        0.14526546093589598,
+        0.14526546093589598,
+        0.14526546093589598
+      ]
+    }
+  ],
+  "exposure_bytes": 1000000,
+  "exposure_sha256": "f79801abb8c9ed54545f062e4b90e406da066a76f41ed6aa0e2886c0e4a068d6",
+  "gru_lr": 0.001,
+  "gru_params": 20000,
+  "heldout_bytes_per_role": 200000,
+  "manifest_sha256": "f3fc19e0cdce253e7976fc02d6cbe0baf9fde9b722444e42d91a3eb4fcacab3b",
+  "mixer_lr": 0.1,
+  "mixer_lr_grid": [
+    0.003,
+    0.01,
+    0.03,
+    0.1
+  ],
+  "mixer_lr_probe_bpb": [
+    2.1712420261602396,
+    2.167972294928087,
+    2.166775918472458,
+    2.166693116510216
+  ],
+  "paired_per_seed": [
+    {
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "gain_bpb": 0.50381210048617,
+      "gain_ci95": [
+        0.4824144924670375,
+        0.5267414611288938
+      ],
+      "role": "fiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "gain_bpb": 0.5089329999744878,
+      "gain_ci95": [
+        0.4879729786321456,
+        0.5305992758391909
+      ],
+      "role": "fiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "gain_bpb": 0.5156886321117332,
+      "gain_ci95": [
+        0.4953166827736522,
+        0.5383494013275528
+      ],
+      "role": "fiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "gain_bpb": 0.025917669581628344,
+      "gain_ci95": [
+        0.022888182229683404,
+        0.028880709604245478
+      ],
+      "role": "fiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "gain_bpb": 0.024208685838826464,
+      "gain_ci95": [
+        0.021321930421575597,
+        0.02725317546248842
+      ],
+      "role": "fiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "gain_bpb": 0.024112926117591627,
+      "gain_ci95": [
+        0.021335917307488458,
+        0.026973211937568926
+      ],
+      "role": "fiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "H vs G (match layer over hybrid)",
+      "gain_bpb": 0.05367658584084454,
+      "gain_ci95": [
+        0.04250843076589517,
+        0.0640925453019402
+      ],
+      "role": "fiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "H vs G (match layer over hybrid)",
+      "gain_bpb": 0.051894048003856025,
+      "gain_ci95": [
+        0.04076301714206236,
+        0.06242353633865341
+      ],
+      "role": "fiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "H vs G (match layer over hybrid)",
+      "gain_bpb": 0.0517233023890802,
+      "gain_ci95": [
+        0.04052979067420015,
+        0.062184771910956255
+      ],
+      "role": "fiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "gain_bpb": 0.02934275025224241,
+      "gain_ci95": [
+        0.02680262208986865,
+        0.032119126975775125
+      ],
+      "role": "fiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "gain_bpb": 0.025851228683666714,
+      "gain_ci95": [
+        0.023350459118783584,
+        0.028423626213562182
+      ],
+      "role": "fiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "gain_bpb": 0.025584723258073833,
+      "gain_ci95": [
+        0.02313326123428347,
+        0.028235209952597602
+      ],
+      "role": "fiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "Bm vs B (match over counts)",
+      "gain_bpb": 0.05025150520806122,
+      "gain_ci95": [
+        0.038035756742186025,
+        0.061473966236311225
+      ],
+      "role": "fiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "Bm vs B (match over counts)",
+      "gain_bpb": 0.05025150520806122,
+      "gain_ci95": [
+        0.038035756742186025,
+        0.061473966236311225
+      ],
+      "role": "fiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "Bm vs B (match over counts)",
+      "gain_bpb": 0.05025150520806122,
+      "gain_ci95": [
+        0.038035756742186025,
+        0.061473966236311225
+      ],
+      "role": "fiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "gain_bpb": 0.6471130842344254,
+      "gain_ci95": [
+        0.6223852044383157,
+        0.6826709941835143
+      ],
+      "role": "nonfiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "gain_bpb": 0.6540106294208858,
+      "gain_ci95": [
+        0.6320610842658533,
+        0.6846140179739846
+      ],
+      "role": "nonfiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "G vs A (hybrid over GRU alone)",
+      "gain_bpb": 0.6255440452057822,
+      "gain_ci95": [
+        0.608088566923011,
+        0.6478944750608364
+      ],
+      "role": "nonfiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "gain_bpb": 0.02874240809638519,
+      "gain_ci95": [
+        0.02568076686470362,
+        0.03236027998380363
+      ],
+      "role": "nonfiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "gain_bpb": 0.028456300649925832,
+      "gain_ci95": [
+        0.02544166828286834,
+        0.031973850764679956
+      ],
+      "role": "nonfiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "G vs B (hybrid over Kneser-Ney 5)",
+      "gain_bpb": 0.0297213610648131,
+      "gain_ci95": [
+        0.026598854698822835,
+        0.03346874709306168
+      ],
+      "role": "nonfiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "H vs G (match layer over hybrid)",
+      "gain_bpb": 0.1454635399646446,
+      "gain_ci95": [
+        0.12653893970285776,
+        0.16668537718551524
+      ],
+      "role": "nonfiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "H vs G (match layer over hybrid)",
+      "gain_bpb": 0.14497190027883625,
+      "gain_ci95": [
+        0.1256394453220046,
+        0.16652046549434424
+      ],
+      "role": "nonfiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "H vs G (match layer over hybrid)",
+      "gain_bpb": 0.14413468826091033,
+      "gain_ci95": [
+        0.1250601439822663,
+        0.1654241390693083
+      ],
+      "role": "nonfiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "gain_bpb": 0.02894048699055362,
+      "gain_ci95": [
+        0.02633686409640937,
+        0.03181064475805771
+      ],
+      "role": "nonfiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "gain_bpb": 0.028162739868392527,
+      "gain_ci95": [
+        0.025332587235576576,
+        0.03103364559147718
+      ],
+      "role": "nonfiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "H vs Bm (GRU adds over count+match)",
+      "gain_bpb": 0.028590588312947803,
+      "gain_ci95": [
+        0.025854644282533482,
+        0.03130723674594971
+      ],
+      "role": "nonfiction",
+      "seed": 9203
+    },
+    {
+      "contrast": "Bm vs B (match over counts)",
+      "gain_bpb": 0.14526546093589598,
+      "gain_ci95": [
+        0.12534979155855014,
+        0.16708877104329978
+      ],
+      "role": "nonfiction",
+      "seed": 9201
+    },
+    {
+      "contrast": "Bm vs B (match over counts)",
+      "gain_bpb": 0.14526546093589598,
+      "gain_ci95": [
+        0.12534979155855014,
+        0.16708877104329978
+      ],
+      "role": "nonfiction",
+      "seed": 9202
+    },
+    {
+      "contrast": "Bm vs B (match over counts)",
+      "gain_bpb": 0.14526546093589598,
+      "gain_ci95": [
+        0.12534979155855014,
+        0.16708877104329978
+      ],
+      "role": "nonfiction",
+      "seed": 9203
+    }
+  ],
+  "report": "hybrid-bars",
+  "scope_note": "Dev role only, one exposure budget, GRU seeds differ and the count model is deterministic. The mixer and match confidences adapt prequentially on the held-out stream. Equal exposure only; equal-compute accounting is not reported here. Not a ZeroLM-specific result: these are the controls.",
+  "seeds": [
+    9201,
+    9202,
+    9203
+  ],
+  "split_role": "dev"
+}

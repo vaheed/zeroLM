@@ -13,10 +13,80 @@
     "bootstrap_seed": 20261127,
     "history": "mixer v1 was run first on the dev role and lost up to 0.11 BPB on fiction at 1e6-1e7 bytes; v2 (confidence conditioned on the count model's probability of the predicted byte) was written after seeing it. Both reports are kept."
   },
-  "arms": ["A", "B", "C", "D", "E", "F", "G", "H", "X1", "X2"],
-  "budgets_bytes": [100000, 1000000, 10000000, 100000000],
-  "primary_metrics": ["bytes_to_target_bpb", "novel_context_bpb"],
-  "protected": {"max_overall_bpb_regression_vs_G": 0.02, "kappa_min": 0.5, "min_throughput_ratio_vs_G": 0.5},
-  "thresholds": {"delta_floor_bytes_ratio": null, "delta_floor_novel_bpb": null, "seeds": null, "set_from": "pilot seeds only, before any hidden-role read"},
-  "outcomes": ["NOVELTY SUPPORTED", "ENGINEERING SUCCESS ONLY", "HYPOTHESIS REJECTED", "INCONCLUSIVE"]
+  "arms": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E",
+    "F",
+    "G",
+    "H",
+    "X1",
+    "X2"
+  ],
+  "budgets_bytes": [
+    100000,
+    1000000,
+    10000000,
+    100000000
+  ],
+  "primary_metrics": [
+    "bytes_to_target_bpb",
+    "novel_context_bpb"
+  ],
+  "protected": {
+    "max_overall_bpb_regression_vs_G": 0.02,
+    "kappa_min": 0.5,
+    "min_throughput_ratio_vs_G": 0.5
+  },
+  "thresholds": {
+    "delta_floor_bytes_ratio": null,
+    "delta_floor_novel_bpb": null,
+    "seeds": null,
+    "set_from": "pilot seeds only, before any hidden-role read"
+  },
+  "outcomes": [
+    "NOVELTY SUPPORTED",
+    "ENGINEERING SUCCESS ONLY",
+    "HYPOTHESIS REJECTED",
+    "INCONCLUSIVE"
+  ],
+  "n1": {
+    "command": "cargo run --release -p zerolm-eval --bin zerolm-hybrid -- --root data --exposure 1000000 --heldout 200000",
+    "role": "dev",
+    "hidden_role_read": false,
+    "pilot_seeds": [
+      9201,
+      9202,
+      9203
+    ],
+    "gru": {
+      "params": 20000,
+      "lr": 0.001,
+      "window": 32
+    },
+    "mixer": {
+      "experts": [
+        "gru",
+        "kneser-ney-5"
+      ],
+      "contexts": 4,
+      "lr_grid": [
+        0.003,
+        0.01,
+        0.03,
+        0.1
+      ],
+      "selected_on": "probe role slice, 100000 bytes, first seed, arm G only",
+      "note": "selected value 0.1 is the grid edge; the probe BPB differs by 0.0001 between 0.03 and 0.1"
+    }
+  },
+  "arms_implemented": [
+    "A",
+    "B",
+    "C",
+    "G",
+    "H"
+  ]
 }

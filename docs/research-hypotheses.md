@@ -17,6 +17,8 @@ It splits into hypotheses that can be tested separately:
 
 Where a hypothesis could be true only at scale, the design says why and how it would be tested at small scale first (`docs/experimental-design.md`, budgets).
 
+**Bars (N1, dev role, 10^6 bytes):** arm H reaches 2.144 BPB on fiction and 2.176 on non-fiction; the GRU adds about 0.03 BPB to count-plus-match. H2-H4 must be measured against G and H, not only against A and B (`docs/experimental-design.md`).
+
 ## Current position
 
 Nothing here supports a novelty claim. H1 is measured and small. The central comparison (H2, H3, H4) has not been run because arms D, E, F need a trainable compiled circuit inside the learned core, which does not exist yet. Outcome today: **INCONCLUSIVE** for H0, for a stated engineering reason, and **not forced either way**.
