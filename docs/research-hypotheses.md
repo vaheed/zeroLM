@@ -25,3 +25,11 @@ Update (N2 pilot, `research/decisions/novelty-n2-2026-11-26.md`): the central co
 Nothing here supports a novelty claim. H1 is measured and small. The central comparison (H2, H3, H4) has not been run because arms D, E, F need a trainable compiled circuit inside the learned core, which does not exist yet. Outcome today: **INCONCLUSIVE** for H0, for a stated engineering reason, and **not forced either way**.
 
 Update (GDM, `research/decisions/novelty-gdm-2026-11-26.md`): a second compiled family, a gated-delta memory, was tested confirmatorily (hidden role, 8 new seeds, 10^6 bytes): compiled initialization gave no advantage over random tables on BPB (-0.020, interval includes 0), retention (+0.005), or forgetting (interval includes 0), and a parameter-matched GRU was 0.117 BPB better. Verdict **FAIL**; H2-H5 are not supported by N2 or GDM at this scale. The next step is the project lead's decision whether to retire H0 (recommended).
+
+## Final position (2026-11-26): H0 retired, ENGINEERING SUCCESS ONLY
+
+The project lead retired H0 after experiment GDM. Outcome: **ENGINEERING SUCCESS ONLY**; the novelty track is closed.
+- H2-H5 are not supported at the registered thresholds. Two compiled families (N2 circuit, pilot; GDM gated-delta memory, confirmatory, hidden role, 8 seeds, 10^6 bytes) gave no advantage of compiled initialization over random initialization of the same architecture, and a parameter-matched GRU beat the GDM arms by 0.117 BPB (bits per byte).
+- "Retired" means not supported by the evidence at this scale and mechanism; it does not mean disproved for other mechanisms, larger memories or longer exposure, which were not tested. No registered threshold was changed.
+- What stands: the engineering results (online GRU learning, neural ISA, compiled circuits with reference-interpreter parity, weight-resident memory, exact snapshot restore). No novelty claim is made, and no further novelty experiments are run.
+- Record: `research/decisions/novelty-gdm-2026-11-26.md`.
