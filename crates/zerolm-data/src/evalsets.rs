@@ -81,14 +81,19 @@ pub fn parse_lambada(bytes: &[u8]) -> Result<(Vec<LambadaItem>, usize), String> 
     Ok((items, skipped))
 }
 
-/// Number of `sentences` that occur verbatim (as a whole run of words) in
-/// `exposure`. Short items such as BLiMP sentences never reach 13 words, so
+/// Sentences shorter than this many words are not checked for verbatim overlap: a two- or
+/// three-word sentence ("Thomas sang.") occurs inside longer text by chance in any large corpus,
+/// which is not leakage of the benchmark item.
+pub const MIN_VERBATIM_WORDS: usize = 4;
+
+/// Number of `sentences` of at least [`MIN_VERBATIM_WORDS`] words that occur verbatim (as a whole
+/// run of words) in `exposure`. Short items such as BLiMP sentences never reach 13 words, so
 /// the long n-gram check alone would be vacuous for them.
 pub fn verbatim_overlap(exposure: &[u8], sentences: &[&[u8]]) -> usize {
     let mut by_len: BTreeMap<usize, Vec<&[u8]>> = BTreeMap::new();
     for s in sentences {
         let n = s.split(|b| b.is_ascii_whitespace()).filter(|w| !w.is_empty()).count();
-        if n > 0 {
+        if n >= MIN_VERBATIM_WORDS {
             by_len.entry(n).or_default().push(s);
         }
     }

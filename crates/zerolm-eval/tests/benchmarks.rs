@@ -85,6 +85,8 @@ fn verbatim_overlap_counts_whole_sentences_only() {
     let exposure = b"yesterday the old man walked home. then he slept. the cat sat on the mat";
     let sentences: Vec<&[u8]> = vec![b"the old man walked home.", b"the old man sat home.", b"the cat sat on the mat"];
     assert_eq!(verbatim_overlap(exposure, &sentences), 2);
+    // Very short sentences are chance fragments of longer text, not leakage, and are not checked.
+    assert_eq!(verbatim_overlap(b"then he slept. Thomas sang. later", &[b"Thomas sang."]), 0);
 }
 
 #[test]

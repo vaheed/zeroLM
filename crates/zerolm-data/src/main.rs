@@ -40,7 +40,8 @@ fn main() {
                     EvalKind::Blimp => {
                         let pairs = evalsets::parse_blimp(&data).unwrap_or_else(|e| fail(&e));
                         let all: Vec<&[u8]> = pairs.iter().flat_map(|p| [p.good.as_bytes(), p.bad.as_bytes()]).collect();
-                        ("sentences found verbatim in exposure".to_string(), evalsets::verbatim_overlap(&exposure, &all), all.len())
+                        let checked = all.iter().filter(|s| s.split(|b| b.is_ascii_whitespace()).filter(|w| !w.is_empty()).count() >= evalsets::MIN_VERBATIM_WORDS).count();
+                        (format!("sentences of at least {} words found verbatim in exposure ({} shorter sentences not checked)", evalsets::MIN_VERBATIM_WORDS, all.len() - checked), evalsets::verbatim_overlap(&exposure, &all), checked)
                     }
                     EvalKind::Lambada => {
                         // LAMBADA is lower-cased and word-tokenized: compare detokenized, lower-cased text.
