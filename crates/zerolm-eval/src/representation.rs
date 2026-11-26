@@ -39,7 +39,7 @@ pub struct Thresholds {
     pub r: f64,
     pub rho_min: f64,
     pub kappa_min: f64,
-    /// Largest allowed late-window prequential BPB degradation.
+    /// Largest allowed excess late-window prequential BPB degradation of A2 over A1.
     pub s: f64,
     /// Largest allowed fraction of probe or hidden 13-word windows found in exposure.
     pub max_shared_window_fraction: f64,
@@ -63,6 +63,9 @@ pub struct Spec {
     pub frozen_on: Option<String>,
     pub rationale: Option<String>,
     pub status: Option<String>,
+    /// Earlier attempts (earlier spec versions and their pilot outcomes), kept so failures stay reported.
+    #[serde(default)]
+    pub history: Vec<Value>,
     pub feedback_seed: u64,
     pub pilot_seeds: Vec<u64>,
     pub main_seeds: Vec<u64>,
@@ -413,7 +416,8 @@ pub struct SeedMeasures {
     pub novel_gain_local: f64,
     pub kappa_local: f64,
     pub finite: bool,
-    /// Worst late-window prequential BPB minus the best window, for A2.
+    /// Late-window degradation of A2 minus that of A1 on the same stream (the domain shift at the
+    /// E1/E2 boundary raises both; only the excess counts as instability of the local rule).
     pub late_degradation_local: f64,
 }
 

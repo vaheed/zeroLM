@@ -156,6 +156,8 @@ fn main() {
             .collect();
         hs.into_iter().map(|h| h.join().expect("seed")).collect()
     });
+    // The ratio needs a real gain to divide by: the frozen r threshold (0 in smoke if unfrozen).
+    let kappa_floor = spec.thresholds.as_ref().map(|t| t.r).unwrap_or(0.0).max(1e-9);
     let mut measures = Vec::new();
     let mut arm_json: Vec<Value> = Vec::new();
     for arm in [Arm::Frozen, Arm::RandomFeatures, Arm::Local, Arm::Bptt] {
@@ -168,7 +170,7 @@ fn main() {
                 let a1l = a1.evals.last().unwrap();
                 let e1_at = |run: &ArmRun| run.evals.iter().find(|e| e.bytes == data.e1.len()).map(|e| e.probe_e1_bpb);
                 let kappa = match (e1_at(a1), e1_at(r)) {
-                    (Some(a), Some(b)) if a - b > 1e-9 => (a1l.probe_e1_bpb - last.probe_e1_bpb) / (a - b),
+                    (Some(a), Some(b)) if a - b >= kappa_floor => (a1l.probe_e1_bpb - last.probe_e1_bpb) / (a - b),
                     _ => f64::NAN,
                 };
                 let _ = pert;
@@ -196,7 +198,9 @@ fn main() {
         let (a1, a2, a3) = (get(Arm::RandomFeatures), get(Arm::Local), get(Arm::Bptt));
         let (l1, l2, l3) = (a1.evals.last().unwrap(), a2.evals.last().unwrap(), a3.evals.last().unwrap());
         let e1 = |r: &ArmRun| r.evals.iter().find(|e| e.bytes == data.e1.len()).map(|e| e.probe_e1_bpb).unwrap_or(f64::NAN);
-        let kappa = (l1.probe_e1_bpb - l2.probe_e1_bpb) / (e1(a1) - e1(a2));
+        // kappa is a ratio of probe gains; it is undefined (NaN, so P4 fails) when the gain after E1 is below the floor.
+        let before = e1(a1) - e1(a2);
+        let kappa = if before >= kappa_floor { (l1.probe_e1_bpb - l2.probe_e1_bpb) / before } else { f64::NAN };
         measures.push(SeedMeasures {
             delta_r_local: l1.probe_bpb - l2.probe_bpb,
             delta_r_bptt: l1.probe_bpb - l3.probe_bpb,
@@ -204,7 +208,7 @@ fn main() {
             novel_gain_local: l1.novel_bpb - l2.novel_bpb,
             kappa_local: kappa,
             finite: a2.finite && a3.finite,
-            late_degradation_local: late_degradation(&a2.windows),
+            late_degradation_local: late_degradation(&a2.windows) - late_degradation(&a1.windows),
         });
         let _ = seed;
     }
@@ -310,7 +314,7 @@ fn pilot(spec: &Spec, data: &Data, index: &[u64], seeds: &[u64], mk: &dyn Fn(&Ep
         });
         attempts.extend(rows);
     }
-    std::fs::write(out.join("pilot.json"), serde_json::to_string_pretty(&json!({"report": "representation-pilot", "outcome": "pilot", "development_bytes": data.hidden.len(), "attempts": attempts, "note": "development role and pilot seeds only; every pre-registered configuration is listed"})).unwrap()).expect("write");
+    std::fs::write(out.join("pilot.json"), serde_json::to_string_pretty(&json!({"report": "representation-pilot", "outcome": "pilot", "spec_version": spec.version, "spec_sha256": Spec::sha256(Path::new(".")), "development_bytes": data.hidden.len(), "attempts": attempts, "note": "development role and pilot seeds only; every pre-registered configuration is listed"})).unwrap()).expect("write");
     // Summary table: Delta R per configuration (A1 probe minus the arm's probe, per budget and seed).
     let mut brief = String::from("## Gate A pilot (development role, pilot seeds)\n\n| budget | seed | configuration | probe BPB | Delta R vs A1 | perturbed Delta R | held-out BPB |\n|---|---|---|---|---|---|---|\n");
     for a in &attempts {

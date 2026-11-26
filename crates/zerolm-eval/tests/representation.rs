@@ -13,14 +13,25 @@ fn the_spec_loads_and_pilot_and_main_seeds_are_disjoint() {
     let mut bad = s.clone();
     bad.main_seeds[0] = bad.pilot_seeds[0];
     assert!(bad.validate().unwrap_err().contains("disjoint"));
+    // The shipped spec is frozen and complete.
+    assert!(s.frozen && s.eprop.is_some() && s.thresholds.is_some() && s.bptt_lr.is_some());
     // An unfrozen spec may not carry chosen constants.
     let mut bad = s.clone();
-    bad.eprop = Some(EpropChoice { eta: 0.01, max_core_update: 0.05 });
+    bad.frozen = false;
     assert!(bad.validate().is_err());
-    // A frozen spec needs everything.
-    let mut bad = s.clone();
-    bad.frozen = true;
-    assert!(bad.validate().is_err());
+    // A frozen spec needs everything: rule, learning rate, thresholds, date, rationale.
+    for strip in 0..4 {
+        let mut bad = s.clone();
+        match strip {
+            0 => bad.eprop = None,
+            1 => bad.thresholds = None,
+            2 => bad.rationale = None,
+            _ => bad.bptt_lr = None,
+        }
+        assert!(bad.validate().is_err());
+    }
+    // The pilot configurations of every version stay on record.
+    assert!(s.history.len() >= 2);
 }
 
 fn thresholds() -> Thresholds {

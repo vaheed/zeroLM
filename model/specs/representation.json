@@ -1,26 +1,125 @@
 {
-  "version": 1,
-  "frozen": false,
-  "frozen_on": null,
-  "rationale": null,
-  "status": "probe_bytes and hidden_bytes cap each source's role. Pre-registered 2026-11-26 before any pilot run. The pilot may try exactly the configurations listed here (3 e-prop configurations x 2 core budgets, 3 backpropagation learning rates), on pilot seeds and the development role only. After the pilot, a new version of this file freezes the chosen rule, core size, thresholds, and the novel-context k, with a dated rationale; thresholds are never changed after the main run starts.",
+  "version": 3,
+  "frozen": true,
+  "frozen_on": "2026-11-26",
+  "rationale": "Frozen 2026-11-26 from the pilots (pilot seeds 9101, 9102; development role). Core: 20,000 cell parameters, the smallest budget, because the backpropagation control already shows a probe gain of 1.09-1.14 BPB there. E-prop: eta 3e-5 with max_core_update 0.001, the least harmful of the pre-registered configurations (Delta R -0.002 and 0.000; every larger eta was worse). Backpropagation learning rate 0.001: lowest probe BPB (3.027-3.035) and lowest held-out BPB (2.94-2.97) on the development role. novel_k 10: with 10^7 exposure bytes about 40% of development positions have a 10-byte context absent from exposure (6: 5.5%, 8: 18.9%, 10: 40.4%, 12: 62.4%, 16: 89.7%, 24: 99.6%; crates/zerolm-eval/examples/novelk.rs). Thresholds: h 0.5 is about half the pilot backpropagation effect (1.09-1.14) and nine times its seed spread (0.055); r 0.1 is far above the e-prop and perturbed-control seed noise (at most 0.02 in magnitude) and one tenth of the backpropagation effect; rho_min 0.1 is the same fraction; kappa_min 0.5 (the probe gain on first-source text must keep half its value after the second source); s 0.1 BPB excess late-window degradation of A2 over A1 and max_shared_window_fraction 0.01 are judgements, not calibrated on pilot noise (the pilot did not record window series or contamination fractions). Because the primary rule showed no pilot gain, r and rho_min test whether more exposure changes that; they are not set to be passable by a null result.",
+  "status": "Frozen (version 3). Thresholds are never changed after the main run starts; a rerun after INCONCLUSIVE uses new seeds and a new hidden split, and a second attempt after FAIL needs a newly pre-registered rule (a new spec version).",
   "feedback_seed": 777,
-  "pilot_seeds": [9101, 9102],
-  "main_seeds": [20261201, 20261202, 20261203],
-  "smoke": {"e1_bytes": 100000, "e2_bytes": 100000, "probe_bytes": 30000, "hidden_bytes": 30000, "core_budget": 4000},
-  "pilot": {"e1_bytes": 500000, "e2_bytes": 500000, "probe_bytes": 150000, "hidden_bytes": 150000, "core_budget": 20000},
-  "main": {"e1_bytes": 5000000, "e2_bytes": 5000000, "probe_bytes": 850000, "hidden_bytes": 1000000, "core_budget": 20000},
-  "core_budgets": [20000, 200000],
-  "eprop_pilot_configs": [
-    {"eta": 0.003, "max_core_update": 0.02},
-    {"eta": 0.01, "max_core_update": 0.05},
-    {"eta": 0.03, "max_core_update": 0.1}
+  "pilot_seeds": [
+    9101,
+    9102
   ],
-  "bptt_pilot_lrs": [0.001, 0.003, 0.01],
-  "eprop": null,
-  "bptt_lr": null,
-  "novel_k": 12,
-  "thresholds": null,
+  "main_seeds": [
+    20261201,
+    20261202,
+    20261203
+  ],
+  "smoke": {
+    "e1_bytes": 100000,
+    "e2_bytes": 100000,
+    "probe_bytes": 30000,
+    "hidden_bytes": 30000,
+    "core_budget": 4000
+  },
+  "pilot": {
+    "e1_bytes": 500000,
+    "e2_bytes": 500000,
+    "probe_bytes": 150000,
+    "hidden_bytes": 150000,
+    "core_budget": 20000
+  },
+  "main": {
+    "e1_bytes": 5000000,
+    "e2_bytes": 5000000,
+    "probe_bytes": 850000,
+    "hidden_bytes": 1000000,
+    "core_budget": 20000
+  },
+  "core_budgets": [
+    20000,
+    200000
+  ],
+  "eprop_pilot_configs": [
+    {
+      "eta": 3e-05,
+      "max_core_update": 0.001
+    },
+    {
+      "eta": 0.0001,
+      "max_core_update": 0.003
+    },
+    {
+      "eta": 0.0003,
+      "max_core_update": 0.01
+    }
+  ],
+  "bptt_pilot_lrs": [
+    0.001,
+    0.003,
+    0.01
+  ],
+  "eprop": {
+    "eta": 3e-05,
+    "max_core_update": 0.001
+  },
+  "bptt_lr": 0.001,
+  "novel_k": 10,
+  "thresholds": {
+    "h": 0.5,
+    "r": 0.1,
+    "rho_min": 0.1,
+    "kappa_min": 0.5,
+    "s": 0.1,
+    "max_shared_window_fraction": 0.01
+  },
   "largest_affordable": false,
-  "milestones": [100000, 1000000, 10000000]
+  "milestones": [
+    100000,
+    1000000,
+    10000000
+  ],
+  "history": [
+    {
+      "version": 1,
+      "date": "2026-11-26",
+      "pilot": "reports/representation-pilot (pilot seeds 9101 and 9102, development role, 5e5+5e5 exposure bytes)",
+      "configs_tried": [
+        {
+          "eta": 0.003,
+          "max_core_update": 0.02
+        },
+        {
+          "eta": 0.01,
+          "max_core_update": 0.05
+        },
+        {
+          "eta": 0.03,
+          "max_core_update": 0.1
+        }
+      ],
+      "result_budget_20000": "every e-prop configuration was harmful or unstable: probe BPB 4.135-4.482 for eta 0.003 against 4.113-4.176 for random features (A1), and 4.5-5.2 (probe) and 5.3-30 (held-out) for the two larger etas; the backpropagation control reached probe BPB 3.03-3.05 at lr 0.001 and 0.003 (a gain of about 1.1 BPB). The per-step update (up to 0.02 in Frobenius norm over 20,000 weights, 1e6 steps) was a random walk as large as the weights themselves while the random feedback is not yet aligned with the readout.",
+      "decision": "version 2 pre-registers three smaller learning rates on the same rule; the larger etas were a configuration error, not a different rule"
+    },
+    {
+      "version": 2,
+      "date": "2026-11-26",
+      "pilot": "reports/representation-pilot-v2 (budget 20000 only; pilot seeds 9101 and 9102; development role; 5e5+5e5 exposure bytes)",
+      "configs_tried": [
+        {
+          "eta": 3e-05,
+          "max_core_update": 0.001
+        },
+        {
+          "eta": 0.0001,
+          "max_core_update": 0.003
+        },
+        {
+          "eta": 0.0003,
+          "max_core_update": 0.01
+        }
+      ],
+      "result_budget_20000": "no e-prop configuration helped: probe gain over random features (Delta R) -0.002 and -0.000 for eta 3e-5, -0.006 and -0.001 for eta 1e-4, -0.015 and -0.000 for eta 3e-4 (seeds 9101, 9102); the A2-perturbed control gave -0.002 to +0.002. The backpropagation control gave Delta R 1.141 and 1.086 (lr 0.001), 1.124 and 1.079 (lr 0.003), 0.802 and 0.710 (lr 0.01).",
+      "decision": "the primary rule captures none of the headroom at this stream length. The optional second rule (error-free predictive) is NOT pre-registered: it is not required to reach a decision (roadmap Phase 9: P1 failing while A3 shows headroom leads to the written decision), and the main run on 10^7 bytes tests whether the failure persists at 10x the pilot stream. The 200,000-parameter budget pilot of version 1 (configs of version 1) was still running at freeze time; it cannot change the core choice because the smaller core already shows headroom."
+    }
+  ]
 }
