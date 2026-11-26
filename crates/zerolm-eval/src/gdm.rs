@@ -122,6 +122,7 @@ pub const CONDITIONS: [&str; 5] = ["full", "reset_h", "reset_s", "restart", "wei
 /// Run the recall probe at one distractor length. `distractor` supplies unrelated real text (consecutive
 /// windows are used per trial). `make` builds a model of the same genome as `m`; `snap` is `m`'s snapshot,
 /// from which the `weights` condition restores a throw-away copy per trial.
+#[allow(clippy::too_many_arguments)]
 pub fn recall_probe(m: &Bptt, make: &dyn Fn() -> Bptt, snap: &[u8], distractor: &[u8], dlen: usize, trials: usize, facts: usize, seed: u64) -> Vec<(&'static str, Tally)> {
     let mut tallies = vec![Tally::default(); CONDITIONS.len()];
     for ti in 0..trials {
