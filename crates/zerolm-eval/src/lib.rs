@@ -10,6 +10,7 @@ pub mod uniform;
 pub mod online;
 pub mod bptt;
 pub mod ngram;
+pub mod representation;
 pub mod benchmarks;
 pub mod levels;
 

@@ -5,6 +5,11 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      representation_mode:
+        description: "Gate A run for the representation-gate job: pilot or main (empty skips it)"
+        required: false
+        default: ""
 permissions:
   contents: read
 jobs:
@@ -228,7 +233,8 @@ jobs:
         run: cargo run -q -p zerolm-data -- check
       - name: Fetch the corpus and verify every shard hash (fails on any mismatch)
         run: |
-          bash research/corpus/fetch-gutenberg.sh data
+          bash research/corpus/fetch-gutenberg.sh data fiction
+          bash research/corpus/fetch-gutenberg.sh data nonfiction
           bash research/corpus/fetch-benchmarks.sh data
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Contamination check (13-word windows, exposure against every evaluation set)
@@ -256,11 +262,69 @@ jobs:
             reports/benchmarks/
           if-no-files-found: warn
           retention-days: 30
+  representation-feasibility:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Rule invariants (trace recursion vs finite differences, alignment with exact gradients, determinism, no future leak, disabled means no update, perturbation norms, decision rule)
+        run: cargo test -p zerolm-learning && cargo test -p zerolm-eval --test eprop --test representation --test bptt
+      - uses: actions/cache@v4
+        with:
+          path: data
+          key: zerolm-corpus-${{ hashFiles('research/corpus/manifest.json', 'research/corpus/fetch-gutenberg.sh', 'research/corpus/fetch-benchmarks.sh') }}
+      - name: Fetch the corpus if not cached, then verify every hash (fails on any mismatch)
+        run: |
+          [ -s data/gutenberg/books.bin ] || bash research/corpus/fetch-gutenberg.sh data fiction
+          [ -s data/gutenberg/nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data nonfiction
+          cargo run -q --release -p zerolm-data -- verify --root data
+      - name: Smoke run (tiny core, 2e5 bytes, all arms; the outcome is always smoke)
+        run: cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode smoke --out reports/representation
+      - name: Report is complete and its outcome is smoke
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/representation-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/representation/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
+          test "$(jq -r .outcome reports/representation/summary.json)" = smoke
+      - name: Job summary
+        if: always()
+        run: |
+          { if [ -s reports/representation/brief.md ]; then cat reports/representation/brief.md; else echo "## representation: report **not produced**"; fi; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-representation-smoke-${{ github.sha }}
+          path: reports/representation/
+          if-no-files-found: warn
+          retention-days: 30
+  representation-gate:
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.representation_mode != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 1440
+    steps:
+      - uses: actions/checkout@v4
+      - run: rustup toolchain install stable --profile minimal
+      - name: Fetch the corpus and verify every hash
+        run: |
+          bash research/corpus/fetch-gutenberg.sh data fiction
+          bash research/corpus/fetch-gutenberg.sh data nonfiction
+          cargo run -q --release -p zerolm-data -- verify --root data
+      - name: Gate A ${{ github.event.inputs.representation_mode }} run
+        run: cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode ${{ github.event.inputs.representation_mode }} --out reports/representation
+      - name: Job summary
+        if: always()
+        run: |
+          { if [ -s reports/representation/brief.md ]; then cat reports/representation/brief.md; elif [ -s reports/representation/pilot.md ]; then cat reports/representation/pilot.md; else echo "## representation gate: report **not produced**"; fi; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zerolm-representation-${{ github.event.inputs.representation_mode }}-${{ github.sha }}
+          path: reports/representation/
+          if-no-files-found: warn
+          retention-days: 90
   # Last stage: runs only after every test and gate job above has passed.
   # Pull requests build and smoke-test the image; pushes to main and v* tags
   # also publish it to ghcr.io/<owner>/zerolm (latest, sha-<short>, version).
   docker-image:
-    needs: [engine-unit, architecture-bakeoff, policy-and-provenance, bootstrap-cli, online-learning, weight-memory, compositional-reasoning, uniform-engine, real-text]
+    needs: [engine-unit, architecture-bakeoff, policy-and-provenance, bootstrap-cli, online-learning, weight-memory, compositional-reasoning, uniform-engine, real-text, representation-feasibility]
     permissions:
       contents: read
       packages: write

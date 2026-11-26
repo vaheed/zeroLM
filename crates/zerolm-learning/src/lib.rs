@@ -4,6 +4,7 @@
 
 pub mod ngram;
 pub mod online_predictor;
+pub mod plastic;
 pub mod streams;
 
 pub use online_predictor::{Constants, EvalMetrics, OnlinePredictor, Rule};

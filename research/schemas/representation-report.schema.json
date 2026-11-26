@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ZeroLM representation-feasibility report (reports/representation/summary.json), Gate A",
-  "description": "Design contract for roadmap Phase 9. The milestone is planned: no code produces this report yet. 'smoke' is the only outcome a regular CI run may report; only a main run on hidden data may report pass, fail_pivot, or inconclusive.",
+  "description": "Produced by zerolm-representation (roadmap Phase 9). The milestone stays planned until a main run with outcome pass or fail_pivot and a written decision exists. 'smoke' is the only outcome a regular CI run may report; only a main run on hidden data may report pass, fail_pivot, or inconclusive.",
   "type": "object",
   "required": ["report", "mode", "outcome", "deciding_criteria", "spec_sha256", "data", "arms", "baselines", "validity", "criteria", "attempts", "resources", "scope_note"],
   "properties": {
@@ -29,7 +29,7 @@
           "id": {"enum": ["frozen", "random_features", "local", "local_perturbed", "bptt_control"]},
           "control": {"type": "boolean", "description": "true only for bptt_control; controls are excluded from strict results"},
           "changed_tensors": {"type": "array", "items": {"type": "string"}},
-          "per_seed": {"type": "array", "items": {"type": "object", "required": ["seed", "prequential_bpb", "heldout_bpb", "probe_bpb", "delta_r", "novel_context_bpb", "ece", "retention", "curve"]}}
+          "per_seed": {"type": "array", "items": {"type": "object", "required": ["seed", "probe_bpb", "delta_r"], "description": "arms other than local_perturbed (a probe-only arm) also carry prequential_bpb, heldout_bpb, novel_context_bpb, ece, retention, and curve"}}
         }
       }
     },

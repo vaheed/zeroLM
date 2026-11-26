@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "frozen": false,
+  "frozen_on": null,
+  "rationale": null,
+  "status": "probe_bytes and hidden_bytes cap each source's role. Pre-registered 2026-11-26 before any pilot run. The pilot may try exactly the configurations listed here (3 e-prop configurations x 2 core budgets, 3 backpropagation learning rates), on pilot seeds and the development role only. After the pilot, a new version of this file freezes the chosen rule, core size, thresholds, and the novel-context k, with a dated rationale; thresholds are never changed after the main run starts.",
+  "feedback_seed": 777,
+  "pilot_seeds": [9101, 9102],
+  "main_seeds": [20261201, 20261202, 20261203],
+  "smoke": {"e1_bytes": 100000, "e2_bytes": 100000, "probe_bytes": 30000, "hidden_bytes": 30000, "core_budget": 4000},
+  "pilot": {"e1_bytes": 500000, "e2_bytes": 500000, "probe_bytes": 150000, "hidden_bytes": 150000, "core_budget": 20000},
+  "main": {"e1_bytes": 5000000, "e2_bytes": 5000000, "probe_bytes": 850000, "hidden_bytes": 1000000, "core_budget": 20000},
+  "core_budgets": [20000, 200000],
+  "eprop_pilot_configs": [
+    {"eta": 0.003, "max_core_update": 0.02},
+    {"eta": 0.01, "max_core_update": 0.05},
+    {"eta": 0.03, "max_core_update": 0.1}
+  ],
+  "bptt_pilot_lrs": [0.001, 0.003, 0.01],
+  "eprop": null,
+  "bptt_lr": null,
+  "novel_k": 12,
+  "thresholds": null,
+  "largest_affordable": false,
+  "milestones": [100000, 1000000, 10000000]
+}

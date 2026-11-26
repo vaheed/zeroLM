@@ -126,7 +126,11 @@ impl Bptt {
     /// The same seeded initialization as `OnlinePredictor::new(seed, ..)`:
     /// the model's embedding and GRU weights, a zero readout and bias.
     pub fn new(seed: u64, cfg: Config) -> Self {
-        let model = Model::new(DEFAULT_KIND, seed, EMBED_DIM, CELL_BUDGET);
+        Self::with_budget(seed, cfg, CELL_BUDGET)
+    }
+
+    pub fn with_budget(seed: u64, cfg: Config, budget: usize) -> Self {
+        let model = Model::new(DEFAULT_KIND, seed, EMBED_DIM, budget);
         let d = model.cell.hidden_dim();
         let l = Layout::new(EMBED_DIM, d);
         let mut p = vec![0.0f32; l.total];
@@ -147,6 +151,16 @@ impl Bptt {
             p[at..at + data.len()].copy_from_slice(data);
         }
         Bptt { cfg, m: vec![0.0; l.total], v: vec![0.0; l.total], steps: 0, state: vec![0.0; d], prev: START_BYTE, bits: 0.0, seen: 0, l, p }
+    }
+
+    /// The embedding and GRU tensors as a plastic core (same flat layout).
+    pub fn core(&self) -> zerolm_learning::plastic::Core {
+        zerolm_learning::plastic::Core { e: self.l.e, d: self.l.d, p: self.p[..self.l.ro].to_vec() }
+    }
+
+    /// Readout weights and bias (zero-initialized, trained here).
+    pub fn readout(&self) -> (&[f32], &[f32]) {
+        (&self.p[self.l.ro..self.l.rb], &self.p[self.l.rb..self.l.total])
     }
 
     pub fn param_count(&self) -> usize {
@@ -290,8 +304,33 @@ impl Bptt {
         bits / bytes.len().max(1) as f64
     }
 
+    /// Total prequential bits so far.
+    pub fn prequential_bits(&self) -> f64 {
+        self.bits
+    }
+
     pub fn prequential_bpb(&self) -> f64 {
         self.bits / self.seen.max(1) as f64
+    }
+
+    /// Per-position bits of `bytes` from a fresh state; changes no weight.
+    pub fn score(&self, bytes: &[u8]) -> Vec<f32> {
+        self.score_detail(bytes).into_iter().map(|d| d[0]).collect()
+    }
+
+    /// Per position `[bits, confidence (max probability), 1.0 if the argmax is the byte else 0.0]`.
+    pub fn score_detail(&self, bytes: &[u8]) -> Vec<[f32; 3]> {
+        let mut h = vec![0.0f32; self.l.d];
+        let mut prev = START_BYTE;
+        let mut out = Vec::with_capacity(bytes.len());
+        for &y in bytes {
+            let s = self.forward_step(&self.p, &h, prev);
+            let (am, conf) = s.p.iter().enumerate().fold((0usize, 0.0f32), |a, (i, v)| if *v > a.1 { (i, *v) } else { a });
+            out.push([-(s.p[y as usize].max(1e-30)).log2(), conf, (am == y as usize) as u8 as f32]);
+            h = s.h;
+            prev = y;
+        }
+        out
     }
 
     /// Held-out BPB from a fresh state; changes no weight.

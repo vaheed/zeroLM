@@ -84,6 +84,12 @@
       "description": "Frozen bounded grammar seed tables: lexical attributes, ordered rewrites, byte classes, and recognition templates with numeric frame readouts.",
       "init_source": "reasoning-grammar",
       "update_path": "none"
+    },
+    {
+      "id": "plastic_core",
+      "description": "Representation-feasibility research arm (roadmap Gate A): a plastic copy of the byte embedding and the selected GRU core (tensors embed, gru.wz..gru.bh) changed by the candidate local rule (e-prop with fixed random feedback; eligibility traces are session state, not weights). The frozen core of the memory milestone is a separate copy and stays byte-identical. Research code only; not part of any checkpoint.",
+      "init_source": "seeded_prng",
+      "update_path": "local_plasticity"
     }
   ]
 }
