@@ -231,13 +231,18 @@ jobs:
         run: cargo test -p zerolm-data && cargo test -p zerolm-eval --test realtext --test bptt --test benchmarks
       - name: Manifest validation
         run: cargo run -q -p zerolm-data -- check
-      - name: Fetch the corpus and verify every shard hash (fails on any mismatch)
+      - uses: actions/cache@v4
+        with:
+          path: data
+          key: zerolm-corpus-${{ hashFiles('research/corpus/manifest.json', 'research/corpus/fetch-gutenberg.sh', 'research/corpus/fetch-benchmarks.sh', 'research/corpus/fetch-simplewiki.sh', 'research/corpus/wiki_clean.py') }}
+      - name: Fetch the corpus if not cached, then verify every shard hash (fails on any mismatch)
         run: |
-          bash research/corpus/fetch-gutenberg.sh data fiction
-          bash research/corpus/fetch-gutenberg.sh data nonfiction
-          bash research/corpus/fetch-gutenberg.sh data fresh-fiction
-          bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
-          bash research/corpus/fetch-benchmarks.sh data
+          [ -s data/gutenberg/books.bin ] || bash research/corpus/fetch-gutenberg.sh data fiction
+          [ -s data/gutenberg/nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data nonfiction
+          [ -s data/gutenberg/fresh-fiction.bin ] || bash research/corpus/fetch-gutenberg.sh data fresh-fiction
+          [ -s data/gutenberg/fresh-nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
+          [ -s data/wikipedia/simplewiki.bin ] || bash research/corpus/fetch-simplewiki.sh data
+          [ -s data/eval/blimp.jsonl ] || bash research/corpus/fetch-benchmarks.sh data
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Contamination check (13-word windows, exposure against every evaluation set)
         run: cargo run -q --release -p zerolm-data -- contamination --root data --n 13
@@ -274,13 +279,15 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: data
-          key: zerolm-corpus-${{ hashFiles('research/corpus/manifest.json', 'research/corpus/fetch-gutenberg.sh', 'research/corpus/fetch-benchmarks.sh') }}
+          key: zerolm-corpus-${{ hashFiles('research/corpus/manifest.json', 'research/corpus/fetch-gutenberg.sh', 'research/corpus/fetch-benchmarks.sh', 'research/corpus/fetch-simplewiki.sh', 'research/corpus/wiki_clean.py') }}
       - name: Fetch the corpus if not cached, then verify every hash (fails on any mismatch)
         run: |
           [ -s data/gutenberg/books.bin ] || bash research/corpus/fetch-gutenberg.sh data fiction
           [ -s data/gutenberg/nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data nonfiction
           [ -s data/gutenberg/fresh-fiction.bin ] || bash research/corpus/fetch-gutenberg.sh data fresh-fiction
           [ -s data/gutenberg/fresh-nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
+          [ -s data/wikipedia/simplewiki.bin ] || bash research/corpus/fetch-simplewiki.sh data
+          [ -s data/eval/blimp.jsonl ] || bash research/corpus/fetch-benchmarks.sh data
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Smoke run (tiny core, 2e5 bytes, all arms; the outcome is always smoke)
         run: cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode smoke --out reports/representation
@@ -321,6 +328,8 @@ jobs:
           bash research/corpus/fetch-gutenberg.sh data nonfiction
           bash research/corpus/fetch-gutenberg.sh data fresh-fiction
           bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
+          bash research/corpus/fetch-simplewiki.sh data
+          bash research/corpus/fetch-benchmarks.sh data
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Gate A ${{ github.event.inputs.representation_mode }} run (pilot and main are the e-prop gate, gradient-main is the rerun with the mainline online-gradient rule)
         run: |

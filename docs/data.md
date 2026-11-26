@@ -15,6 +15,10 @@ The manifest lists two exposure sources (order: fiction, then non-fiction, for t
 
 With only 33 documents, the whole-document split leaves few books in the probe, dev, and hidden roles (hidden: 1,264,223 bytes). More sources are needed for stable held-out numbers.
 
+## Simple English Wikipedia
+
+`simple-wikipedia` (116,422 articles, 218,893,245 bytes) is the third exposure source, after the two book sources. It is built from the Wikimedia dump of 2026-11-01 by `research/corpus/fetch-simplewiki.sh` and `wiki_clean.py` (stdlib only, deterministic: main-namespace non-redirect articles; templates, references, tables, files, categories, markup, and lines under 40 characters removed; HTML entities decoded; some stray markup survives). License: CC BY-SA 4.0 (text by Wikipedia contributors, also GFDL; attribution via the article histories at simple.wikipedia.org). Wikimedia deletes old dumps, so if the URL disappears the pinned hash cannot be reproduced and the manifest must be re-pinned deliberately. Its documents use the global 80/5/5/10 split, which gives a Wikipedia held-out role of about 10% of articles for the level thresholds that are stated on Wikipedia text.
+
 ## Fresh held-out sources
 
 `gutenberg-fresh-fiction` (5 books, 3.1 MB) and `gutenberg-fresh-nonfiction` (3 books, 0.9 MB) have `fixed_role: hidden` in the manifest: every document is held-out text, the sources are not in `exposure_order`, and no earlier run has seen them. They are the held-out role of the Gate A rerun ([representation-learning.md](representation-learning.md)); `fetch-gutenberg.sh data fresh-fiction` and `... fresh-nonfiction` download them.

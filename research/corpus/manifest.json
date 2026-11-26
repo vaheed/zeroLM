@@ -81,11 +81,28 @@
         }
       ],
       "fixed_role": "hidden"
+    },
+    {
+      "id": "simple-wikipedia",
+      "description": "Simple English Wikipedia articles, dump of 2026-11-01 (simplewiki-20261101-pages-articles.xml.bz2), main namespace, redirects dropped, wikitext markup, templates, references, tables, and short lines removed by research/corpus/wiki_clean.py; one document per article. Attribution: text by Wikipedia contributors, CC BY-SA 4.0 (also GFDL); see the article histories at simple.wikipedia.org",
+      "license": "CC BY-SA 4.0 (Wikipedia contributors; text also available under GFDL)",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "origin_url": "https://dumps.wikimedia.org/simplewiki/20261101/",
+      "generated_by_model": false,
+      "benchmark": false,
+      "shards": [
+        {
+          "path": "wikipedia/simplewiki.bin",
+          "sha256": "a0211f253a890cdcd3de72d233a4b82c9ec3ec73e90a3ae91c24512ddf163e4d",
+          "bytes": 218893245
+        }
+      ]
     }
   ],
   "exposure_order": [
     "gutenberg-books",
-    "gutenberg-nonfiction"
+    "gutenberg-nonfiction",
+    "simple-wikipedia"
   ],
   "evaluation_sets": [
     {

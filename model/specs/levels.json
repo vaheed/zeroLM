@@ -9,9 +9,18 @@
       "bpb_rule": "held-out real-text BPB at or below min(PPM-C order 5, Kneser-Ney order 5) re-measured on the same stream at equal exposure bytes",
       "reference_corpus": "gutenberg-books (research/corpus/manifest.json, split_seed 20261125), hidden role 1,264,223 bytes",
       "reference_bpb": {
-        "1000000": {"ppm-c-5": 2.444, "kneser-ney-5": 2.391},
-        "10000000": {"ppm-c-5": 2.221, "kneser-ney-5": 2.190},
-        "12532967": {"ppm-c-5": 2.194, "kneser-ney-5": 2.170}
+        "1000000": {
+          "ppm-c-5": 2.444,
+          "kneser-ney-5": 2.391
+        },
+        "10000000": {
+          "ppm-c-5": 2.221,
+          "kneser-ney-5": 2.19
+        },
+        "12532967": {
+          "ppm-c-5": 2.194,
+          "kneser-ney-5": 2.17
+        }
       },
       "reference_note": "Measured 2026-11-26 (docs/data.md). The rule re-measures the baselines at claim time; these values only show where the bar sits today. With 33 books the hidden role is a few books, so differences under about 0.05 BPB are not reliable."
     },
@@ -20,21 +29,32 @@
       "blimp_min": 0.75,
       "wikipedia_heldout_bpb_max": 1.5,
       "blind_rating": "blind raters judge generated sentences locally grammatical",
-      "pending": ["the Wikipedia corpus is not in the manifest yet; the BPB threshold applies once a licensed Wikipedia held-out role exists"]
+      "pending": [
+        "the Wikipedia corpus is not in the manifest yet; the BPB threshold applies once a licensed Wikipedia held-out role exists"
+      ]
     },
     "L3": {
       "name": "Small LLM (1.0 target)",
-      "blimp_min": 0.80,
+      "blimp_min": 0.8,
       "lambada_accuracy_min": 0.35,
       "wikipedia_heldout_bpb_max": 1.2,
       "read_then_answer": "frozen in the read-and-reason milestone",
       "blind_rating": "coherent multi-sentence generation under blind rating",
-      "pending": ["same as L2"]
+      "pending": [
+        "same as L2"
+      ]
     },
     "L4": {
       "name": "Assistant",
       "requires": "L3 plus instruction following and multi-turn dialogue on hidden human-written prompts, with calibrated abstention; thresholds frozen in the generation milestone"
     }
   },
-  "source_check": "Thresholds are the roadmap's section 7.1 values. They have not yet been checked against the GPT-2 paper's small-model numbers or the BLiMP paper; that check is listed in docs/data.md as open work."
+  "source_check": {
+    "checked_on": "2026-11-26",
+    "method": "Numbers read from the published pages by a fetch agent (second-hand, not from the PDFs, whose text could not be extracted). Not independently re-read by hand.",
+    "blimp": "BLiMP paper (Warstadt et al. 2020), main results table via ar5iv: overall accuracy 5-gram 61.2, LSTM 69.8, Transformer-XL 69.6, GPT-2 83.0, human 88.6. The L2 bar (0.75) sits below GPT-2 and the L3 bar (0.80) below it, both under the human figure; consistent with the roadmap's intent. The repository's note that some published table entries were mis-reported was not checked.",
+    "gpt2": "OpenAI's GPT-2 release page (zero-shot table, the largest model): LAMBADA accuracy 63.24%, perplexity 8.6; enwik8 0.93 and text8 0.98 bits per character; WikiText-103 perplexity 17.48. The 117M-model rows of the paper's Table 3 could not be read, so the L3 LAMBADA bar (0.35) is not checked against the small model's published value.",
+    "bpb_caveat": "The BPB bars (1.5 and 1.2) are for held-out Wikipedia text under this project's byte model. enwik8 and text8 numbers are for other corpora and preprocessing, so they bracket the scale only; they do not check the bars. The bars become measurable once the Simple English Wikipedia held-out role exists and are then compared with the Kneser-Ney order-5 baseline on it."
+  },
+  "source_check_open": "Open: read Table 3 of the GPT-2 paper for the 117M rows; compare the BPB bars with measured baselines on the Wikipedia held-out role."
 }
