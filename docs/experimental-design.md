@@ -1,6 +1,6 @@
 # Experimental design: novelty gate (Gate N)
 
-Pre-registration. Frozen values are in `model/specs/novelty.json` (version 1, `status: "preregistered_thresholds_pending_pilot"`). Thresholds marked `null` there are set from pilot seeds only and are never changed after the final run reads the hidden role.
+Pre-registration. Frozen values are in `model/specs/novelty.json` (version 1, `status: "thresholds_frozen_from_n2_pilot_confirmatory_not_run"`). Thresholds were set from pilot seeds only (N2: bytes-ratio floor 0.8, novel-context floor 0.02 BPB, 5 seeds; decision record `research/decisions/novelty-n2-2026-11-26.md`) and are never changed after the final run reads the hidden role.
 
 ## Arms
 

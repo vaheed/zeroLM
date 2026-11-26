@@ -1,7 +1,7 @@
 {
   "version": 1,
   "frozen_on": "2026-11-26",
-  "status": "preregistered_thresholds_pending_pilot",
+  "status": "thresholds_frozen_from_n2_pilot_confirmatory_not_run",
   "design": "docs/experimental-design.md",
   "n0": {
     "command": "cargo run --release -p zerolm-eval --bin zerolm-headroom -- --root data --mixer v2",
@@ -41,10 +41,10 @@
     "min_throughput_ratio_vs_G": 0.5
   },
   "thresholds": {
-    "delta_floor_bytes_ratio": null,
-    "delta_floor_novel_bpb": null,
-    "seeds": null,
-    "set_from": "pilot seeds only, before any hidden-role read"
+    "delta_floor_bytes_ratio": 0.8,
+    "delta_floor_novel_bpb": 0.02,
+    "seeds": 5,
+    "set_from": "pilot seeds 9201-9203 (N2) only, before any hidden-role read; confirmatory run needs new seeds"
   },
   "outcomes": [
     "NOVELTY SUPPORTED",

@@ -56,6 +56,10 @@ Revision 2 makes four changes.
 
 The reasoning, memory, and online-learning work from Phases 4-6 is not discarded. In Phase 7 it is recompiled onto the uniform engine, and its frozen gates become regression tests.
 
+### 0.3a Revision 3 note: Gate N pilot result (2026-11-26)
+
+The Gate N pilot (N2, 10^6 bytes, development role) does not show an advantage of compiled initialization over random initialization of the same circuit. Per the scaling rule, the 10^7 comparison and Gate B are not run for the match circuit; the scalable-core milestone proceeds on engineering grounds only until the project lead chooses among the options in `research/decisions/novelty-n2-2026-11-26.md`. Gate B's own requirements are unchanged.
+
 ### 0.4 Original scope note (revision 1)
 
 This plan does **not** guarantee a seven-year-old level of cognition, much less a twenty-year-old level. No known research result establishes that an initially untrained neural network can acquire broad human language and world knowledge through a small CPU-only online stream. The roadmap is designed to test that hypothesis in falsifiable steps. A successful parser, memory demo, or low perplexity on a tiny synthetic language is not evidence of human-level understanding.
