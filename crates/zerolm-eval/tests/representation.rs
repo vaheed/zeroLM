@@ -100,3 +100,36 @@ fn bptt_core_export_equals_the_shared_initialization() {
         assert_eq!(b.core(), Core::from_seed_budget(5, budget));
     }
 }
+
+#[test]
+fn the_gradient_spec_is_valid_and_its_seeds_are_new() {
+    let s = GradientSpec::load(root()).unwrap();
+    let old = Spec::load(root()).unwrap();
+    assert!(s.main_seeds.iter().all(|x| !old.main_seeds.contains(x) && !old.pilot_seeds.contains(x)), "rerun seeds must not repeat an earlier run's");
+    assert!(old.main_seeds.iter().chain(&old.pilot_seeds).all(|x| s.burned_seeds.contains(x)), "every earlier seed is listed as burned");
+    let mut bad = s.clone();
+    bad.main_seeds[0] = bad.burned_seeds[0];
+    assert!(bad.validate().is_err());
+}
+
+fn gm(dr: f64, pert: f64, gain: f64, kappa: f64, reg: f64) -> GradientMeasures {
+    GradientMeasures { delta_r: dr, delta_r_perturbed: pert, gain_over_byte_frequency: gain, novel_gain: 0.5, kappa, finite: true, max_regression: reg, max_abs_weight: 5.0 }
+}
+
+#[test]
+fn gradient_decision_rule_passes_fails_and_flags_an_invalid_probe() {
+    let t = GradientSpec::load(root()).unwrap().thresholds;
+    let seeds = |dr: f64, pert: f64, gain: f64, kappa: f64, reg: f64| vec![gm(dr, pert, gain, kappa, reg), gm(dr + 0.02, pert + 0.01, gain + 0.02, kappa, reg), gm(dr - 0.02, pert - 0.01, gain - 0.02, kappa, reg)];
+    let ok = |m: &[GradientMeasures]| {
+        let (v, c) = decide_gradient(m, &t);
+        (v.iter().all(|x| x.passed), c.iter().filter(|x| !x.passed).map(|x| x.id).collect::<Vec<_>>())
+    };
+    assert_eq!(ok(&seeds(1.3, 0.0, 1.6, 1.0, 0.05)), (true, vec![]));
+    assert_eq!(ok(&seeds(0.1, 0.0, 1.6, 1.0, 0.05)).1, vec!["P1"]);
+    assert_eq!(ok(&seeds(1.3, 0.0, 0.5, 1.0, 0.05)).1, vec!["P2"]);
+    assert_eq!(ok(&seeds(1.3, 0.0, 1.6, f64::NAN, 0.05)).1, vec!["P4"], "an undefined retention fails P4");
+    assert_eq!(ok(&seeds(1.3, 0.0, 1.6, 1.0, 0.4)).1, vec!["P5"]);
+    // A matched random perturbation that gains as much makes the probe invalid.
+    assert!(!ok(&seeds(1.3, 1.3, 1.6, 1.0, 0.05)).0);
+    assert!((max_regression(&[3.5, 3.0, 2.8, 2.9]) - 0.1).abs() < 1e-9);
+}

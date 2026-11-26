@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Usage: fetch-gutenberg.sh [OUT=data] [GROUP=fiction|nonfiction]
+# Usage: fetch-gutenberg.sh [OUT=data] [GROUP=fiction|nonfiction|fresh-fiction|fresh-nonfiction]
+# GROUP fresh-fiction / fresh-nonfiction write gutenberg/fresh-fiction.bin and fresh-nonfiction.bin: books held back entirely as the fresh held-out role of the
+# Gate A rerun (never in exposure, probe, or development, and never seen by any earlier run).
 # GROUP nonfiction writes gutenberg/nonfiction.bin (essays, science, history, philosophy), the
 # second source of the retention test; fiction writes gutenberg/books.bin.
 # Fetch a fixed list of US public-domain books from a Project Gutenberg mirror,
@@ -7,10 +9,16 @@
 # separated by byte 0x1E. Output: $1/gutenberg/books.bin (default data/).
 # The shard's SHA-256 is recorded in research/corpus/manifest.json.
 set -euo pipefail
-GROUP="${2:-fiction}"
+GROUP="${2:-fiction}"  # fiction | nonfiction | fresh-fiction | fresh-nonfiction
 OUT="${1:-data}/gutenberg"
 MIRROR="https://gutenberg.pglaf.org"
-if [ "$GROUP" = nonfiction ]; then
+if [ "$GROUP" = fresh-fiction ]; then
+  FILE=fresh-fiction.bin
+  IDS="1342 829 2554 28054 600 2814 1257"
+elif [ "$GROUP" = fresh-nonfiction ]; then
+  FILE=fresh-nonfiction.bin
+  IDS="4363 7370 5827"
+elif [ "$GROUP" = nonfiction ]; then
   FILE=nonfiction.bin
   IDS="1228 2300 944 148 1497 8438 3300 34901 11224 4280 9662 10615 1404 147 2376 10378 5001 59 132 25717 674 2707 7142 3600"
 else

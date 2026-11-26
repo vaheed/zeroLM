@@ -15,6 +15,10 @@ The manifest lists two exposure sources (order: fiction, then non-fiction, for t
 
 With only 33 documents, the whole-document split leaves few books in the probe, dev, and hidden roles (hidden: 1,264,223 bytes). More sources are needed for stable held-out numbers.
 
+## Fresh held-out sources
+
+`gutenberg-fresh-fiction` (5 books, 3.1 MB) and `gutenberg-fresh-nonfiction` (3 books, 0.9 MB) have `fixed_role: hidden` in the manifest: every document is held-out text, the sources are not in `exposure_order`, and no earlier run has seen them. They are the held-out role of the Gate A rerun ([representation-learning.md](representation-learning.md)); `fetch-gutenberg.sh data fresh-fiction` and `... fresh-nonfiction` download them.
+
 ## Splits
 
 A document's role is `H(split_seed, source id, document index) mod 100` mapped through the split percentages, where `H` is FNV-1a (a 64-bit hash) followed by a bit mixer. Whole documents never straddle roles, and a document keeps its role when later documents are appended.

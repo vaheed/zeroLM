@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       representation_mode:
-        description: "Gate A run for the representation-gate job: pilot or main (empty skips it)"
+        description: "Gate A run for the representation-gate job: pilot, main, or gradient-main (empty skips it)"
         required: false
         default: ""
 permissions:
@@ -235,6 +235,8 @@ jobs:
         run: |
           bash research/corpus/fetch-gutenberg.sh data fiction
           bash research/corpus/fetch-gutenberg.sh data nonfiction
+          bash research/corpus/fetch-gutenberg.sh data fresh-fiction
+          bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
           bash research/corpus/fetch-benchmarks.sh data
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Contamination check (13-word windows, exposure against every evaluation set)
@@ -277,9 +279,18 @@ jobs:
         run: |
           [ -s data/gutenberg/books.bin ] || bash research/corpus/fetch-gutenberg.sh data fiction
           [ -s data/gutenberg/nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data nonfiction
+          [ -s data/gutenberg/fresh-fiction.bin ] || bash research/corpus/fetch-gutenberg.sh data fresh-fiction
+          [ -s data/gutenberg/fresh-nonfiction.bin ] || bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Smoke run (tiny core, 2e5 bytes, all arms; the outcome is always smoke)
         run: cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode smoke --out reports/representation
+      - name: Gate A rerun smoke (mainline online-gradient arm with its update log; outcome always smoke)
+        run: cargo run --release -p zerolm-eval --bin zerolm-gradient-gate -- --root data --mode smoke --out reports/representation-gradient
+      - name: Gradient report is complete, its outcome is smoke, and the update log is exact
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/representation-gradient-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/representation-gradient/summary.json > /dev/null || { echo "gradient summary lacks $k"; exit 1; }; done
+          test "$(jq -r .outcome reports/representation-gradient/summary.json)" = smoke
+          jq -e '.validity[] | select(.id == "V1") | .passed' reports/representation-gradient/summary.json
       - name: Report is complete and its outcome is smoke
         run: |
           for k in $(jq -r '.required[]' research/schemas/representation-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/representation/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
@@ -292,7 +303,9 @@ jobs:
         if: always()
         with:
           name: zerolm-representation-smoke-${{ github.sha }}
-          path: reports/representation/
+          path: |
+            reports/representation/
+            reports/representation-gradient/
           if-no-files-found: warn
           retention-days: 30
   representation-gate:
@@ -306,9 +319,16 @@ jobs:
         run: |
           bash research/corpus/fetch-gutenberg.sh data fiction
           bash research/corpus/fetch-gutenberg.sh data nonfiction
+          bash research/corpus/fetch-gutenberg.sh data fresh-fiction
+          bash research/corpus/fetch-gutenberg.sh data fresh-nonfiction
           cargo run -q --release -p zerolm-data -- verify --root data
-      - name: Gate A ${{ github.event.inputs.representation_mode }} run
-        run: cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode ${{ github.event.inputs.representation_mode }} --out reports/representation
+      - name: Gate A ${{ github.event.inputs.representation_mode }} run (pilot and main are the e-prop gate, gradient-main is the rerun with the mainline online-gradient rule)
+        run: |
+          if [ "${{ github.event.inputs.representation_mode }}" = gradient-main ]; then
+            cargo run --release -p zerolm-eval --bin zerolm-gradient-gate -- --root data --mode main --out reports/representation
+          else
+            cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode ${{ github.event.inputs.representation_mode }} --out reports/representation
+          fi
       - name: Job summary
         if: always()
         run: |

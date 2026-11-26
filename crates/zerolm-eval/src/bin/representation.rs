@@ -115,6 +115,7 @@ fn main() {
         novel_k: spec.novel_k,
         milestones: spec.milestones.clone(),
         window,
+        log_every: None,
     };
     if mode == "pilot" {
         let budgets: Vec<usize> = if arg("--budget").is_some() { vec![budget] } else { spec.core_budgets.clone() };

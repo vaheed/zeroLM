@@ -68,7 +68,48 @@ impl Layout {
     }
 }
 
+/// One logged update (constitution invariant 3): which bytes drove it, the signal, the rule, and the size of the step.
+#[derive(Debug, Clone, PartialEq)]
+pub struct UpdateEvent {
+    pub seq: usize,
+    /// Offset of the chunk's first byte in the exposure stream.
+    pub stream_offset: usize,
+    pub bytes: usize,
+    /// Bits the chunk cost under the weights from before this update.
+    pub bits_before: f64,
+    pub grad_norm: f32,
+    pub update_norm: f32,
+}
+
+/// A block of consecutive updates and the weights' hash after the last one.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CheckpointRecord {
+    pub input_stream: String,
+    pub signal: &'static str,
+    pub rule: &'static str,
+    pub changed_tensors: Vec<&'static str>,
+    pub first_seq: usize,
+    pub last_seq: usize,
+    pub targets_sha256: String,
+    pub checkpoint_sha256: String,
+}
+
+pub const SIGNAL: &str = "observed_next_byte";
+pub const RULE: &str = "truncated_bptt_adam";
+pub const CHANGED: [&str; 12] = ["embed", "gru.wz", "gru.wr", "gru.wh", "gru.uz", "gru.ur", "gru.uh", "gru.bz", "gru.br", "gru.bh", "readout.weight", "readout.bias"];
+
+struct EventLog {
+    stream: String,
+    every: usize,
+    events: Vec<UpdateEvent>,
+    checkpoints: Vec<CheckpointRecord>,
+    block_start: usize,
+    block_targets: zerolm_tensor::sha256::Sha256,
+}
+
 pub struct Bptt {
+    learning: bool,
+    log: Option<EventLog>,
     cfg: Config,
     l: Layout,
     p: Vec<f32>,
@@ -150,7 +191,7 @@ impl Bptt {
             };
             p[at..at + data.len()].copy_from_slice(data);
         }
-        Bptt { cfg, m: vec![0.0; l.total], v: vec![0.0; l.total], steps: 0, state: vec![0.0; d], prev: START_BYTE, bits: 0.0, seen: 0, l, p }
+        Bptt { learning: true, log: None, cfg, m: vec![0.0; l.total], v: vec![0.0; l.total], steps: 0, state: vec![0.0; d], prev: START_BYTE, bits: 0.0, seen: 0, l, p }
     }
 
     /// The embedding and GRU tensors as a plastic core (same flat layout).
@@ -275,8 +316,16 @@ impl Bptt {
         let (loss, mut g, steps) = self.loss_and_grad(&self.p, &self.state, self.prev, bytes);
         let bits = loss * bytes.len() as f64 / std::f64::consts::LN_2;
         self.bits += bits;
+        let offset = self.seen;
         self.seen += bytes.len();
+        if !self.learning {
+            // Scored only: carry the state, change nothing.
+            self.state = steps.last().expect("non-empty chunk").h.clone();
+            self.prev = *bytes.last().expect("non-empty chunk");
+            return bits;
+        }
         let norm = g.iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt() as f32;
+        let before = if self.log.is_some() { Some(self.p.clone()) } else { None };
         if norm > self.cfg.clip {
             let s = self.cfg.clip / norm;
             g.iter_mut().for_each(|x| *x *= s);
@@ -292,7 +341,62 @@ impl Bptt {
         // Carry the state forward, detached, as computed before the update.
         self.state = steps.last().expect("non-empty chunk").h.clone();
         self.prev = *bytes.last().expect("non-empty chunk");
+        if let Some(before) = before {
+            let update_norm = self.p.iter().zip(&before).map(|(a, b)| ((a - b) as f64).powi(2)).sum::<f64>().sqrt() as f32;
+            let hash = self.weights_sha256_if_due();
+            let log = self.log.as_mut().expect("log");
+            let seq = log.events.len();
+            log.events.push(UpdateEvent { seq, stream_offset: offset, bytes: bytes.len(), bits_before: bits, grad_norm: norm, update_norm });
+            log.block_targets.update(bytes);
+            if let Some(h) = hash {
+                let targets = std::mem::replace(&mut log.block_targets, zerolm_tensor::sha256::Sha256::new()).finish_hex();
+                log.checkpoints.push(CheckpointRecord { input_stream: log.stream.clone(), signal: SIGNAL, rule: RULE, changed_tensors: CHANGED.to_vec(), first_seq: log.block_start, last_seq: seq, targets_sha256: targets, checkpoint_sha256: h });
+                log.block_start = seq + 1;
+            }
+        }
         bits
+    }
+
+    /// Log every update; close a checkpoint block (with the weights' hash) every `every` updates.
+    pub fn enable_log(&mut self, input_stream: &str, every: usize) {
+        self.log = Some(EventLog { stream: input_stream.into(), every: every.max(1), events: Vec::new(), checkpoints: Vec::new(), block_start: 0, block_targets: zerolm_tensor::sha256::Sha256::new() });
+    }
+
+    /// Close the open block, so the last updates are covered too.
+    pub fn close_log(&mut self) {
+        let h = self.weights_sha256();
+        if let Some(log) = self.log.as_mut() {
+            if log.block_start < log.events.len() {
+                let targets = std::mem::replace(&mut log.block_targets, zerolm_tensor::sha256::Sha256::new()).finish_hex();
+                log.checkpoints.push(CheckpointRecord { input_stream: log.stream.clone(), signal: SIGNAL, rule: RULE, changed_tensors: CHANGED.to_vec(), first_seq: log.block_start, last_seq: log.events.len() - 1, targets_sha256: targets, checkpoint_sha256: h });
+                log.block_start = log.events.len();
+            }
+        }
+    }
+
+    pub fn events(&self) -> &[UpdateEvent] {
+        self.log.as_ref().map(|l| &l.events[..]).unwrap_or(&[])
+    }
+
+    pub fn checkpoints(&self) -> &[CheckpointRecord] {
+        self.log.as_ref().map(|l| &l.checkpoints[..]).unwrap_or(&[])
+    }
+
+    /// With `false`, chunks are scored and the state advances, but no weight changes.
+    pub fn set_learning(&mut self, on: bool) {
+        self.learning = on;
+    }
+
+    pub fn weights_sha256(&self) -> String {
+        let mut h = zerolm_tensor::sha256::Sha256::new();
+        h.update(b"zerolm-gradient-core-v1\0");
+        h.update_f32(&self.p);
+        h.finish_hex()
+    }
+
+    fn weights_sha256_if_due(&self) -> Option<String> {
+        let log = self.log.as_ref()?;
+        if (log.events.len() + 1) % log.every == 0 { Some(self.weights_sha256()) } else { None }
     }
 
     /// One chronological pass over `bytes`; returns the prequential BPB of these bytes.

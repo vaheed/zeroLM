@@ -52,3 +52,65 @@ fn training_changes_weights_and_learns_a_repeating_text() {
     assert!(after < 0.5, "should learn the repeat: {after}");
     assert!(online < before && online.is_finite());
 }
+
+fn text(n: usize) -> Vec<u8> {
+    b"the quick brown fox jumps over the lazy dog. ".iter().cycle().take(n).copied().collect()
+}
+
+#[test]
+fn the_mainline_update_log_is_exact() {
+    let data = text(1000);
+    let mut b = Bptt::new(1, Config::default());
+    b.enable_log("test-stream", 5);
+    b.observe_all(&data);
+    b.close_log();
+    let ev = b.events();
+    assert_eq!(ev.len(), data.len().div_ceil(32), "one event per update chunk");
+    let mut at = 0;
+    for (i, e) in ev.iter().enumerate() {
+        assert_eq!((e.seq, e.stream_offset), (i, at), "events are contiguous and ordered");
+        assert!(e.update_norm > 0.0 && e.grad_norm.is_finite());
+        at += e.bytes;
+    }
+    assert_eq!(at, data.len());
+    let cps = b.checkpoints();
+    assert_eq!(cps.first().unwrap().first_seq, 0);
+    assert_eq!(cps.last().unwrap().last_seq, ev.len() - 1, "the closing block covers the last update");
+    for w in cps.windows(2) {
+        assert_eq!(w[1].first_seq, w[0].last_seq + 1, "blocks tile the update sequence");
+    }
+    assert!(cps.iter().all(|c| c.signal == "observed_next_byte" && c.rule == "truncated_bptt_adam" && c.input_stream == "test-stream" && c.changed_tensors.contains(&"embed")));
+    // The final checkpoint hash is the weights' hash, and the target hashes cover exactly the stream.
+    assert_eq!(cps.last().unwrap().checkpoint_sha256, b.weights_sha256());
+    let all: Vec<&str> = cps.iter().map(|c| c.targets_sha256.as_str()).collect();
+    assert_eq!(all.len(), cps.len());
+    assert_ne!(all[0], all[1], "different blocks have different target hashes");
+}
+
+#[test]
+fn disabled_means_no_update_and_the_future_does_not_leak() {
+    let data = text(400);
+    let init = Bptt::new(2, Config::default()).weights_sha256();
+    let mut b = Bptt::new(2, Config::default());
+    b.set_learning(false);
+    b.enable_log("s", 5);
+    b.observe_all(&data);
+    assert_eq!(b.weights_sha256(), init);
+    assert!(b.events().is_empty());
+    // Bits of an update chunk depend only on bytes before and inside it.
+    let mut other = data.clone();
+    for x in other[200..].iter_mut() {
+        *x = b'~';
+    }
+    let (mut a, mut c) = (Bptt::new(2, Config::default()), Bptt::new(2, Config::default()));
+    a.enable_log("s", 5);
+    c.enable_log("s", 5);
+    a.observe_all(&data);
+    c.observe_all(&other);
+    let first = 200 / 32;
+    assert_eq!(a.events()[..first].iter().map(|e| e.bits_before).collect::<Vec<_>>(), c.events()[..first].iter().map(|e| e.bits_before).collect::<Vec<_>>());
+    // Determinism.
+    let mut d = Bptt::new(2, Config::default());
+    d.observe_all(&data);
+    assert_eq!(d.weights_sha256(), a.weights_sha256());
+}

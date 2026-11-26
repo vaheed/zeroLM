@@ -47,6 +47,10 @@ pub struct Source {
     pub splits: Option<Splits>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub split_seed: Option<u64>,
+    /// Every document of this source has this role (`probe`, `dev`, or `hidden`) and the source is
+    /// not in `exposure_order`: books held back whole, for a held-out set no earlier run has seen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fixed_role: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -116,6 +120,16 @@ impl Manifest {
             }
             for sh in &src.shards {
                 check_file(&sh.path, &sh.sha256).map_err(|e| format!("source '{}': {e}", src.id))?;
+            }
+        }
+        for src in &self.sources {
+            if let Some(r) = &src.fixed_role {
+                if !["probe", "dev", "hidden"].contains(&r.as_str()) {
+                    return Err(format!("source '{}': fixed_role must be probe, dev, or hidden", src.id));
+                }
+                if self.exposure_order.contains(&src.id) {
+                    return Err(format!("source '{}': a fixed-role source cannot be in exposure_order", src.id));
+                }
             }
         }
         let mut seen = BTreeSet::new();

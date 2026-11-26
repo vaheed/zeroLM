@@ -257,6 +257,22 @@ pub struct ArmRun {
     pub bytes: usize,
     pub bytes_per_s: f64,
     pub peak_rss_kb: Option<u64>,
+    /// Summary of the update log (gradient arm with logging on).
+    pub log: Option<LogSummary>,
+}
+
+/// What the update log of the mainline gradient arm shows (constitution invariant 3).
+#[derive(Debug, Clone)]
+pub struct LogSummary {
+    pub updates: usize,
+    pub checkpoint_blocks: usize,
+    /// Events are contiguous from offset 0 and cover exactly the bytes learned.
+    pub covers_stream: bool,
+    /// Blocks tile the update sequence and the last covers the last update.
+    pub blocks_tile: bool,
+    pub final_checkpoint_matches_weights: bool,
+    pub final_checkpoint_sha256: String,
+    pub max_update_norm: f32,
 }
 
 pub struct RunParams {
@@ -267,6 +283,8 @@ pub struct RunParams {
     pub novel_k: usize,
     pub milestones: Vec<usize>,
     pub window: usize,
+    /// Log every update of the gradient arm and close a checkpoint block every N updates (mainline mode).
+    pub log_every: Option<usize>,
 }
 
 /// Milestones to evaluate for a two-segment stream: the configured ones that fit, the end of E1, and the end.
@@ -299,6 +317,24 @@ impl Learner {
             }
         }
     }
+    fn log_summary(&mut self, learned: usize) -> Option<LogSummary> {
+        let Learner::Bptt(b) = self else { return None };
+        b.close_log();
+        let ev = b.events();
+        if ev.is_empty() {
+            return None;
+        }
+        let mut at = 0;
+        let mut covers = true;
+        for (i, e) in ev.iter().enumerate() {
+            covers &= e.seq == i && e.stream_offset == at;
+            at += e.bytes;
+        }
+        let cps = b.checkpoints();
+        let tiles = cps.first().map(|c| c.first_seq == 0).unwrap_or(false) && cps.windows(2).all(|w| w[1].first_seq == w[0].last_seq + 1) && cps.last().map(|c| c.last_seq == ev.len() - 1).unwrap_or(false);
+        let last = cps.last().map(|c| c.checkpoint_sha256.clone()).unwrap_or_default();
+        Some(LogSummary { updates: ev.len(), checkpoint_blocks: cps.len(), covers_stream: covers && at == learned, blocks_tile: tiles, final_checkpoint_matches_weights: last == b.weights_sha256(), final_checkpoint_sha256: last, max_update_norm: ev.iter().map(|e| e.update_norm).fold(0.0, f32::max) })
+    }
     fn core(&self) -> Core {
         match self {
             Learner::Plastic(m) => m.core.clone(),
@@ -323,7 +359,13 @@ pub fn run_arm(arm: Arm, seed: u64, d: &Data, rp: &RunParams, index: &[u64], ini
         Arm::Frozen => Learner::Plastic(Box::new(PlasticModel::new(init.clone(), Plasticity::Frozen, rp.delta, rp.eprop))),
         Arm::RandomFeatures => Learner::Plastic(Box::new(PlasticModel::new(init.clone(), Plasticity::ReadoutOnly, rp.delta, rp.eprop))),
         Arm::Local => Learner::Plastic(Box::new(PlasticModel::new(init.clone(), Plasticity::Eprop, rp.delta, rp.eprop))),
-        Arm::Bptt => Learner::Bptt(Box::new(Bptt::with_budget(seed, BpttConfig { lr: rp.bptt_lr, ..Default::default() }, rp.budget))),
+        Arm::Bptt => {
+            let mut b = Bptt::with_budget(seed, BpttConfig { lr: rp.bptt_lr, ..Default::default() }, rp.budget);
+            if let Some(every) = rp.log_every {
+                b.enable_log(&format!("exposure-seed-{seed}"), every);
+            }
+            Learner::Bptt(Box::new(b))
+        }
     };
     let (mut evals, mut windows) = (Vec::new(), Vec::new());
     let (mut at, mut bits_all, mut finite) = (0usize, 0.0f64, true);
@@ -365,6 +407,7 @@ pub fn run_arm(arm: Arm, seed: u64, d: &Data, rp: &RunParams, index: &[u64], ini
             probe_e1_bpb: probe_e1,
         });
     }
+    let log = learner.log_summary(at);
     let final_core = learner.core();
     let finite = finite && final_core.p.iter().all(|w| w.is_finite());
     let wall_s = t0.elapsed().as_secs_f64();
@@ -381,6 +424,7 @@ pub fn run_arm(arm: Arm, seed: u64, d: &Data, rp: &RunParams, index: &[u64], ini
         bytes: at,
         bytes_per_s: at as f64 / wall_s.max(1e-9),
         peak_rss_kb: crate::peak_rss_kb(),
+        log,
     }
 }
 
@@ -473,4 +517,141 @@ pub fn outcome(validity: &[Check], criteria: &[Check], largest_affordable: bool)
     }
     let failed_p: Vec<&'static str> = criteria.iter().filter(|c| !c.passed).map(|c| c.id).collect();
     if failed_p.is_empty() { ("pass", criteria.iter().map(|c| c.id).collect()) } else { ("fail_pivot", failed_p) }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Gate A rerun with the mainline online-gradient rule (decision record gate-a-2026-11-26, option a).
+
+pub const GRADIENT_SPEC: &str = "model/specs/representation-gradient.json";
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GradientThresholds {
+    /// Minimum probe gain of A2 over random features.
+    pub r: f64,
+    /// A2's end-to-end held-out BPB must be at least this far below byte frequency (Witten-Bell order 1).
+    pub gain_over_byte_frequency: f64,
+    pub kappa_min: f64,
+    /// Largest allowed regression of end-to-end held-out BPB between consecutive milestones.
+    pub max_regression: f64,
+    pub max_abs_weight: f32,
+    pub max_shared_window_fraction: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GradientSpec {
+    pub version: u32,
+    pub frozen_on: String,
+    pub rationale: String,
+    pub predecessor: String,
+    pub main_seeds: Vec<u64>,
+    /// Seeds already used by an earlier Gate A run; the rerun must use new ones.
+    pub burned_seeds: Vec<u64>,
+    pub smoke: Sizes,
+    pub main: Sizes,
+    pub bptt_lr: f32,
+    pub log_every: usize,
+    pub novel_k: usize,
+    pub milestones: Vec<usize>,
+    /// Sources used whole as the held-out role (first: E1-side text, second: E2-side text).
+    pub fresh_hidden_sources: Vec<String>,
+    pub thresholds: GradientThresholds,
+}
+
+impl GradientSpec {
+    pub fn load(root: &Path) -> Result<Self, String> {
+        let text = std::fs::read_to_string(root.join(GRADIENT_SPEC)).map_err(|e| format!("{GRADIENT_SPEC}: {e}"))?;
+        let s: GradientSpec = serde_json::from_str(&text).map_err(|e| format!("{GRADIENT_SPEC}: {e}"))?;
+        s.validate()?;
+        Ok(s)
+    }
+
+    pub fn sha256(root: &Path) -> String {
+        corpus::sha256_hex(&std::fs::read(root.join(GRADIENT_SPEC)).unwrap_or_default())
+    }
+
+    pub fn validate(&self) -> Result<(), String> {
+        if self.main_seeds.len() < 3 {
+            return Err("at least 3 main seeds".into());
+        }
+        if self.main_seeds.iter().any(|s| self.burned_seeds.contains(s)) {
+            return Err("main seeds must be new: a seed of an earlier run is burned".into());
+        }
+        if self.fresh_hidden_sources.len() != 2 || self.milestones.is_empty() || self.log_every == 0 || self.novel_k == 0 {
+            return Err("two fresh held-out sources, milestones, log_every, and novel_k are required".into());
+        }
+        Ok(())
+    }
+}
+
+/// Like [`load_data`], with the held-out role taken from two sources that are held back whole
+/// (`fixed_role: hidden`, absent from exposure), so no earlier run has seen it.
+pub fn load_data_fresh(root: &Path, manifest_text: &str, sz: &Sizes, fresh: &[String], max_shared: f64) -> Result<Data, String> {
+    let m = Manifest::parse(manifest_text)?;
+    let problems = corpus::verify(&m, root);
+    if !problems.is_empty() {
+        return Err(problems.join("; "));
+    }
+    for id in fresh {
+        let src = m.source(id).ok_or(format!("unknown fresh source {id}"))?;
+        if src.fixed_role.as_deref() != Some("hidden") {
+            return Err(format!("fresh source {id} must have fixed_role hidden"));
+        }
+    }
+    let (s1, s2) = (&m.exposure_order[0], &m.exposure_order[1]);
+    let stream = |src: &str, role| corpus::source_role_stream(&m, root, src, role);
+    let (e1, e2) = (cap(stream(s1, corpus::Role::Exposure)?, sz.e1_bytes), cap(stream(s2, corpus::Role::Exposure)?, sz.e2_bytes));
+    let (probe_e1, probe_e2) = (cap(stream(s1, corpus::Role::Probe)?, sz.probe_bytes), cap(stream(s2, corpus::Role::Probe)?, sz.probe_bytes));
+    let (hidden_e1, hidden_e2) = (cap(stream(&fresh[0], corpus::Role::Hidden)?, sz.hidden_bytes), cap(stream(&fresh[1], corpus::Role::Hidden)?, sz.hidden_bytes));
+    let cat = |a: &[u8], b: &[u8]| [a, b].concat();
+    let (probe, hidden) = (cat(&probe_e1, &probe_e2), cat(&hidden_e1, &hidden_e2));
+    let exposure = cat(&e1, &e2);
+    let index = contamination::ngram_hashes(&exposure, 13);
+    let mut rows = Vec::new();
+    let mut passed = true;
+    for (name, text) in [("probe", &probe), ("held_out", &hidden)] {
+        let o = contamination::overlap(&index, text, 13);
+        let frac = o.shared as f64 / o.windows.max(1) as f64;
+        passed &= frac <= max_shared;
+        rows.push(json!({"role": name, "windows": o.windows, "shared": o.shared, "fraction": frac}));
+    }
+    Ok(Data { e1, e2, probe, probe_e1, hidden, hidden_e1, manifest_sha256: corpus::sha256_hex(manifest_text.as_bytes()), contamination: json!(rows), contamination_passed: passed })
+}
+
+/// Per-seed measurements of the rerun.
+#[derive(Debug, Clone)]
+pub struct GradientMeasures {
+    pub delta_r: f64,
+    pub delta_r_perturbed: f64,
+    /// Byte-frequency BPB minus A2's end-to-end held-out BPB.
+    pub gain_over_byte_frequency: f64,
+    pub novel_gain: f64,
+    pub kappa: f64,
+    pub finite: bool,
+    pub max_regression: f64,
+    pub max_abs_weight: f32,
+}
+
+/// Largest increase of the held-out BPB from one milestone to the next.
+pub fn max_regression(heldout: &[f64]) -> f64 {
+    heldout.windows(2).map(|w| w[1] - w[0]).fold(0.0, f64::max)
+}
+
+/// V3 and P1-P5 for the rerun (V1 and V4 are checked by the caller).
+pub fn decide_gradient(m: &[GradientMeasures], t: &GradientThresholds) -> (Vec<Check>, Vec<Check>) {
+    let col = |f: fn(&GradientMeasures) -> f64| -> Vec<f64> { m.iter().map(f).collect() };
+    let (dr, dp, gb, nv, kp) = (col(|s| s.delta_r), col(|s| s.delta_r_perturbed), col(|s| s.gain_over_byte_frequency), col(|s| s.novel_gain), col(|s| s.kappa));
+    let (mdr, mdp, mgb) = (mean_sd(&dr).0, mean_sd(&dp).0, mean_sd(&gb).0);
+    let worst_regression = m.iter().map(|s| s.max_regression).fold(f64::NEG_INFINITY, f64::max);
+    let worst_weight = m.iter().map(|s| s.max_abs_weight as f64).fold(0.0, f64::max);
+    let validity = vec![Check { id: "V3", passed: !significant_above(&dp, 0.0), value: mdp, threshold: 0.0, detail: "A2-perturbed gain is not significantly positive".into() }];
+    let criteria = vec![
+        Check { id: "P1", passed: significant_above(&dr, 0.0) && mdr >= t.r && mdr > mdp, value: mdr, threshold: t.r, detail: "A2 probe gain is significant, at least r, and above the perturbed control".into() },
+        Check { id: "P2", passed: significant_above(&gb, t.gain_over_byte_frequency), value: mgb, threshold: t.gain_over_byte_frequency, detail: "A2's end-to-end held-out BPB beats byte frequency by at least the threshold".into() },
+        Check { id: "P3", passed: significant_above(&nv, 0.0), value: mean_sd(&nv).0, threshold: 0.0, detail: "A2 beats A1 end-to-end on novel-context positions".into() },
+        Check { id: "P4", passed: mean_sd(&kp).0 >= t.kappa_min, value: mean_sd(&kp).0, threshold: t.kappa_min, detail: "retention of the E1 probe gain after E2".into() },
+        Check { id: "P5", passed: m.iter().all(|s| s.finite) && worst_regression <= t.max_regression && worst_weight <= t.max_abs_weight as f64, value: worst_regression, threshold: t.max_regression, detail: "all values finite, weights bounded, held-out BPB never regresses by more than the threshold between milestones".into() },
+    ];
+    (validity, criteria)
 }

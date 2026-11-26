@@ -47,6 +47,40 @@
         "hidden": 15
       },
       "split_seed": 1
+    },
+    {
+      "id": "gutenberg-fresh-fiction",
+      "description": "5 English-language fiction books (ids in research/corpus/fetch-gutenberg.sh, group fresh-fiction; 2 listed ids were not on the mirror) held back whole as the fresh held-out role of the Gate A rerun: never in exposure, probe, or development, and never seen by any earlier run",
+      "license": "Public domain in the United States (Project Gutenberg texts of works published before 1929)",
+      "license_url": "https://www.gutenberg.org/policy/permission.html",
+      "origin_url": "https://gutenberg.pglaf.org (Project Gutenberg mirror)",
+      "generated_by_model": false,
+      "benchmark": false,
+      "shards": [
+        {
+          "path": "gutenberg/fresh-fiction.bin",
+          "sha256": "810f83e4b38176da6e8a672b7272c7ef5798e6e5dc240fb2e1edd7503f233e45",
+          "bytes": 3103786
+        }
+      ],
+      "fixed_role": "hidden"
+    },
+    {
+      "id": "gutenberg-fresh-nonfiction",
+      "description": "3 English-language non-fiction books (group fresh-nonfiction) held back whole as the fresh held-out role of the Gate A rerun, as above",
+      "license": "Public domain in the United States (Project Gutenberg texts of works published before 1929)",
+      "license_url": "https://www.gutenberg.org/policy/permission.html",
+      "origin_url": "https://gutenberg.pglaf.org (Project Gutenberg mirror)",
+      "generated_by_model": false,
+      "benchmark": false,
+      "shards": [
+        {
+          "path": "gutenberg/fresh-nonfiction.bin",
+          "sha256": "bffd6276be69bceff35c1a359b94fdd559894e03fdec2214159743dff109a16e",
+          "bytes": 942562
+        }
+      ],
+      "fixed_role": "hidden"
     }
   ],
   "exposure_order": [

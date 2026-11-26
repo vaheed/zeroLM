@@ -49,3 +49,7 @@ path = "src/bin/benchmarks.rs"
 [[bin]]
 name = "zerolm-representation"
 path = "src/bin/representation.rs"
+
+[[bin]]
+name = "zerolm-gradient-gate"
+path = "src/bin/gradient_gate.rs"

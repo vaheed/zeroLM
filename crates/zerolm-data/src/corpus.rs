@@ -19,6 +19,12 @@ pub enum Role {
 /// changes role when other documents or shards change.
 pub fn role_of(m: &Manifest, source: &str, index: usize) -> Role {
     let src = m.source(source);
+    match src.and_then(|x| x.fixed_role.as_deref()) {
+        Some("probe") => return Role::Probe,
+        Some("dev") => return Role::Dev,
+        Some("hidden") => return Role::Hidden,
+        _ => {}
+    }
     let (seed, s) = (src.and_then(|x| x.split_seed).unwrap_or(m.split_seed), src.and_then(|x| x.splits).unwrap_or(m.splits));
     let mut key = Vec::new();
     key.extend_from_slice(&seed.to_le_bytes());

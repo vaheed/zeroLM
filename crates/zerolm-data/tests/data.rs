@@ -111,3 +111,15 @@ fn a_source_can_override_the_split_and_the_override_is_validated() {
     assert!(count(&m1, Role::Probe) > count(&m0, Role::Probe));
     assert!(Manifest::parse(&manifest(&shard, r#","splits":{"exposure":40,"probe":20,"dev":20,"hidden":30}"#)).is_err());
 }
+
+#[test]
+fn a_fixed_role_source_is_wholly_held_out_and_never_exposure() {
+    let shard = docs(30, "f");
+    let base = manifest(&shard, r#","fixed_role":"hidden""#);
+    // The only source is in exposure_order, which a fixed-role source may not be.
+    assert!(Manifest::parse(&base).is_err());
+    let ok = base.replace(r#""exposure_order":["books"]"#, r#""exposure_order":[]"#);
+    let m = Manifest::parse(&ok).unwrap();
+    assert!((0..30).all(|i| role_of(&m, "books", i) == Role::Hidden));
+    assert!(Manifest::parse(&ok.replace("\"hidden\"}", "\"exposure\"}").replace(r#""fixed_role":"hidden""#, r#""fixed_role":"exposure""#)).is_err());
+}

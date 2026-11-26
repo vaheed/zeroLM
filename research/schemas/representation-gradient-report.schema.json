@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM Gate A rerun report with the mainline online-gradient rule (reports/representation-gradient/summary.json)",
+  "description": "Produced by zerolm-gradient-gate (roadmap Phase 9, decision research/decisions/gate-a-2026-11-26.md option a). 'smoke' is the only outcome a regular CI run may report; a main run on the fresh held-out role may report pass, fail_pivot, or inconclusive.",
+  "type": "object",
+  "required": ["report", "mode", "outcome", "deciding_criteria", "decision_record", "spec_sha256", "data", "arms", "baselines", "validity", "criteria", "attempts", "resources", "scope_note"],
+  "properties": {
+    "report": {"const": "representation-gradient"},
+    "mode": {"enum": ["smoke", "main"]},
+    "outcome": {"enum": ["smoke", "pass", "fail_pivot", "inconclusive"]},
+    "deciding_criteria": {"type": "array", "items": {"type": "string"}},
+    "decision_record": {"type": "string"},
+    "spec_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "data": {"type": "object", "required": ["manifest_sha256", "splits", "contamination_passed"]},
+    "arms": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "control", "changed_tensors", "per_seed"],
+        "properties": {
+          "id": {"enum": ["frozen", "random_features", "gradient_mainline", "gradient_perturbed"]},
+          "control": {"const": false},
+          "per_seed": {"type": "array", "items": {"type": "object", "required": ["seed", "probe_bpb", "delta_r"], "description": "gradient_mainline seeds also carry update_log: updates, checkpoint_blocks, covers_stream, blocks_tile, final_checkpoint_matches_weights, final_checkpoint_sha256, signal, rule, input_stream"}}
+        }
+      }
+    },
+    "baselines": {"type": "array", "items": {"type": "object", "required": ["name", "heldout_bpb", "novel_context_bpb"]}},
+    "validity": {"type": "array", "items": {"type": "object", "required": ["id", "passed", "detail"]}},
+    "criteria": {"type": "array", "items": {"type": "object", "required": ["id", "passed", "value", "threshold", "detail"]}},
+    "attempts": {"type": "array", "items": {"type": "object", "required": ["id", "mode", "rule", "outcome"]}},
+    "resources": {"type": "array", "items": {"type": "object", "required": ["arm", "bytes", "bytes_per_s", "peak_rss_bytes", "wall_s"]}},
+    "scope_note": {"type": "string"}
+  }
+}

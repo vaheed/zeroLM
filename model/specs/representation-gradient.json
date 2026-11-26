@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "frozen_on": "2026-11-26",
+  "predecessor": "model/specs/representation.json version 3: main run outcome fail_pivot (e-prop captured 0.7% of the backpropagation gain); decision research/decisions/gate-a-2026-11-26.md, option (a)",
+  "rationale": "Frozen 2026-11-26 before any run of this spec. A2 is now the mainline online-gradient learner: single-pass truncated backpropagation through time (windows of 32 bytes, Adam, gradient-norm clip 1.0, learning rate 0.001 chosen on the development role in the version-1/2 pilots of the predecessor spec), every update logged. The core, stream, probe, and data roles are those of the predecessor main run, except that the held-out role is two source groups of books held back whole and never seen by any earlier run (gutenberg-fresh-fiction, gutenberg-fresh-nonfiction), and the seeds are new. Thresholds, set from the predecessor's pilot and main-run measurements of this same rule (these were seen; they are why the thresholds are placed well below them and why this run is a confirmation under mainline rules, not a fresh discovery): r 0.5 against a measured probe gain of 1.1-1.4 BPB; gain_over_byte_frequency 1.0 against a measured gap of about 1.6 (byte frequency about 4.5 BPB against about 2.9); kappa_min 0.5 against a measured retention of about 1.0; max_regression 0.25 BPB between milestones against a measured worst regression of 0.08; max_abs_weight 100; max_shared_window_fraction 0.01 (a judgement, as in the predecessor). Thresholds are never changed after the main run starts. A rerun after INCONCLUSIVE uses new seeds and a new held-out role.",
+  "main_seeds": [20261211, 20261212, 20261213],
+  "burned_seeds": [9101, 9102, 20261201, 20261202, 20261203],
+  "smoke": {"e1_bytes": 100000, "e2_bytes": 100000, "probe_bytes": 30000, "hidden_bytes": 30000, "core_budget": 4000},
+  "main": {"e1_bytes": 5000000, "e2_bytes": 5000000, "probe_bytes": 850000, "hidden_bytes": 1000000, "core_budget": 20000},
+  "bptt_lr": 0.001,
+  "log_every": 1000,
+  "novel_k": 10,
+  "milestones": [100000, 1000000, 10000000],
+  "fresh_hidden_sources": ["gutenberg-fresh-fiction", "gutenberg-fresh-nonfiction"],
+  "thresholds": {
+    "r": 0.5,
+    "gain_over_byte_frequency": 1.0,
+    "kappa_min": 0.5,
+    "max_regression": 0.25,
+    "max_abs_weight": 100.0,
+    "max_shared_window_fraction": 0.01
+  }
+}
