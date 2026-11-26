@@ -1,4 +1,4 @@
-# Real-text data pipeline (Phase 8, in progress)
+# Real-text data pipeline (Phase 8)
 
 Status: the `real-text` milestone is **planned**, not complete. This page describes the part that exists: the manifest, verification, whole-document splits, and the contamination check. 
 
@@ -74,6 +74,25 @@ Both are evaluation-only and listed in the manifest with license and SHA-256 (`r
 
 `zerolm-realtext` writes `reports/real-text/summary.json` (schema: `research/schemas/real-text-report.schema.json`; it records the manifest, exposure, hidden-role, and levels hashes plus the L1 bar at each exposure point). The `real-text` CI job runs the unit tests, fetches the corpus and verifies every shard hash, runs the contamination check, and runs the baselines on a 10^6-byte prefix. The count-based models live in `crates/zerolm-eval/src/ngram.rs` and are unit-tested (distributions sum to 1, no future leak).
 
+## Learning curves to 10^8 bytes
+
+`zerolm-curves --root data` (about 5 minutes, 0.65 GB of memory) streams every exposure source in order (fiction, non-fiction, Simple English Wikipedia) and scores three held-out roles at 10^5, 10^6, 10^7, and 10^8 exposure bytes. It uses memory-lean versions of the count models (`crates/zerolm-eval/src/ngram_lean.rs`: open-addressing tables keyed by 64-bit hashes; a unit test checks them against the reference models to 1e-9). The first 10^7 bytes are the fiction stream, so the fiction column reproduces the table above exactly. Held-out BPB (bits per byte; fiction role 1.26 MB, non-fiction role 1.0 MB, Wikipedia role 2.0 MB):
+
+| baseline | bytes | fiction | non-fiction | Wikipedia |
+|---|---|---|---|---|
+| byte frequency | 10^8 | 4.530 | 4.486 | 4.924 |
+| Witten-Bell order 3 | 10^8 | 2.950 | 3.042 | 3.078 |
+| Witten-Bell order 5 | 10^6 / 10^7 / 10^8 | 2.580 / 2.272 / 2.181 | 2.785 / 2.522 / 2.226 | 4.868 / 4.131 / 2.050 |
+| PPM-C order 5 | 10^6 / 10^7 / 10^8 | 2.444 / 2.221 / 2.174 | 2.653 / 2.421 / 2.217 | 4.347 / 3.656 / 2.050 |
+| Kneser-Ney order 5 | 10^6 / 10^7 / 10^8 | 2.391 / 2.190 / **2.167** | 2.557 / 2.376 / **2.210** | 3.817 / 3.428 / **2.037** |
+
+The full table (every baseline at every point) is in the CI artifact `reports/real-text-curves/`. Readings and caveats:
+
+- Returns diminish fast on books (KN 2.19 at 10^7, 2.17 at 10^8) because only 22 MB of the 10^8 bytes are books; the Wikipedia column drops from 3.4 to 2.04 once Wikipedia is in the exposure stream.
+- The Wikipedia held-out role is not clean of near-duplicates: 0.72% of its 13-word windows occur in exposure (fiction 0.00%, non-fiction one window), because Simple English articles share boilerplate. Treat its BPB as optimistic.
+- The best count baseline on Wikipedia (2.04) is far above the L2 and L3 bars (1.5 and 1.2 BPB). The bars are not met by any count baseline; they are goals for the learned model, as the roadmap says.
+- The backpropagation CONTROL (to 10^7 bytes only; 10^8 bytes would take about 5.5 hours on this machine at 5,000 bytes/s) and the online-learning predictor (to 10^6 bytes) are in the table above, not in this report.
+
 ## Remaining Phase 8 work
 
-More sources (so the hidden role is not a few books), checking the L2 and L3 thresholds against their sources, and learning curves at 10^7 and 10^8 bytes in CI or a scheduled run. The `real-text` milestone stays `planned` until these exist.
+The GPT-2 paper's 117M-model rows (L3 LAMBADA bar check), and the uploaded CI evidence. The milestone is marked complete only when both the CI jobs and these are done.

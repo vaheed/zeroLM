@@ -53,3 +53,7 @@ path = "src/bin/representation.rs"
 [[bin]]
 name = "zerolm-gradient-gate"
 path = "src/bin/gradient_gate.rs"
+
+[[bin]]
+name = "zerolm-curves"
+path = "src/bin/curves.rs"

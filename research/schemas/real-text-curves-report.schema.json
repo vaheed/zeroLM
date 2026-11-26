@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ZeroLM real-text baseline learning curves (reports/real-text-curves/summary.json)",
+  "type": "object",
+  "required": ["report", "exposure_sha256", "exposure_bytes", "manifest_sha256", "levels_sha256", "points", "rows", "l1_bars", "resources", "wikipedia_level_bars", "scope_note"],
+  "properties": {
+    "report": {"const": "real-text-curves"},
+    "exposure_sha256": {"$ref": "#/$defs/sha256"},
+    "exposure_bytes": {"type": "integer", "minimum": 1},
+    "manifest_sha256": {"$ref": "#/$defs/sha256"},
+    "levels_sha256": {"$ref": "#/$defs/sha256"},
+    "points": {"type": "array", "minItems": 1, "items": {"type": "integer", "minimum": 1}},
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["baseline", "exposure_bytes", "heldout_role", "heldout_bytes", "bpb"],
+        "properties": {
+          "baseline": {"enum": ["byte-frequency", "witten-bell-3", "witten-bell-5", "ppm-c-5", "kneser-ney-5"]},
+          "heldout_role": {"enum": ["fiction", "nonfiction", "wikipedia"]},
+          "bpb": {"type": "number", "exclusiveMinimum": 0, "maximum": 16}
+        }
+      }
+    },
+    "l1_bars": {"type": "array", "items": {"type": "object", "required": ["exposure_bytes", "heldout_role", "bar_bpb"]}},
+    "resources": {"type": "array", "items": {"type": "object", "required": ["models", "wall_s", "table_entries"]}},
+    "wikipedia_level_bars": {"type": "object", "required": ["l2_max_bpb", "l3_max_bpb", "best_count_baseline_bpb_at_last_point", "count_baseline_meets_l2", "count_baseline_meets_l3"]},
+    "scope_note": {"type": "string"}
+  },
+  "$defs": {"sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

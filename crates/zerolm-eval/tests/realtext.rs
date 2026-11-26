@@ -84,3 +84,51 @@ fn summary_has_every_field_the_schema_requires() {
     }
     assert_eq!(s["levels_sha256"].as_str().unwrap().len(), 64);
 }
+
+mod lean {
+    use zerolm_eval::ngram::{Kn, Wb};
+    use zerolm_eval::ngram_lean::{LeanKn, LeanWb};
+
+    fn text() -> Vec<u8> {
+        // Word-like pseudo text with enough variety to exercise backoff, escapes, and exclusion.
+        let mut r = zerolm_tensor::Rng::new(5);
+        let words: Vec<Vec<u8>> = (0..300).map(|_| (0..2 + r.below(7)).map(|_| b'a' + r.below(26) as u8).collect()).collect();
+        let mut out = Vec::new();
+        while out.len() < 60_000 {
+            // Zipf-ish: favour early words.
+            let i = (r.below(300) * r.below(300)) / 300;
+            out.extend_from_slice(&words[i]);
+            out.push(if r.below(12) == 0 { b'.' } else { b' ' });
+        }
+        out
+    }
+
+    #[test]
+    fn lean_models_match_the_reference_models() {
+        let t = text();
+        let (train, test) = t.split_at(50_000);
+        let (mut wb, mut kn, mut wb3, mut wb1) = (Wb::new(5), Kn::new(5), Wb::new(3), Wb::new(1));
+        let (mut lw, mut lk) = (LeanWb::new(5), LeanKn::new(5));
+        for i in 0..train.len() {
+            let h = &train[i.saturating_sub(4)..i];
+            wb.observe(h, train[i]);
+            kn.observe(h, train[i]);
+            wb3.observe(&train[i.saturating_sub(2)..i], train[i]);
+            wb1.observe(&[], train[i]);
+            lw.observe(h, train[i]);
+            lk.observe(h, train[i]);
+        }
+        let close = |a: f64, b: f64, what: &str| assert!((a - b).abs() < 1e-9, "{what}: reference {a}, lean {b}");
+        close(wb.bpb(test, false), lw.bpb_wb(test, 5), "witten-bell 5");
+        close(wb.bpb(test, true), lw.bpb_ppm(test), "ppm-c 5");
+        close(kn.bpb(test), lk.bpb(test), "kneser-ney 5");
+        // Lower orders come from the same tables.
+        close(wb3.bpb(test, false), lw.bpb_wb(test, 3), "witten-bell 3");
+        close(wb1.bpb(test, false), lw.bpb_wb(test, 1), "byte frequency");
+        // A held-out context the model has never seen still gives a valid distribution.
+        let s: f64 = (0..=255u8).map(|b| lw.ppm_prob(b"zzzz", b)).sum();
+        assert!((s - 1.0).abs() < 1e-6, "ppm sums to {s}");
+        let s: f64 = (0..=255u8).map(|b| lk.prob(b"abcd", b)).sum();
+        assert!((s - 1.0).abs() < 1e-6, "kn sums to {s}");
+    }
+}

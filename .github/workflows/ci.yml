@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       representation_mode:
-        description: "Gate A run for the representation-gate job: pilot, main, or gradient-main (empty skips it)"
+        description: "Gate A run for the representation-gate job: pilot, main, gradient-main, or curves (empty skips it)"
         required: false
         default: ""
 permissions:
@@ -253,6 +253,11 @@ jobs:
       - name: Benchmark report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/benchmarks-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/benchmarks/summary.json > /dev/null || { echo "benchmarks summary lacks $k"; exit 1; }; done
+      - name: Baseline curves to 10^7 bytes with the memory-lean models (the 10^8 curve is a manual representation-gate run, input curves)
+        run: cargo run --release -p zerolm-eval --bin zerolm-curves -- --root data --points 100000,1000000,10000000 --out reports/real-text-curves
+      - name: Curves report fields match the schema
+        run: |
+          for k in $(jq -r '.required[]' research/schemas/real-text-curves-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text-curves/summary.json > /dev/null || { echo "curves summary lacks $k"; exit 1; }; done
       - name: Report fields match the schema
         run: |
           for k in $(jq -r '.required[]' research/schemas/real-text-report.schema.json); do jq -e --arg k "$k" 'has($k)' reports/real-text/summary.json > /dev/null || { echo "summary.json lacks $k"; exit 1; }; done
@@ -266,6 +271,7 @@ jobs:
           name: zerolm-real-text-${{ github.sha }}
           path: |
             reports/real-text/
+            reports/real-text-curves/
             reports/benchmarks/
           if-no-files-found: warn
           retention-days: 30
@@ -333,7 +339,9 @@ jobs:
           cargo run -q --release -p zerolm-data -- verify --root data
       - name: Gate A ${{ github.event.inputs.representation_mode }} run (pilot and main are the e-prop gate, gradient-main is the rerun with the mainline online-gradient rule)
         run: |
-          if [ "${{ github.event.inputs.representation_mode }}" = gradient-main ]; then
+          if [ "${{ github.event.inputs.representation_mode }}" = curves ]; then
+            cargo run --release -p zerolm-eval --bin zerolm-curves -- --root data --out reports/representation
+          elif [ "${{ github.event.inputs.representation_mode }}" = gradient-main ]; then
             cargo run --release -p zerolm-eval --bin zerolm-gradient-gate -- --root data --mode main --out reports/representation
           else
             cargo run --release -p zerolm-eval --bin zerolm-representation -- --root data --mode ${{ github.event.inputs.representation_mode }} --out reports/representation
